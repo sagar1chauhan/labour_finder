@@ -2,8 +2,23 @@ import api from './api';
 import { registerFCMToken, removeFCMToken } from './pushNotificationService';
 
 /**
- * User Authentication Service
+ * Notify Flutter WebView about successful login
+ * This directly calls Flutter's captureLoginResponse handler
+ * @param {object} responseData - The login response data containing accessToken and user/vendor/worker info
  */
+function notifyFlutterLogin(responseData) {
+  try {
+    if (window.flutter_inappwebview && window.flutter_inappwebview.callHandler) {
+      window.flutter_inappwebview.callHandler('captureLoginResponse', JSON.stringify({
+        url: '/auth/login',
+        body: responseData
+      }));
+    }
+  } catch (e) {
+    console.error('[AUTH] Error notifying Flutter:', e);
+  }
+}
+
 /**
  * User Authentication Service
  */
@@ -21,6 +36,7 @@ export const userAuthService = {
       localStorage.setItem('accessToken', response.data.accessToken);
       localStorage.setItem('refreshToken', response.data.refreshToken);
       localStorage.setItem('userData', JSON.stringify(response.data.user));
+      notifyFlutterLogin(response.data);
       registerFCMToken('user', true).catch(console.error);
     }
     return response.data;
@@ -33,7 +49,7 @@ export const userAuthService = {
       localStorage.setItem('accessToken', response.data.accessToken);
       localStorage.setItem('refreshToken', response.data.refreshToken);
       localStorage.setItem('userData', JSON.stringify(response.data.user));
-      // Register FCM token after successful registration
+      notifyFlutterLogin(response.data);
       registerFCMToken('user', true).catch(console.error);
     }
     return response.data;
@@ -46,7 +62,7 @@ export const userAuthService = {
       localStorage.setItem('accessToken', response.data.accessToken);
       localStorage.setItem('refreshToken', response.data.refreshToken);
       localStorage.setItem('userData', JSON.stringify(response.data.user));
-      // Register FCM token after successful login
+      notifyFlutterLogin(response.data);
       registerFCMToken('user', true).catch(console.error);
     }
     return response.data;
@@ -102,6 +118,7 @@ export const vendorAuthService = {
       localStorage.setItem('vendorAccessToken', response.data.accessToken);
       localStorage.setItem('vendorRefreshToken', response.data.refreshToken);
       localStorage.setItem('vendorData', JSON.stringify(response.data.vendor));
+      notifyFlutterLogin(response.data);
       registerFCMToken('vendor', true).catch(console.error);
     }
     return response.data;
@@ -122,7 +139,8 @@ export const vendorAuthService = {
       localStorage.setItem('vendorAccessToken', response.data.accessToken);
       localStorage.setItem('vendorRefreshToken', response.data.refreshToken);
       localStorage.setItem('vendorData', JSON.stringify(response.data.vendor));
-      // Register FCM token after successful login (await to ensure it completes)
+      notifyFlutterLogin(response.data);
+      // Register FCM token after successful login
       console.log('[AUTH] Vendor login successful, registering FCM token...');
       try {
         const fcmToken = await registerFCMToken('vendor', true);
@@ -188,6 +206,7 @@ export const workerAuthService = {
       localStorage.setItem('workerAccessToken', response.data.accessToken);
       localStorage.setItem('workerRefreshToken', response.data.refreshToken);
       localStorage.setItem('workerData', JSON.stringify(response.data.worker));
+      notifyFlutterLogin(response.data);
       registerFCMToken('worker', true).catch(console.error);
     }
     return response.data;
@@ -200,6 +219,7 @@ export const workerAuthService = {
       localStorage.setItem('workerAccessToken', response.data.accessToken);
       localStorage.setItem('workerRefreshToken', response.data.refreshToken);
       localStorage.setItem('workerData', JSON.stringify(response.data.worker));
+      notifyFlutterLogin(response.data);
     }
     return response.data;
   },
@@ -213,7 +233,7 @@ export const workerAuthService = {
       localStorage.setItem('workerAccessToken', response.data.accessToken);
       localStorage.setItem('workerRefreshToken', response.data.refreshToken);
       localStorage.setItem('workerData', JSON.stringify(response.data.worker));
-      // Register FCM token after successful login
+      notifyFlutterLogin(response.data);
       registerFCMToken('worker', true).catch(console.error);
     }
     return response.data;
