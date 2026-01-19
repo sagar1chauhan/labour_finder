@@ -112,6 +112,35 @@ router.delete('/remove', authenticate, async (req, res) => {
 });
 
 /**
+ * @route   DELETE /api/workers/fcm-tokens/remove-all
+ * @desc    Remove ALL FCM tokens for a specific platform (called during logout)
+ * @access  Private (Worker)
+ */
+router.delete('/remove-all', authenticate, async (req, res) => {
+  try {
+    const workerId = req.user._id;
+    const { platform = 'web' } = req.body;
+
+    // Clear only the specified platform's tokens
+    const updateQuery = platform === 'mobile'
+      ? { $set: { fcmTokenMobile: [] } }
+      : { $set: { fcmTokens: [] } };
+
+    const worker = await Worker.findByIdAndUpdate(workerId, updateQuery, { new: true });
+
+    if (!worker) {
+      return res.status(404).json({ success: false, error: 'Worker not found' });
+    }
+
+    console.log(`[FCM] ✅ All ${platform} tokens removed for worker: ${workerId}`);
+    res.json({ success: true, message: `All ${platform} FCM tokens removed successfully` });
+  } catch (error) {
+    console.error('Error removing FCM tokens:', error);
+    res.status(500).json({ success: false, error: 'Failed to remove FCM tokens' });
+  }
+});
+
+/**
  * @route   POST /api/workers/fcm-tokens/test
  * @desc    Send test notification to worker (development only)
  * @access  Private (Worker)

@@ -73,7 +73,7 @@ export const userAuthService = {
     // Remove FCM token before logout
     await removeFCMToken('user');
     try {
-      await api.post('/users/auth/logout');
+      await api.post('/users/auth/logout', { platform: 'web' });
     } catch (error) {
       console.error('Logout error:', error);
     }
@@ -161,7 +161,7 @@ export const vendorAuthService = {
     // Remove FCM token before logout
     await removeFCMToken('vendor');
     try {
-      await api.post('/vendors/auth/logout');
+      await api.post('/vendors/auth/logout', { platform: 'web' });
     } catch (error) {
       console.error('Logout error:', error);
     }
@@ -244,7 +244,7 @@ export const workerAuthService = {
     // Remove FCM token before logout
     await removeFCMToken('worker');
     try {
-      await api.post('/workers/auth/logout');
+      await api.post('/workers/auth/logout', { platform: 'web' });
     } catch (error) {
       console.error('Logout error:', error);
     }

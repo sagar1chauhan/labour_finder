@@ -283,16 +283,16 @@ const login = async (req, res) => {
  */
 const logout = async (req, res) => {
   try {
-    const { fcmToken } = req.body;
+    const { platform = 'web' } = req.body;
 
-    // If fcmToken is provided, remove it from worker's profile
-    if (fcmToken && req.user && req.user._id) {
-      await Worker.findByIdAndUpdate(req.user._id, {
-        $pull: {
-          fcmTokens: fcmToken,
-          fcmTokenMobile: fcmToken
-        }
-      });
+    // Clear FCM tokens based on platform
+    if (req.user && req.user._id) {
+      const updateQuery = platform === 'mobile'
+        ? { $set: { fcmTokenMobile: [] } }
+        : { $set: { fcmTokens: [] } };
+
+      await Worker.findByIdAndUpdate(req.user._id, updateQuery);
+      console.log(`[AUTH] ✅ ${platform} FCM tokens cleared for worker: ${req.user._id}`);
     }
 
     res.status(200).json({

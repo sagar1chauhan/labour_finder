@@ -351,6 +351,18 @@ const login = async (req, res) => {
  */
 const logout = async (req, res) => {
   try {
+    const { platform = 'web' } = req.body;
+
+    // Clear FCM tokens based on platform
+    if (req.user && req.user._id) {
+      const updateQuery = platform === 'mobile'
+        ? { $set: { fcmTokenMobile: [] } }
+        : { $set: { fcmTokens: [] } };
+
+      await Vendor.findByIdAndUpdate(req.user._id, updateQuery);
+      console.log(`[AUTH] ✅ ${platform} FCM tokens cleared for vendor: ${req.user._id}`);
+    }
+
     res.status(200).json({
       success: true,
       message: 'Logged out successfully'

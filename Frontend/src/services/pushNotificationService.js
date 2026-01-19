@@ -175,31 +175,30 @@ async function registerFCMToken(userType = 'user', forceUpdate = false) {
 }
 
 /**
- * Remove FCM token from backend
+ * Remove FCM token from backend (removes all web tokens for this user)
  * @param {string} userType - 'user', 'vendor', or 'worker'
  */
 async function removeFCMToken(userType = 'user') {
   try {
     const storageKey = `fcm_token_${userType}_web`;
-    const token = localStorage.getItem(storageKey);
-    if (!token) {
-      return;
-    }
+
+    // Notify Flutter WebView to clear mobile token (Flutter handles its own logout)
+    notifyFlutterLogout(userType);
 
     // Determine API endpoint based on user type
     let endpoint;
     let authTokenKey;
     switch (userType) {
       case 'vendor':
-        endpoint = '/vendors/fcm-tokens/remove';
+        endpoint = '/vendors/fcm-tokens/remove-all';
         authTokenKey = 'vendorAccessToken';
         break;
       case 'worker':
-        endpoint = '/workers/fcm-tokens/remove';
+        endpoint = '/workers/fcm-tokens/remove-all';
         authTokenKey = 'workerAccessToken';
         break;
       default:
-        endpoint = '/users/fcm-tokens/remove';
+        endpoint = '/users/fcm-tokens/remove-all';
         authTokenKey = 'accessToken';
     }
 
@@ -210,6 +209,8 @@ async function removeFCMToken(userType = 'user') {
     }
 
     const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+
+    // Call remove-all with platform='web' to clear only web tokens
     await fetch(`${baseUrl}${endpoint}`, {
       method: 'DELETE',
       headers: {
@@ -217,15 +218,31 @@ async function removeFCMToken(userType = 'user') {
         'Authorization': `Bearer ${authToken}`
       },
       body: JSON.stringify({
-        token: token,
         platform: 'web'
       })
     });
 
     localStorage.removeItem(storageKey);
-    // console.log('✅ FCM token removed');
+    console.log('[FCM] ✅ All web FCM tokens removed on logout');
   } catch (error) {
-    // console.error('Error removing FCM token:', error);
+    console.error('[FCM] Error removing FCM tokens:', error);
+  }
+}
+
+/**
+ * Notify Flutter WebView about logout to remove mobile FCM token
+ * @param {string} userType - 'user', 'vendor', or 'worker'
+ */
+function notifyFlutterLogout(userType = 'user') {
+  try {
+    if (window.flutter_inappwebview && window.flutter_inappwebview.callHandler) {
+      console.log('[FCM] Notifying Flutter about logout...');
+      window.flutter_inappwebview.callHandler('onUserLogout', JSON.stringify({
+        userType: userType
+      }));
+    }
+  } catch (e) {
+    console.error('[FCM] Error notifying Flutter about logout:', e);
   }
 }
 
