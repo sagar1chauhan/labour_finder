@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { GoogleMap, useJsApiLoader, Marker, Autocomplete } from '@react-google-maps/api';
+import { FiCrosshair } from 'react-icons/fi';
 
 const libraries = ['places', 'geometry'];
 
@@ -180,7 +181,8 @@ const LocationPicker = ({ onLocationSelect, initialPosition = null }) => {
             fullscreenControl: false,
             gestureHandling: 'greedy',
             rotateControl: true,
-            tiltControl: true
+            tiltControl: true,
+            zoomControl: false
           }}
         >
           {marker && <Marker position={marker} />}
@@ -192,13 +194,12 @@ const LocationPicker = ({ onLocationSelect, initialPosition = null }) => {
         </div>
 
         {/* Locate Me Button */}
+        {/* Locate Me Button - Now on right */}
         <button
           onClick={handleCurrentLocation}
-          className="absolute bottom-4 right-4 w-10 h-10 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-gray-50 transition-colors z-10"
+          className="absolute bottom-16 right-4 p-3 bg-white rounded-xl shadow-lg flex items-center justify-center hover:bg-gray-50 active:scale-95 transition-all z-10"
         >
-          <div className="w-6 h-6 border-2 border-gray-600 rounded-full flex items-center justify-center">
-            <div className="w-2 h-2 bg-gray-600 rounded-full"></div>
-          </div>
+          <FiCrosshair className="w-6 h-6 text-gray-700" />
         </button>
       </div>
     </div>

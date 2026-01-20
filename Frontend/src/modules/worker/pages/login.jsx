@@ -18,21 +18,27 @@ const WorkerLogin = () => {
   const phoneInputRef = useRef(null);
   const otpInputRefs = useRef([]);
 
-  // Clear any existing worker tokens on page load
-  useEffect(() => {
-    localStorage.removeItem('workerAccessToken');
-    localStorage.removeItem('workerRefreshToken');
-    localStorage.removeItem('workerData');
-  }, []);
+  // Clear any existing worker tokens on page load - REMOVED to fix back button logout issue
+  // useEffect(() => {
+  //   localStorage.removeItem('workerAccessToken');
+  //   localStorage.removeItem('workerRefreshToken');
+  //   localStorage.removeItem('workerData');
+  // }, []);
 
   // Auto-focus logic
   useEffect(() => {
+    // Redirect if already logged in
+    if (localStorage.getItem('workerAccessToken')) {
+      navigate('/worker', { replace: true });
+      return;
+    }
+
     if (step === 'phone' && phoneInputRef.current) {
       setTimeout(() => phoneInputRef.current.focus(), 100);
     } else if (step === 'otp' && otpInputRefs.current[0]) {
       setTimeout(() => otpInputRefs.current[0].focus(), 100);
     }
-  }, [step]);
+  }, [step, navigate]);
 
   const handlePhoneSubmit = async (e) => {
     e.preventDefault();
@@ -110,7 +116,7 @@ const WorkerLogin = () => {
             </div>,
             { icon: <FiCheckCircle className="text-green-500" /> }
           );
-          navigate('/worker');
+          navigate('/worker', { replace: true });
         }
       } else {
         setIsLoading(false);
@@ -125,7 +131,7 @@ const WorkerLogin = () => {
   const brandColor = themeColors.brand?.teal || '#347989';
 
   return (
-    <div className="min-h-[100dvh] bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden">
+    <div className="min-h-[100dvh] bg-gray-50 flex flex-col justify-start sm:justify-center py-12 sm:px-6 lg:px-8 relative overflow-y-auto overflow-x-hidden">
       {/* Decorative Background Elements */}
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#347989] opacity-[0.03] rounded-full blur-3xl animate-floating" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#D68F35] opacity-[0.03] rounded-full blur-3xl animate-floating" style={{ animationDelay: '2s' }} />

@@ -440,7 +440,7 @@ const BookingDetails = () => {
         <div className="px-4 py-3">
           <div className="flex items-center gap-4">
             <button
-              onClick={() => navigate(-1)}
+              onClick={() => navigate('/user/my-bookings')}
               className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors active:scale-95"
             >
               <FiArrowLeft className="w-5 h-5 text-gray-800" />
