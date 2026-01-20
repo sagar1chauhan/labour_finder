@@ -71,7 +71,7 @@ const BookingDetails = () => {
         navigate('/user/my-bookings');
       }
     } catch (error) {
-      console.error('Failed to load booking details', error);
+      // Failed to load booking details
       // toast.error('Failed to load booking details'); 
     } finally {
       setLoading(false);
@@ -132,7 +132,6 @@ const BookingDetails = () => {
       const handleUpdate = (data) => {
         // Check if update relates to this booking
         if (data.bookingId === id || data.relatedId === id || data.data?.bookingId === id) {
-          console.log('Live update received:', data);
 
           // Instant UI update for critical fields (status, OTPs, amounts)
           setBooking(prev => {
@@ -253,7 +252,6 @@ const BookingDetails = () => {
 
     // If a Razorpay order already exists for this booking and hasn't been used, skip creating a new one
     if (booking.razorpayOrderId) {
-      console.log('Using existing Razorpay order:', booking.razorpayOrderId);
       // Open Razorpay with existing order
       const options = {
         key: import.meta.env.VITE_RAZORPAY_KEY_ID,

@@ -79,7 +79,7 @@ const LiveBookingCard = ({ hasBottomNav }) => {
         setActiveBooking(ongoing || null);
       }
     } catch (error) {
-      console.error('Failed to fetch active booking', error);
+      // Failed to fetch active booking
     } finally {
       setLoading(false);
     }

@@ -66,7 +66,6 @@ const BookingTrack = () => {
 
     // If a Razorpay order already exists for this booking, reuse it
     if (booking.razorpayOrderId) {
-      console.log('Using existing Razorpay order:', booking.razorpayOrderId);
       const options = {
         key: import.meta.env.VITE_RAZORPAY_KEY_ID,
         amount: Math.round((booking.finalAmount || 0) * 100),
@@ -220,12 +219,15 @@ const BookingTrack = () => {
             } else if (response.data.vendorId && provider.address && provider.address.lat && provider.address.lng) {
               // Fallback to vendor address
               setCurrentLocation({ lat: parseFloat(provider.address.lat), lng: parseFloat(provider.address.lng) });
+            } else {
+              // Reset if no location found to avoid wrong location display
+              setCurrentLocation(null);
             }
           }
         }
       }
     } catch (error) {
-      console.error("Error fetching booking:", error);
+      // Error fetching booking
     } finally {
       if (isFirstLoad) setLoading(false);
     }
@@ -251,11 +253,9 @@ const BookingTrack = () => {
   // Socket Listener
   useEffect(() => {
     if (socket && id) {
-      console.log('[User Tracking] Joining tracking room for booking:', id);
       socket.emit('join_tracking', id);
 
       const handleLocationUpdate = (data) => {
-        console.log('[User Tracking] 📍 Received location update:', data);
         if (data.lat && data.lng) {
           // Mark that we've received location from socket - don't let booking refresh override
           locationFromSocketRef.current = true;
@@ -269,7 +269,6 @@ const BookingTrack = () => {
 
       const handleBookingUpdate = (data) => {
         if (data.bookingId === id || data.relatedId === id || data.data?.bookingId === id) {
-          console.log('[User Tracking] Booking update:', data);
           setBooking(prev => {
             if (!prev) return prev;
             return { ...prev, ...(data.data || data) };
@@ -407,6 +406,8 @@ const BookingTrack = () => {
   const initialBoundsSetRef = useRef(false);
   const directionsCalculatedRef = useRef(false);
 
+  const fullRoutePathRef = useRef([]);
+
   useEffect(() => {
     // Only calculate directions ONCE when we have all required data
     if (isLoaded && currentLocation && coords && map && !directionsCalculatedRef.current) {
@@ -425,6 +426,9 @@ const BookingTrack = () => {
             const leg = result.routes[0].legs[0];
             setDistance(leg.distance.text);
             setDuration(leg.duration.text);
+
+            // Store full path and set initial state
+            fullRoutePathRef.current = result.routes[0].overview_path;
             setRoutePath(result.routes[0].overview_path);
 
             // Center on rider
@@ -436,10 +440,10 @@ const BookingTrack = () => {
     }
   }, [isLoaded, coords, map, currentLocation]);
 
-  // Update distance and ETA as rider moves (without recalculating route)
+  // Update distance, ETA, and Clear Traveled Path as rider moves
   useEffect(() => {
     if (isLoaded && currentLocation && coords && window.google && directionsCalculatedRef.current) {
-      // Calculate straight-line distance
+      // 1. Calculate straight-line distance & ETA
       const riderPoint = new window.google.maps.LatLng(currentLocation);
       const destPoint = new window.google.maps.LatLng(coords);
       const distanceMeters = window.google.maps.geometry.spherical.computeDistanceBetween(riderPoint, destPoint);
@@ -467,6 +471,31 @@ const BookingTrack = () => {
         const hours = Math.floor(timeMinutes / 60);
         const mins = timeMinutes % 60;
         setDuration(`${hours} hr ${mins} min`);
+      }
+
+      // 2. Clear Traveled Path Visualization
+      if (fullRoutePathRef.current && fullRoutePathRef.current.length > 0) {
+        // Find the closest point on the original path to the current rider location
+        let closestIndex = -1;
+        let minDist = Infinity;
+
+        // Optimization: Only check a reasonable window if path is huge, but full check is safer for loops
+        fullRoutePathRef.current.forEach((p, idx) => {
+          const d = window.google.maps.geometry.spherical.computeDistanceBetween(riderPoint, p);
+          if (d < minDist) {
+            minDist = d;
+            closestIndex = idx;
+          }
+        });
+
+        // If we found a close point, update the path to start from CURRENT location, 
+        // then continue from the NEXT point in the original path.
+        if (closestIndex !== -1) {
+          // We splice the array to remove points "behind"
+          // We start drawing from the current rider position explicitly to avoid a gap
+          const remaining = fullRoutePathRef.current.slice(closestIndex + 1);
+          setRoutePath([currentLocation, ...remaining]);
+        }
       }
     }
   }, [currentLocation, coords, isLoaded]);
@@ -538,16 +567,15 @@ const BookingTrack = () => {
   return (
     <div className="h-screen flex flex-col relative bg-white overflow-hidden">
       {/* Top Floating Header */}
-      {!isFullScreen && (
-        <div className="absolute top-4 left-4 right-4 z-10 flex justify-between items-start pointer-events-none">
-          <button
-            onClick={() => navigate(-1)}
-            className="pointer-events-auto bg-white/90 backdrop-blur-md p-3 rounded-full shadow-lg text-gray-700 hover:bg-white transition-all active:scale-95"
-          >
-            <FiArrowLeft className="w-6 h-6" />
-          </button>
-        </div>
-      )}
+      {/* Top Floating Header - Always Visible */}
+      <div className="absolute top-4 left-4 right-4 z-20 flex justify-between items-start pointer-events-none">
+        <button
+          onClick={() => navigate(`/user/booking/${id}`)}
+          className="pointer-events-auto bg-white/90 backdrop-blur-md p-3 rounded-full shadow-lg text-gray-700 hover:bg-white transition-all active:scale-95"
+        >
+          <FiArrowLeft className="w-6 h-6" />
+        </button>
+      </div>
 
       {/* Full Screen Stats Card */}
       <AnimatePresence>
@@ -616,29 +644,46 @@ const BookingTrack = () => {
             }
           }}
         >
-          {directions && (
+          {currentLocation ? (
             <>
-              <DirectionsRenderer
-                directions={directions}
-                options={{
-                  suppressMarkers: true,
-                  suppressPolylines: true
-                }}
-              />
-              <PolylineF
-                path={routePath}
-                options={{
-                  strokeColor: "#0F766E",
-                  strokeWeight: 8,
-                  strokeOpacity: 1,
-                  zIndex: 50
-                }}
-              />
+              {directions && (
+                <>
+                  <DirectionsRenderer
+                    directions={directions}
+                    options={{
+                      suppressMarkers: true,
+                      suppressPolylines: true
+                    }}
+                  />
+                  <PolylineF
+                    path={routePath}
+                    options={{
+                      strokeColor: "#0F766E",
+                      strokeWeight: 8,
+                      strokeOpacity: 1,
+                      zIndex: 50
+                    }}
+                  />
+                </>
+              )}
+              {riderMarker}
             </>
+          ) : (
+            // Fallback when rider location is not yet available
+            <OverlayView
+              position={coords || defaultCenter}
+              mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
+            >
+              <div className="absolute top-0 left-0 -translate-x-1/2 -translate-y-1/2 w-64 flex flex-col items-center">
+                <div className="bg-white/90 backdrop-blur-md px-4 py-3 rounded-2xl shadow-xl border border-teal-100 flex items-center gap-3 animate-bounce-slow">
+                  <div className="w-3 h-3 bg-teal-500 rounded-full animate-ping"></div>
+                  <span className="text-xs font-bold text-gray-700">Waiting for rider location...</span>
+                </div>
+              </div>
+            </OverlayView>
           )}
 
           {destinationMarker}
-          {riderMarker}
         </GoogleMap>
 
 

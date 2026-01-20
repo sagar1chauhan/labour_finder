@@ -3,56 +3,28 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GoogleMap, useJsApiLoader, DirectionsRenderer, OverlayView } from '@react-google-maps/api';
-import { FiArrowLeft, FiNavigation, FiMapPin, FiCrosshair, FiPhone, FiCheckCircle, FiMaximize, FiMinimize, FiClock } from 'react-icons/fi';
-import workerService from '../../../../services/workerService';
-import { VisitVerificationModal } from '../../components/common'; // Import from local worker common
-import { toast } from 'react-hot-toast';
-import { useAppNotifications } from '../../../../hooks/useAppNotifications';
+import { FiArrowLeft, FiNavigation, FiMapPin, FiCrosshair, FiPhone, FiCheckCircle, FiMaximize, FiMinimize, FiClock, FiWifiOff, FiAlertTriangle, FiRefreshCw } from 'react-icons/fi';
+// ... existing imports ...
 
-// Simple toggle for the simulation button (Controlled via .env)
-const SHOW_SIMULATION_BUTTON = import.meta.env.VITE_ENABLE_MAP_SIMULATION === 'true';
-
-// Zomato-like Premium Map Style (Silver/Clean)
-const mapStyles = [
-  { "elementType": "geometry", "stylers": [{ "color": "#f5f5f5" }] },
-  { "elementType": "labels.icon", "stylers": [{ "visibility": "off" }] },
-  { "elementType": "labels.text.fill", "stylers": [{ "color": "#616161" }] },
-  { "elementType": "labels.text.stroke", "stylers": [{ "color": "#f5f5f5" }] },
-  { "featureType": "administrative.land_parcel", "elementType": "labels.text.fill", "stylers": [{ "color": "#bdbdbd" }] },
-  { "featureType": "poi", "elementType": "geometry", "stylers": [{ "color": "#eeeeee" }] },
-  { "featureType": "poi", "elementType": "labels.text.fill", "stylers": [{ "color": "#757575" }] },
-  { "featureType": "poi.park", "elementType": "geometry", "stylers": [{ "color": "#e5e5e5" }] },
-  { "featureType": "road", "elementType": "geometry", "stylers": [{ "color": "#ffffff" }] },
-  { "featureType": "road.arterial", "elementType": "labels.text.fill", "stylers": [{ "color": "#757575" }] },
-  { "featureType": "road.highway", "elementType": "geometry", "stylers": [{ "color": "#dadada" }] },
-  { "featureType": "road.highway", "elementType": "labels.text.fill", "stylers": [{ "color": "#616161" }] },
-  { "featureType": "road.local", "elementType": "labels.text.fill", "stylers": [{ "color": "#9e9e9e" }] },
-  { "featureType": "transit.line", "elementType": "geometry", "stylers": [{ "color": "#e5e5e5" }] },
-  { "featureType": "transit.station", "elementType": "geometry", "stylers": [{ "color": "#eeeeee" }] },
-  { "featureType": "water", "elementType": "geometry", "stylers": [{ "color": "#c9c9c9" }] },
-  { "featureType": "water", "elementType": "labels.text.fill", "stylers": [{ "color": "#9e9e9e" }] }
-];
-
-const defaultCenter = { lat: 20.5937, lng: 78.9629 };
-const libraries = ['places', 'geometry'];
+// ... existing code ...
 
 const JobMap = () => {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const [job, setJob] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [coords, setCoords] = useState(null);
-  const [map, setMap] = useState(null);
-  const [currentLocation, setCurrentLocation] = useState(null);
-  const [directions, setDirections] = useState(null);
-  const [distance, setDistance] = useState('');
-  const [duration, setDuration] = useState('');
-  const [routePath, setRoutePath] = useState([]);
-  const [isAutoCenter, setIsAutoCenter] = useState(true);
-  const [isNavigationMode, setIsNavigationMode] = useState(false);
-  const [heading, setHeading] = useState(0);
-  const [isFullScreen, setIsFullScreen] = useState(false);
+  // ... existing states ...
   const [isVisitModalOpen, setIsVisitModalOpen] = useState(false);
+  const [routeError, setRouteError] = useState(null);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+  // Network Status Listener
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
   const mapId = import.meta.env.VITE_GOOGLE_MAPS_MAP_ID;
@@ -90,7 +62,7 @@ const JobMap = () => {
         }
 
       } catch (error) {
-        console.error('Error:', error);
+        // Error
       } finally {
         setLoading(false);
       }
@@ -100,9 +72,17 @@ const JobMap = () => {
 
   // Watch Location
   useEffect(() => {
+    // START CHANGE: If simulating, do NOT watch real GPS position
+    if (isSimulating) return;
+    // END CHANGE
+
     if (navigator.geolocation) {
       const watchId = navigator.geolocation.watchPosition(
         (position) => {
+          // START CHANGE: Double check simulating state inside callback
+          if (isSimulating) return;
+          // END CHANGE
+
           const { latitude, longitude, heading: gpsHeading } = position.coords;
           setCurrentLocation({ lat: latitude, lng: longitude });
 
@@ -112,7 +92,7 @@ const JobMap = () => {
           }
         },
         (error) => {
-          console.warn('GPS Tracking Error:', error);
+          // GPS Tracking Error
           if (error.code === 1) { // PERMISSION_DENIED
             toast.error("Location permission denied. Map cannot track you.");
           }
@@ -123,10 +103,38 @@ const JobMap = () => {
     } else {
       toast.error("Geolocation not supported on this device");
     }
-  }, []);
+  }, [isSimulating]); // Add isSimulating to dependency array
 
   const socket = useAppNotifications('worker'); // Use worker namespace
 
+  // ... code ...
+
+  // Sync Location to Backend (Periodic)
+  useEffect(() => {
+    if (socket && id) {
+      socket.emit('join_tracking', id);
+    }
+  }, [socket, id]);
+
+  useEffect(() => {
+    if (currentLocation && socket && id) {
+      const syncInterval = setInterval(() => {
+        // START CHANGE: If simulating, do NOT emit periodic updates here (simulation loop does it)
+        if (isSimulating) return;
+        // END CHANGE
+
+        if (currentLocation.lat && currentLocation.lng) {
+          socket.emit('update_location', {
+            bookingId: id,
+            lat: currentLocation.lat,
+            lng: currentLocation.lng
+          });
+        }
+      }, 5000);
+
+      return () => clearInterval(syncInterval);
+    }
+  }, [currentLocation, socket, id, isSimulating]); // Add isSimulating to dependency array
   // DEBUG: Location Simulator for testing
   const [isSimulating, setIsSimulating] = useState(false);
   const simulationRef = useRef(null);
@@ -149,22 +157,40 @@ const JobMap = () => {
     const pathPoints = [];
     const stepMeters = 20; // Distance between points (smaller = smoother)
 
-    for (let i = 0; i < routePath.length - 1; i++) {
-      const p1 = routePath[i];
-      const p2 = routePath[i + 1];
-      const dist = window.google.maps.geometry.spherical.computeDistanceBetween(p1, p2);
+    // Use the FULL path for simulation, not the sliced visualization path
+    const simPath = fullRoutePathRef.current && fullRoutePathRef.current.length > 0 ? fullRoutePathRef.current : routePath;
+
+    for (let i = 0; i < simPath.length - 1; i++) {
+      const p1 = simPath[i];
+      const p2 = simPath[i + 1];
+
+      // Helper to safely get coords whether it's a LatLng object or plain object
+      const getLat = (p) => typeof p.lat === 'function' ? p.lat() : p.lat;
+      const getLng = (p) => typeof p.lng === 'function' ? p.lng() : p.lng;
+
+      const lat1 = getLat(p1);
+      const lng1 = getLng(p1);
+      const lat2 = getLat(p2);
+      const lng2 = getLng(p2);
+
+      const p1LatLng = new window.google.maps.LatLng(lat1, lng1);
+      const p2LatLng = new window.google.maps.LatLng(lat2, lng2);
+
+      const dist = window.google.maps.geometry.spherical.computeDistanceBetween(p1LatLng, p2LatLng);
       const steps = Math.max(1, Math.floor(dist / stepMeters));
 
       for (let j = 0; j < steps; j++) {
         const fraction = j / steps;
-        const lat = p1.lat() + (p2.lat() - p1.lat()) * fraction;
-        const lng = p1.lng() + (p2.lng() - p1.lng()) * fraction;
+        const lat = lat1 + (lat2 - lat1) * fraction;
+        const lng = lng1 + (lng2 - lng1) * fraction;
         pathPoints.push({ lat, lng });
       }
     }
     // Add destination
-    const last = routePath[routePath.length - 1];
-    pathPoints.push({ lat: last.lat(), lng: last.lng() });
+    const last = simPath[simPath.length - 1];
+    const lastLat = typeof last.lat === 'function' ? last.lat() : last.lat;
+    const lastLng = typeof last.lng === 'function' ? last.lng() : last.lng;
+    pathPoints.push({ lat: lastLat, lng: lastLng });
 
     let pathIndex = 0;
 
@@ -297,6 +323,8 @@ const JobMap = () => {
 
   const directionsCalculatedRef = useRef(false);
 
+  const fullRoutePathRef = useRef([]);
+
   // Calculate Route ONCE on initial load only
   useEffect(() => {
     if (isLoaded && currentLocation && coords && map && !directionsCalculatedRef.current) {
@@ -312,24 +340,30 @@ const JobMap = () => {
         (result, status) => {
           if (status === window.google.maps.DirectionsStatus.OK) {
             setDirections(result);
+            setRouteError(null);
             const leg = result.routes[0].legs[0];
             setDistance(leg.distance.text);
             setDuration(leg.duration.text);
+
+            // Store full path and set initial state
+            fullRoutePathRef.current = result.routes[0].overview_path;
             setRoutePath(result.routes[0].overview_path);
 
             // Center on location
             map.setCenter(currentLocation);
             map.setZoom(15);
+          } else {
+            setRouteError('Could not calculate a driving route to this location.');
           }
         }
       );
     }
   }, [isLoaded, coords, map, currentLocation]);
 
-  // Update distance and ETA as worker moves (without recalculating route)
+  // Update distance, ETA, and Clear Traveled Path as worker moves
   useEffect(() => {
     if (isLoaded && currentLocation && coords && window.google && directionsCalculatedRef.current) {
-      // Calculate straight-line distance
+      // 1. Calculate straight-line distance
       const riderPoint = new window.google.maps.LatLng(currentLocation);
       const destPoint = new window.google.maps.LatLng(coords);
       const distanceMeters = window.google.maps.geometry.spherical.computeDistanceBetween(riderPoint, destPoint);
@@ -357,6 +391,25 @@ const JobMap = () => {
         const hours = Math.floor(timeMinutes / 60);
         const mins = timeMinutes % 60;
         setDuration(`${hours} hr ${mins} min`);
+      }
+
+      // 2. Clear Traveled Path Visualization
+      if (fullRoutePathRef.current && fullRoutePathRef.current.length > 0) {
+        let closestIndex = -1;
+        let minDist = Infinity;
+
+        fullRoutePathRef.current.forEach((p, idx) => {
+          const d = window.google.maps.geometry.spherical.computeDistanceBetween(riderPoint, p);
+          if (d < minDist) {
+            minDist = d;
+            closestIndex = idx;
+          }
+        });
+
+        if (closestIndex !== -1) {
+          const remaining = fullRoutePathRef.current.slice(closestIndex + 1);
+          setRoutePath([currentLocation, ...remaining]);
+        }
       }
     }
   }, [currentLocation, coords, isLoaded]);
@@ -453,16 +506,72 @@ const JobMap = () => {
   return (
     <div className="h-screen flex flex-col relative bg-white overflow-hidden">
       {/* Top Floating Header */}
-      {!isFullScreen && (
-        <div className="absolute top-4 left-4 right-4 z-10 flex justify-between items-start pointer-events-none">
-          <button
-            onClick={() => navigate(-1)}
-            className="pointer-events-auto bg-white/90 backdrop-blur-md p-3 rounded-full shadow-lg text-gray-700 hover:bg-white transition-all active:scale-95"
+      {/* Top Floating Header - Always Visible */}
+      <div className="absolute top-4 left-4 right-4 z-20 flex justify-between items-start pointer-events-none">
+        <button
+          onClick={() => navigate(-1)}
+          className="pointer-events-auto bg-white/90 backdrop-blur-md p-3 rounded-full shadow-lg text-gray-700 hover:bg-white transition-all active:scale-95"
+        >
+          <FiArrowLeft className="w-6 h-6" />
+        </button>
+      </div>
+
+      {/* No Internet Overlay */}
+      <AnimatePresence>
+        {!isOnline && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="absolute top-20 left-4 right-4 z-50 bg-red-500 text-white p-4 rounded-xl shadow-2xl flex items-center gap-4"
           >
-            <FiArrowLeft className="w-6 h-6" />
-          </button>
-        </div>
-      )}
+            <div className="w-10 h-10 rounded-full bg-red-600 flex items-center justify-center shrink-0">
+              <FiWifiOff className="w-5 h-5" />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-bold text-sm">No Internet Connection</h3>
+              <p className="text-xs text-red-100">Check your network settings.</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Route Error Overlay (Centered) */}
+      <AnimatePresence>
+        {routeError && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="absolute inset-x-4 top-[20%] z-40 bg-white p-6 rounded-3xl shadow-2xl flex flex-col items-center text-center max-w-sm mx-auto border border-gray-100"
+          >
+            <div className="w-16 h-16 rounded-full bg-orange-50 flex items-center justify-center mb-4">
+              <FiAlertTriangle className="w-8 h-8 text-orange-500" />
+            </div>
+            <h3 className="text-lg font-black text-gray-800 mb-2">Route Not Found</h3>
+            <p className="text-sm text-gray-500 mb-6 leading-relaxed">
+              We couldn't calculate a driving path to this location. The destination might be unreachable by road or off the map.
+            </p>
+            <div className="flex gap-3 w-full">
+              <button
+                onClick={() => window.location.reload()}
+                className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl flex items-center justify-center gap-2 transition-colors"
+              >
+                <FiRefreshCw className="w-4 h-4" /> Retry
+              </button>
+              <button
+                onClick={() => {
+                  const dest = coords ? `${coords.lat},${coords.lng}` : encodeURIComponent(job?.address?.addressLine1 || '');
+                  window.open(`https://www.google.com/maps/dir/?api=1&destination=${dest}`, '_blank');
+                }}
+                className="flex-1 py-3 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl flex items-center justify-center gap-2 transition-colors"
+              >
+                Open Maps
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Full Screen Stats Card */}
       <AnimatePresence>
@@ -513,18 +622,24 @@ const JobMap = () => {
           options={mapOptions}
         >
           {directions && (
-            <DirectionsRenderer
-              directions={directions}
-              options={{
-                suppressMarkers: true,
-                polylineOptions: {
+            <>
+              <DirectionsRenderer
+                directions={directions}
+                options={{
+                  suppressMarkers: true,
+                  suppressPolylines: true
+                }}
+              />
+              <PolylineF
+                path={routePath}
+                options={{
                   strokeColor: "#0F766E", // Dark Teal
                   strokeWeight: 8,
                   strokeOpacity: 1,
                   zIndex: 50
-                }
-              }}
-            />
+                }}
+              />
+            </>
           )}
 
           {destinationMarker}

@@ -85,7 +85,7 @@ const Home = () => {
     autoDetectLocation();
 
     // Register FCM token for user to receive push notifications
-    registerFCMToken('user', true).catch(err => console.error('FCM registration failed:', err));
+    registerFCMToken('user', true).catch(err => {/* Silent fail */ });
   }, []);
 
   // Use cart context for instant cart count updates (no polling!)
@@ -181,7 +181,7 @@ const Home = () => {
         setLoading(false);
 
       } catch (error) {
-        console.error('Home content load error:', error);
+        // Home content load error
         // If error, maybe keep loading or show error? 
         // Request says "if no data loads ....keep loader ruuning"
         // So we won't set loading(false) on error? 

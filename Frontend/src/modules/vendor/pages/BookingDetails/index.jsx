@@ -120,7 +120,7 @@ export default function BookingDetails() {
 
         setBooking(mappedBooking);
       } catch (error) {
-        console.error('Error loading booking:', error);
+        // Error loading booking
         // Fallback or Error UI could be handled here
       } finally {
         setLoading(false);
@@ -159,7 +159,6 @@ export default function BookingDetails() {
       const handleBookingUpdate = (data) => {
         // Check if update is for this booking
         if (data.bookingId === id || data.relatedId === id || data._id === id) {
-          console.log('socket: Booking Updated:', data);
 
           // Update local state to trigger effects immediately
           setBooking(prev => {

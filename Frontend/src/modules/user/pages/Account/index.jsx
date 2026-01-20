@@ -173,7 +173,7 @@ const Account = () => {
   }
   return (
     <div
-      className="min-h-screen pb-24"
+      className="min-h-screen pb-48"
       style={{ background: themeColors.backgroundGradient }}
     >
       {/* 1. Header Section */}

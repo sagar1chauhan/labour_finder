@@ -60,7 +60,7 @@ const JobDetails = () => {
       }
       setLoading(false);
     } catch (error) {
-      console.error('Error fetching job details:', error);
+      // Error fetching job details
       toast.error('Failed to load job details');
       setLoading(false);
     }
@@ -115,7 +115,6 @@ const JobDetails = () => {
         throw new Error(res.message || 'Failed to send OTP');
       }
     } catch (error) {
-      console.error('Initiate cash error:', error);
       throw error;
     } finally {
       setActionLoading(false);
@@ -132,7 +131,6 @@ const JobDetails = () => {
         fetchJobDetails();
       }
     } catch (error) {
-      console.error('Confirm cash error:', error);
       throw error;
     } finally {
       setActionLoading(false);
@@ -156,7 +154,6 @@ const JobDetails = () => {
         toast.error(response.message || 'Failed');
       }
     } catch (error) {
-      console.error('Response error:', error);
       toast.error(error.response?.data?.message || 'Failed to update status');
     } finally {
       setActionLoading(false);
@@ -171,7 +168,7 @@ const JobDetails = () => {
           await workerService.workerReached(id);
           toast.success('Customer notified that you reached');
         } catch (e) {
-          console.error('Reached notification failed', e);
+          // Reached notification failed
         }
       }
       setIsVisitModalOpen(true);
@@ -213,7 +210,6 @@ const JobDetails = () => {
       }
       setActionLoading(false);
     } catch (error) {
-      console.error('Action error:', error);
       toast.error(error.response?.data?.message || 'Action failed');
       setActionLoading(false);
     }
@@ -619,7 +615,6 @@ const JobDetails = () => {
                 }
                 setActionLoading(false);
               } catch (error) {
-                console.error('Action error:', error);
                 toast.error(error.response?.data?.message || 'Action failed');
                 setActionLoading(false);
               }
