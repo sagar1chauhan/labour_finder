@@ -4,18 +4,23 @@ import tailwindcss from '@tailwindcss/vite'
 
 // https://vite.dev/config/
 export default defineConfig({
+  resolve: {
+    // Ensure only one React instance
+    dedupe: ['react', 'react-dom', 'react/jsx-runtime'],
+  },
   plugins: [
-    react({
-      // Use automatic JSX runtime for smaller bundles
-      jsxRuntime: 'automatic',
-      // Fast refresh optimization
-      fastRefresh: true,
-    }),
+    react(),
     tailwindcss(),
   ],
   server: {
+    port: 5174, // Change port to bypass cache
+    strictPort: true,
     headers: {
-      'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: blob: http: https: http://localhost:* http://127.0.0.1:* http://localhost:5000 http://127.0.0.1:5000; font-src 'self' data: https:; connect-src 'self' https: ws: wss: http://localhost:* http://127.0.0.1:* http://localhost:5000 http://127.0.0.1:5000; frame-src 'self' https:; object-src 'none'; base-uri 'self'; form-action 'self';"
+      'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: blob: http: https: http://localhost:* http://127.0.0.1:* http://localhost:5000 http://127.0.0.1:5000; font-src 'self' data: https:; connect-src 'self' https: ws: wss: http://localhost:* http://127.0.0.1:* http://localhost:5000 http://127.0.0.1:5000; frame-src 'self' https:; object-src 'none'; base-uri 'self'; form-action 'self';",
+      // Force no caching in development
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0',
     },
     proxy: {
       '/api': {
@@ -26,100 +31,88 @@ export default defineConfig({
     }
   },
   build: {
-    // Enable minification for production
     minify: 'terser',
     terserOptions: {
       compress: {
-        drop_console: true, // Remove console.logs in production
+        drop_console: true,
         drop_debugger: true,
-        pure_funcs: ['console.log', 'console.info'], // Remove specific console calls
+        pure_funcs: ['console.log', 'console.info'],
       },
     },
     rollupOptions: {
       output: {
-        // Aggressive code splitting for better caching
         manualChunks: (id) => {
-          // Core vendor chunk (most stable)
-          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom')) {
+          // Keep React together - CRITICAL for avoiding duplication
+          if (id.includes('node_modules/react') ||
+            id.includes('node_modules/react-dom') ||
+            id.includes('node_modules/scheduler')) {
             return 'react-vendor';
           }
 
-          // Router chunk (changes less frequently)
-          if (id.includes('node_modules/react-router-dom')) {
+          if (id.includes('node_modules/react-router-dom') ||
+            id.includes('node_modules/@remix-run')) {
             return 'router';
           }
 
-          // Icons chunk (large but cacheable)
           if (id.includes('node_modules/react-icons')) {
             return 'icons';
           }
 
-          // Animation libraries (lazy loaded)
           if (id.includes('node_modules/framer-motion')) {
             return 'framer-motion';
           }
 
-          // GSAP only for pages that use it (NOT vendor dashboard)
           if (id.includes('node_modules/gsap')) {
             return 'gsap-lazy';
           }
 
-          // Toast notifications
           if (id.includes('node_modules/react-hot-toast')) {
             return 'toast';
           }
 
-          // Socket.io chunk
-          if (id.includes('node_modules/socket.io-client')) {
+          if (id.includes('node_modules/socket.io-client') ||
+            id.includes('node_modules/engine.io-client')) {
             return 'socket';
           }
 
-          // Chart libraries
-          if (id.includes('node_modules/recharts')) {
+          if (id.includes('node_modules/recharts') ||
+            id.includes('node_modules/recharts-scale')) {
             return 'charts';
           }
 
-          // Remaining node_modules
+          if (id.includes('node_modules/firebase') ||
+            id.includes('node_modules/@firebase')) {
+            return 'firebase';
+          }
+
+          if (id.includes('node_modules/leaflet') ||
+            id.includes('node_modules/react-leaflet') ||
+            id.includes('node_modules/@react-google-maps')) {
+            return 'maps';
+          }
+
           if (id.includes('node_modules')) {
-            return 'vendor-misc';
+            return 'vendor-libs';
           }
         },
-        // Optimize chunk file names
         chunkFileNames: 'assets/[name]-[hash].js',
         entryFileNames: 'assets/[name]-[hash].js',
         assetFileNames: 'assets/[name]-[hash].[ext]',
       },
     },
-    // Increase chunk size warning limit
-    chunkSizeWarningLimit: 600, // Reduced from 1000 to encourage smaller chunks
-    // Disable sourcemaps in production for smaller builds
+    chunkSizeWarningLimit: 600,
     sourcemap: false,
-    // Enable CSS code splitting
     cssCodeSplit: true,
-    // Target modern browsers for smaller output
     target: 'es2020',
-    // Optimize asset inlining
-    assetsInlineLimit: 4096, // 4kb threshold
+    assetsInlineLimit: 4096,
   },
   optimizeDeps: {
-    // Pre-bundle dependencies for faster cold starts
     include: [
       'react',
+      'react/jsx-runtime',
       'react-dom',
+      'react-dom/client',
       'react-router-dom',
-      'framer-motion',
-      'react-hot-toast',
     ],
-    // Exclude large deps that should be lazy loaded
-    exclude: ['gsap'],
-  },
-  // Optimize HTML processing
-  esbuild: {
-    // Drop console and debugger in production
-    drop: ['console', 'debugger'],
-    // Minify identifiers
-    minifyIdentifiers: true,
-    minifySyntax: true,
-    minifyWhitespace: true,
   },
 })
