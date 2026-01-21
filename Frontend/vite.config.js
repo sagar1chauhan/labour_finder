@@ -13,7 +13,7 @@ export default defineConfig({
     tailwindcss(),
   ],
   server: {
-    port: 5174, // Change port to bypass cache
+    port: 5176, // Change port to bypass cache
     strictPort: true,
     headers: {
       'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: blob: http: https: http://localhost:* http://127.0.0.1:* http://localhost:5000 http://127.0.0.1:5000; font-src 'self' data: https:; connect-src 'self' https: ws: wss: http://localhost:* http://127.0.0.1:* http://localhost:5000 http://127.0.0.1:5000; frame-src 'self' https:; object-src 'none'; base-uri 'self'; form-action 'self';",
@@ -54,13 +54,14 @@ export default defineConfig({
             return 'router';
           }
 
-          if (id.includes('node_modules/react-icons')) {
-            return 'icons';
-          }
+          // Icons and animations - bundled with vendor-libs to prevent initialization issues
+          // if (id.includes('node_modules/react-icons')) {
+          //   return 'icons';
+          // }
 
-          if (id.includes('node_modules/framer-motion')) {
-            return 'framer-motion';
-          }
+          // if (id.includes('node_modules/framer-motion')) {
+          //   return 'framer-motion';
+          // }
 
           if (id.includes('node_modules/gsap')) {
             return 'gsap-lazy';
