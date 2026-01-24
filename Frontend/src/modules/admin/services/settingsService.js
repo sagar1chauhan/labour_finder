@@ -63,3 +63,21 @@ export const deleteAdmin = async (id) => {
     throw error;
   }
 };
+
+export const updateAdminDetails = async (id, data) => {
+  try {
+    const response = await api.put(`/admin/admins/${id}`, data);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const toggleAdminStatus = async (id) => {
+  try {
+    const response = await api.patch(`/admin/admins/${id}/status`);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};

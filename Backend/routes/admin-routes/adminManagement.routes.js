@@ -5,7 +5,9 @@ const {
   getAllAdmins,
   createAdmin,
   deleteAdmin,
-  updateAdminRole
+  updateAdminRole,
+  updateAdmin,
+  toggleAdminStatus
 } = require('../../controllers/adminControllers/adminManagementController');
 const { authenticate } = require('../../middleware/authMiddleware');
 const { isSuperAdmin } = require('../../middleware/roleMiddleware');
@@ -26,5 +28,7 @@ router.get('/', getAllAdmins);
 router.post('/', createAdminValidation, createAdmin);
 router.delete('/:id', deleteAdmin);
 router.put('/:id/role', updateAdminRole);
+router.put('/:id', updateAdmin);
+router.patch('/:id/status', toggleAdminStatus);
 
 module.exports = router;

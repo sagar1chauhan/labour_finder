@@ -59,7 +59,7 @@ const isAdminOrVendor = (req, res, next) => {
  */
 const isSuperAdmin = async (req, res, next) => {
   try {
-    if (req.userRole !== USER_ROLES.ADMIN) {
+    if (req.userRole !== USER_ROLES.ADMIN && req.userRole !== 'super_admin') {
       return res.status(403).json({
         success: false,
         message: 'Access denied. Admin role required.'

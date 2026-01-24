@@ -164,5 +164,94 @@ module.exports = {
   getAllAdmins,
   createAdmin,
   deleteAdmin,
-  updateAdminRole
+  updateAdminRole,
+
+  /**
+   * Update admin details (Super Admin only)
+   */
+  updateAdmin: async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { name, email, password, role } = req.body;
+
+      // Find admin
+      let admin = await Admin.findById(id);
+      if (!admin) {
+        return res.status(404).json({ success: false, message: 'Admin not found' });
+      }
+
+      // Check email uniqueness if changed
+      if (email && email !== admin.email) {
+        const existing = await Admin.findOne({ email });
+        if (existing) {
+          return res.status(400).json({ success: false, message: 'Email already in use' });
+        }
+      }
+
+      // Update fields
+      if (name) admin.name = name;
+      if (email) admin.email = email;
+      if (password) admin.password = password; // Pre-save hook will hash it
+      if (role && ['super_admin', 'admin'].includes(role)) {
+        // Prevent self-demotion
+        if (id === req.user.id && role !== 'super_admin' && admin.role === 'super_admin') {
+          return res.status(400).json({ success: false, message: 'Cannot demote yourself' });
+        }
+        admin.role = role;
+      }
+
+      await admin.save();
+
+      res.status(200).json({
+        success: true,
+        message: 'Admin updated successfully',
+        data: {
+          id: admin._id,
+          name: admin.name,
+          email: admin.email,
+          role: admin.role,
+          isActive: admin.isActive
+        }
+      });
+    } catch (error) {
+      console.error('Update admin error:', error);
+      res.status(500).json({ success: false, message: 'Failed to update admin' });
+    }
+  },
+
+  /**
+   * Toggle admin status (Block/Unblock)
+   */
+  toggleAdminStatus: async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      // Prevent self-blocking
+      if (id === req.user.id) {
+        return res.status(400).json({ success: false, message: 'Cannot block yourself' });
+      }
+
+      const admin = await Admin.findById(id);
+      if (!admin) {
+        return res.status(404).json({ success: false, message: 'Admin not found' });
+      }
+
+      // Protect primary super admin
+      if (admin.email === 'admin@admin.com') {
+        return res.status(400).json({ success: false, message: 'Cannot block primary super admin' });
+      }
+
+      admin.isActive = !admin.isActive;
+      await admin.save();
+
+      res.status(200).json({
+        success: true,
+        message: `Admin ${admin.isActive ? 'unblocked' : 'blocked'} successfully`,
+        data: { isActive: admin.isActive }
+      });
+    } catch (error) {
+      console.error('Toggle status error:', error);
+      res.status(500).json({ success: false, message: 'Failed to update status' });
+    }
+  }
 };
