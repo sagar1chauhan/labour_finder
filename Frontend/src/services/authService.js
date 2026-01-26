@@ -285,12 +285,13 @@ export const workerAuthService = {
  */
 export const adminAuthService = {
   // Login
-  login: async (email, password) => {
+  login: async (email, password, rememberMe = false) => {
     const response = await api.post('/admin/auth/login', { email, password });
     if (response.data.accessToken) {
-      localStorage.setItem('adminAccessToken', response.data.accessToken);
-      localStorage.setItem('adminRefreshToken', response.data.refreshToken);
-      localStorage.setItem('adminData', JSON.stringify(response.data.admin));
+      const storage = rememberMe ? localStorage : sessionStorage;
+      storage.setItem('adminAccessToken', response.data.accessToken);
+      storage.setItem('adminRefreshToken', response.data.refreshToken);
+      storage.setItem('adminData', JSON.stringify(response.data.admin));
     }
     return response.data;
   },

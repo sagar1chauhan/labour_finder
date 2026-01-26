@@ -137,7 +137,7 @@ const RedirectionSelector = ({
   );
 };
 
-const HomePage = ({ catalog, setCatalog }) => {
+const HomePage = ({ catalog, setCatalog, selectedCity }) => {
   const [isBannerModalOpen, setIsBannerModalOpen] = useState(false);
   const [bannerForm, setBannerForm] = useState({ imageUrl: "", text: "", targetCategoryId: "", slug: "", targetServiceId: "", scrollToSection: "" });
   const [editingBannerId, setEditingBannerId] = useState(null);
@@ -194,11 +194,14 @@ const HomePage = ({ catalog, setCatalog }) => {
 
   const home = ensureIds(catalog).home;
 
-  // Fetch home content from API on mount
+  // Fetch home content from API on mount or city change
   useEffect(() => {
     const fetchHomeContent = async () => {
       try {
-        const response = await homeContentService.get();
+        const params = {};
+        if (selectedCity) params.cityId = selectedCity;
+
+        const response = await homeContentService.get(params);
         if (response.success && response.homeContent) {
           const hc = response.homeContent;
 
@@ -247,7 +250,7 @@ const HomePage = ({ catalog, setCatalog }) => {
       }
     };
     fetchHomeContent();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [selectedCity]); // Re-fetch on city change
 
   const getCategoryTitle = (id) => {
     const found = categories.find((c) => c.id === id);
@@ -262,7 +265,10 @@ const HomePage = ({ catalog, setCatalog }) => {
   useEffect(() => {
     const fetchServices = async () => {
       try {
-        const response = await serviceService.getAll();
+        const params = {};
+        if (selectedCity) params.cityId = selectedCity;
+
+        const response = await serviceService.getAll(params);
         if (response.success) {
           setAllServices(response.services || []);
         }
@@ -271,7 +277,7 @@ const HomePage = ({ catalog, setCatalog }) => {
       }
     };
     fetchServices();
-  }, []);
+  }, [selectedCity]);
 
   const updateCategory = (id, patch) => {
     const next = ensureIds(catalog);
@@ -318,7 +324,7 @@ const HomePage = ({ catalog, setCatalog }) => {
         isCategorySectionsVisible: homeData.isCategorySectionsVisible,
         isCategoriesVisible: homeData.isCategoriesVisible
       };
-      await homeContentService.update(payload);
+      await homeContentService.update(payload, { cityId: selectedCity });
       toast.success('Home page updated successfully!');
     } catch (error) {
       console.error('Failed to sync home content:', error);

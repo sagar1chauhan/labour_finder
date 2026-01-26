@@ -31,6 +31,12 @@ const serviceSchema = new mongoose.Schema({
     ref: 'Category',
     index: true
   },
+  // Cities where this service is available
+  cityIds: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'City',
+    index: true
+  }],
   iconUrl: {
     type: String,
     default: null

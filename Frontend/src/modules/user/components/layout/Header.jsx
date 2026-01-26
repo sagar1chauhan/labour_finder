@@ -7,8 +7,14 @@ import Logo from '../../../../components/common/Logo';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { themeColors } from '../../../../theme';
 
+import CitySelectorModal from '../common/CitySelectorModal';
+import { useCity } from '../../../../context/CityContext';
+import { HiChevronDown } from 'react-icons/hi';
+
 const Header = ({ location, onLocationClick }) => {
   const logoRef = useRef(null);
+  const { currentCity } = useCity();
+  const [isCityModalOpen, setIsCityModalOpen] = React.useState(false);
 
   useEffect(() => {
     if (logoRef.current) {
@@ -17,9 +23,7 @@ const Header = ({ location, onLocationClick }) => {
   }, []);
 
   return (
-    <header
-      className="relative overflow-hidden"
-    >
+    <header className="relative overflow-hidden">
       {/* Content wrapper with relative positioning */}
       <div className="relative z-10">
         <div className="w-full">
@@ -55,37 +59,48 @@ const Header = ({ location, onLocationClick }) => {
               />
             </div>
 
-            {/* Right: Location */}
-            <div className="flex flex-col items-end cursor-pointer" onClick={onLocationClick}>
-              <div className="flex items-center gap-1 mb-0.5">
-                {/* Gradient Definition for Icons */}
-                <svg width="0" height="0" className="absolute">
-                  <linearGradient id="homster-location-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor={themeColors.brand.teal} />
-                    <stop offset="50%" stopColor={themeColors.brand.yellow} />
-                    <stop offset="100%" stopColor={themeColors.brand.orange} />
-                  </linearGradient>
-                </svg>
-                <HiLocationMarker
-                  className="w-4 h-4"
-                  style={{ fill: 'url(#homster-location-gradient)' }}
+            {/* Right: City & Location */}
+            <div className="flex flex-col items-end gap-1">
+
+
+
+              {/* Location Selector */}
+              <div className="flex flex-col items-end cursor-pointer" onClick={onLocationClick}>
+                <div className="flex items-center gap-1 mb-0.5">
+                  {/* Gradient Definition for Icons */}
+                  <svg width="0" height="0" className="absolute">
+                    <linearGradient id="homster-location-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor={themeColors.brand.teal} />
+                      <stop offset="50%" stopColor={themeColors.brand.yellow} />
+                      <stop offset="100%" stopColor={themeColors.brand.orange} />
+                    </linearGradient>
+                  </svg>
+                  <HiLocationMarker
+                    className="w-4 h-4"
+                    style={{ fill: 'url(#homster-location-gradient)' }}
+                  />
+                  <span className="text-sm font-bold truncate max-w-[160px]" style={{
+                    background: themeColors.gradient,
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                  }}>
+                    {location && location !== '...' ? location.split('-')[0].trim() : 'Select Location'}
+                  </span>
+                </div>
+                <LocationSelector
+                  location={location}
+                  onLocationClick={onLocationClick}
                 />
-                <span className="text-sm font-bold truncate max-w-[160px]" style={{
-                  background: themeColors.gradient,
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                }}>
-                  {location && location !== '...' ? location.split('-')[0].trim() : 'Select Location'}
-                </span>
               </div>
-              <LocationSelector
-                location={location}
-                onLocationClick={onLocationClick}
-              />
             </div>
           </div>
         </div>
       </div>
+
+      <CitySelectorModal
+        isOpen={isCityModalOpen}
+        onClose={() => setIsCityModalOpen(false)}
+      />
     </header>
   );
 };

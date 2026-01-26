@@ -14,11 +14,13 @@ const toAssetUrl = (url) => {
   return `${base}${clean.startsWith('/') ? '' : '/'}${clean}`;
 };
 
-const CategoryModal = React.memo(({ isOpen, onClose, category, location, cartCount }) => {
+const CategoryModal = React.memo(({ isOpen, onClose, category, location, cartCount, currentCity }) => {
   const navigate = useNavigate();
   const [isClosing, setIsClosing] = useState(false);
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(false);
+
+  const cityId = currentCity?._id || currentCity?.id;
 
   useEffect(() => {
     if (!isOpen) {
@@ -28,7 +30,10 @@ const CategoryModal = React.memo(({ isOpen, onClose, category, location, cartCou
       const fetchServices = async () => {
         try {
           setLoading(true);
-          const response = await publicCatalogService.getServices({ categoryId: category.id });
+          const response = await publicCatalogService.getServices({
+            categoryId: category.id,
+            cityId: cityId
+          });
           if (response.success) {
             setServices(response.services);
           }
@@ -39,7 +44,7 @@ const CategoryModal = React.memo(({ isOpen, onClose, category, location, cartCou
       };
       fetchServices();
     }
-  }, [isOpen, category?.id]);
+  }, [isOpen, category?.id, cityId]);
 
   const handleClose = () => {
     setIsClosing(true);

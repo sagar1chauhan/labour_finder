@@ -6,7 +6,7 @@ import Modal from "../components/Modal";
 import { ensureIds, saveCatalog, slugify, toAssetUrl } from "../utils";
 import { serviceService, categoryService } from "../../../../../services/catalogService";
 
-const ServicesPage = ({ catalog, setCatalog }) => {
+const ServicesPage = ({ catalog, setCatalog, selectedCity }) => {
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const services = catalog.services || [];
@@ -33,15 +33,18 @@ const ServicesPage = ({ catalog, setCatalog }) => {
       return s.categoryId === selectedCategoryFilter;
     });
 
-  // Fetch services and categories from API on mount
+  // Fetch services and categories from API on mount or city change
   useEffect(() => {
     const fetchData = async () => {
       try {
         setFetching(true);
+        const params = { status: 'active' };
+        if (selectedCity) params.cityId = selectedCity;
+
         // Fetch both services and categories in parallel for efficiency
         const [servicesRes, categoriesRes] = await Promise.all([
-          serviceService.getAll({ status: 'active' }),
-          categoryService.getAll({ status: 'active' })
+          serviceService.getAll(params),
+          categoryService.getAll(params)
         ]);
 
         let mappedServices = [];
@@ -77,7 +80,12 @@ const ServicesPage = ({ catalog, setCatalog }) => {
           return next;
         });
 
-        if (mappedServices.length > 0 && !selectedServiceId) {
+        // Reset selected service if it's no longer in the list
+        if (selectedServiceId) {
+          const exist = mappedServices.find(s => s.id === selectedServiceId);
+          if (!exist && mappedServices.length > 0) setSelectedServiceId(mappedServices[0].id);
+          else if (!exist) setSelectedServiceId("");
+        } else if (mappedServices.length > 0) {
           setSelectedServiceId(mappedServices[0].id);
         }
 
@@ -91,7 +99,7 @@ const ServicesPage = ({ catalog, setCatalog }) => {
     };
 
     fetchData();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [selectedCity]); // Re-fetch when city changes
   const [form, setForm] = useState({
     title: "",
     iconUrl: "",
@@ -613,26 +621,28 @@ const ServicesPage = ({ catalog, setCatalog }) => {
         )}
         <div className="flex items-center justify-between mb-4">
           <div className="text-sm text-gray-600">{services.length} services</div>
-          <button
-            onClick={() => {
-              reset();
-              setIsModalOpen(true);
-            }}
-            className="px-4 py-2 text-white rounded-lg font-semibold transition-all flex items-center gap-2 shadow-md hover:shadow-lg relative z-10"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              backgroundColor: '#2874F0',
-              border: 'none',
-              cursor: 'pointer'
-            }}
-            onMouseEnter={(e) => e.target.style.backgroundColor = '#1e5fd4'}
-            onMouseLeave={(e) => e.target.style.backgroundColor = '#2874F0'}
-          >
-            <FiPlus className="w-4 h-4" style={{ display: 'block', color: '#ffffff' }} />
-            <span>Add Service</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                reset();
+                setIsModalOpen(true);
+              }}
+              className="px-4 py-2 text-white rounded-lg font-semibold transition-all flex items-center gap-2 shadow-md hover:shadow-lg relative z-10"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                backgroundColor: '#2874F0',
+                border: 'none',
+                cursor: 'pointer'
+              }}
+              onMouseEnter={(e) => e.target.style.backgroundColor = '#1e5fd4'}
+              onMouseLeave={(e) => e.target.style.backgroundColor = '#2874F0'}
+            >
+              <FiPlus className="w-4 h-4" style={{ display: 'block', color: '#ffffff' }} />
+              <span>Add Service</span>
+            </button>
+          </div>
         </div>
 
         {/* Category Filter */}

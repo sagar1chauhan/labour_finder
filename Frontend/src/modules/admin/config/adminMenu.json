@@ -101,7 +101,8 @@
     "title": "Service Catalog",
     "route": "/admin/user-categories",
     "allowedRoles": [
-      "super_admin"
+      "super_admin",
+      "admin"
     ],
     "children": [
       "Home",
@@ -143,7 +144,8 @@
     "title": "Settings",
     "route": "/admin/settings",
     "allowedRoles": [
-      "super_admin"
+      "super_admin",
+      "admin"
     ],
     "children": []
   }

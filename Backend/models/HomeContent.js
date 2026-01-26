@@ -5,6 +5,14 @@ const mongoose = require('mongoose');
  * Manages homepage content: banners, promos, curated services, etc.
  */
 const homeContentSchema = new mongoose.Schema({
+  // City association - if null, considered default/fallback
+  cityId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'City',
+    default: null,
+    index: true
+  },
+
   // Banners (main homepage banners)
   banners: [{
     imageUrl: {
@@ -257,12 +265,27 @@ const homeContentSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Ensure only one home content document exists
-homeContentSchema.statics.getHomeContent = async function () {
-  let homeContent = await this.findOne();
-  if (!homeContent) {
-    homeContent = await this.create({});
+// Ensure only one home content document exists per city
+homeContentSchema.statics.getHomeContent = async function (cityId = null) {
+  let query = { cityId: null };
+
+  if (cityId) {
+    query = { cityId };
   }
+
+  let homeContent = await this.findOne(query);
+
+  // If requesting a specific city and no content exists, create it by copying default/empty
+  if (!homeContent && cityId) {
+    // Ideally we might copy from default here, but for now we create empty/default structure
+    // Fetch default to see if we can copy basics? No, start fresh or based on migration.
+    // Let's create a new entry for this city.
+    homeContent = await this.create({ cityId });
+  } else if (!homeContent && !cityId) {
+    // Create default if it doesn't exist
+    homeContent = await this.create({ cityId: null });
+  }
+
   return homeContent;
 };
 

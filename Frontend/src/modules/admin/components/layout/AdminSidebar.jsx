@@ -120,10 +120,11 @@ const AdminSidebar = ({ isOpen, onClose }) => {
     pendingSettlements: 0
   });
 
-  // Load admin user from localStorage
+  // Load admin user from storage
   useEffect(() => {
     try {
-      const stored = JSON.parse(localStorage.getItem('adminData') || '{}');
+      const storedData = sessionStorage.getItem('adminData') || localStorage.getItem('adminData');
+      const stored = JSON.parse(storedData || '{}');
       if (stored.name || stored.email) {
         setAdminUser({
           name: stored.name || 'Admin',

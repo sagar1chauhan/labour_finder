@@ -42,6 +42,12 @@ const categorySchema = new mongoose.Schema({
     default: 0,
     index: true
   },
+  // Cities where this category is available
+  cityIds: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'City',
+    index: true
+  }],
   // Additional backend fields
   description: {
     type: String,

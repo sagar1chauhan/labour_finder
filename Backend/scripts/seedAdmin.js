@@ -14,9 +14,12 @@ const seedAdmin = async () => {
     // Check if admin already exists
     const existingAdmin = await Admin.findOne({ email: 'admin@appzeto.com' });
     if (existingAdmin) {
-      console.log('⚠️  Admin user already exists!');
-      console.log('   Email: admin@appzeto.com');
-      console.log('   You can login with this account\n');
+      console.log('⚠️  Admin user already exists! Resetting password...');
+      existingAdmin.password = 'admin123';
+      existingAdmin.role = 'super_admin';
+      existingAdmin.isActive = true;
+      await existingAdmin.save();
+      console.log('✅ Admin password reset to: admin123\n');
       return;
     }
 
@@ -24,8 +27,8 @@ const seedAdmin = async () => {
     const adminData = {
       name: 'Super Admin',
       email: 'admin@appzeto.com',
-      password: await bcrypt.hash('admin123', 10),
-      role: 'super-admin',
+      password: 'admin123', // Plain text, let model pre-save hook hash it
+      role: 'super_admin',
       isActive: true,
       permissions: {
         users: { read: true, write: true, delete: true },

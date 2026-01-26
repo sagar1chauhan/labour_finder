@@ -9,12 +9,13 @@ const { SERVICE_STATUS } = require('../../utils/constants');
  */
 const getAllServices = async (req, res) => {
   try {
-    const { status, categoryId } = req.query;
+    const { status, categoryId, cityId } = req.query;
 
     // Build query
     const query = {};
     if (status) query.status = status;
     if (categoryId) query.categoryIds = categoryId;
+    if (cityId) query.cityIds = cityId;
 
     const services = await Service.find(query)
       .populate('categoryIds', 'title slug')
@@ -46,6 +47,7 @@ const getAllServices = async (req, res) => {
         id: svc._id.toString(),
         title: svc.title,
         slug: svc.slug,
+        cityIds: svc.cityIds || [],
         categoryIds: (svc.categoryIds || []).map(cat => (cat && cat._id) ? cat._id.toString() : cat.toString()),
         categoryTitles: (svc.categoryIds || []).map(cat => (cat && cat.title) ? cat.title : null).filter(Boolean),
         categoryId: svc.categoryIds?.[0]?._id?.toString() || svc.categoryIds?.[0]?.toString(),
@@ -172,8 +174,15 @@ const createService = async (req, res) => {
       basePrice,
       discountPrice,
       page,
-      sections
+      sections,
+      cityIds
     } = req.body;
+
+    // Validate cities if provided
+    if (cityIds && cityIds.length > 0) {
+      // Logic to validate cities could be added here
+      // For now we trust the ID list or rely on frontend
+    }
 
     // Determine final category IDs
     const categoryIds = providedCategoryIds || (categoryId ? [categoryId] : []);
@@ -251,6 +260,7 @@ const createService = async (req, res) => {
       discountPrice: discountPrice || null,
       page: sanitizedPage,
       sections: sanitizedSections,
+      cityIds: cityIds || [],
       status: SERVICE_STATUS.ACTIVE,
       createdBy: req.user.id
     });
@@ -317,7 +327,8 @@ const updateService = async (req, res) => {
       discountPrice,
       page,
       sections,
-      status
+      status,
+      cityIds: updateCityIds
     } = req.body;
 
     const categoryIds = providedCategoryIds || (categoryId ? [categoryId] : undefined);
@@ -366,6 +377,7 @@ const updateService = async (req, res) => {
       service.slug = slug.trim().toLowerCase();
       service.routePath = `/user/${slug.trim().toLowerCase()}`;
     }
+    if (updateCityIds !== undefined) service.cityIds = updateCityIds;
     if (categoryIds !== undefined) service.categoryIds = categoryIds;
     if (iconUrl !== undefined) service.iconUrl = iconUrl || null;
     if (badge !== undefined) service.badge = badge?.trim() || null;

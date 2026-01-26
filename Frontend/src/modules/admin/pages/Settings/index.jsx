@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiSettings, FiGrid, FiDollarSign, FiSave, FiUser, FiMail, FiTrash2, FiPlus, FiUsers, FiShield, FiFileText, FiMapPin, FiPhone, FiHeadphones, FiMessageCircle, FiEdit, FiLock, FiUnlock, FiX } from 'react-icons/fi';
 import { getSettings, updateSettings, updateAdminProfile, getAdminProfile, getAllAdmins, createAdmin, deleteAdmin, updateAdminDetails, toggleAdminStatus } from '../../services/settingsService';
+import { cityService } from '../../services/cityService';
+import CityManagement from '../Cities';
 import { toast } from 'react-hot-toast';
 
 const AdminSettings = () => {
@@ -44,6 +46,7 @@ const AdminSettings = () => {
     name: '',
     email: '',
     role: 'admin',
+    assignedCity: '',
     currentPassword: '',
     newPassword: '',
     confirmPassword: ''
@@ -51,8 +54,9 @@ const AdminSettings = () => {
 
   // Admin Management State
   const [admins, setAdmins] = useState([]);
+  const [cities, setCities] = useState([]); // State for cities
   const [showAddAdmin, setShowAddAdmin] = useState(false);
-  const [newAdmin, setNewAdmin] = useState({ name: '', email: '', password: '', role: 'admin' });
+  const [newAdmin, setNewAdmin] = useState({ name: '', email: '', password: '', role: 'admin', cityId: '' }); // Added cityId
   const [adminLoading, setAdminLoading] = useState(false);
 
   const [loading, setLoading] = useState(false);
@@ -70,7 +74,8 @@ const AdminSettings = () => {
             ...prev,
             email: res.data.email,
             name: res.data.name || 'Admin',
-            role: res.data.role || 'admin'
+            role: res.data.role || 'admin',
+            assignedCity: res.data.cityName || res.data.cityId?.name || ''
           }));
           const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
           const newData = { ...adminData, ...res.data };
@@ -146,10 +151,23 @@ const AdminSettings = () => {
     }
   };
 
-  // Load admins when entering admin view or when becoming super_admin
+  // Fetch cities for dropdown
+  const loadCities = async () => {
+    try {
+      const res = await cityService.getAll();
+      if (res.success) {
+        setCities(res.cities || []);
+      }
+    } catch (error) {
+      console.error('Error loading cities:', error);
+    }
+  };
+
+  // Load admins and cities when entering admin view
   useEffect(() => {
     if (isSuperAdmin && (activeView === 'admins' || admins.length === 0)) {
       loadAdmins();
+      loadCities(); // Fetch cities as well
     }
   }, [isSuperAdmin, activeView]);
 
@@ -316,14 +334,24 @@ const AdminSettings = () => {
 
     setAdminLoading(true);
     try {
+      // Prepare payload
+      const payload = { ...newAdmin };
+      if (payload.cityId) {
+        const cityObj = cities.find(c => (c._id || c.id) === payload.cityId);
+        if (cityObj) payload.cityName = cityObj.name;
+      } else {
+        delete payload.cityId;
+        payload.cityName = '';
+      }
+
       if (isEdit) {
-        await updateAdminDetails(newAdmin.id, newAdmin);
+        await updateAdminDetails(newAdmin.id, payload);
         toast.success('Admin updated successfully');
       } else {
-        await createAdmin(newAdmin);
+        await createAdmin(payload);
         toast.success('Admin created successfully');
       }
-      setNewAdmin({ name: '', email: '', password: '', role: 'admin' });
+      setNewAdmin({ name: '', email: '', password: '', role: 'admin', cityId: '' });
       setShowAddAdmin(false);
       loadAdmins();
     } catch (error) {
@@ -339,7 +367,8 @@ const AdminSettings = () => {
       name: admin.name,
       email: admin.email,
       role: admin.role,
-      password: ''
+      password: '',
+      cityId: admin.cityId?._id || admin.cityId || '' // Handle populated or raw ID
     });
     setShowAddAdmin(true);
   };
@@ -387,25 +416,41 @@ const AdminSettings = () => {
         <p className="text-sm text-gray-500">Manage your personal account details and password</p>
       </div>
 
-      {/* Financial Settings Card */}
-      <div onClick={() => setActiveView('financial')}
-        className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow cursor-pointer group">
-        <div className="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center mb-4 group-hover:bg-green-100 transition-colors">
-          <FiDollarSign className="w-6 h-6 text-green-600" />
+      {/* Financial Settings Card - Super Admin Only */}
+      {isSuperAdmin && (
+        <div onClick={() => setActiveView('financial')}
+          className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow cursor-pointer group">
+          <div className="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center mb-4 group-hover:bg-green-100 transition-colors">
+            <FiDollarSign className="w-6 h-6 text-green-600" />
+          </div>
+          <h3 className="text-lg font-bold text-gray-800 mb-2">Financial Info</h3>
+          <p className="text-sm text-gray-500">Configure charges, commissions, and billing details</p>
         </div>
-        <h3 className="text-lg font-bold text-gray-800 mb-2">Financial Info</h3>
-        <p className="text-sm text-gray-500">Configure charges, commissions, and billing details</p>
-      </div>
+      )}
 
-      {/* System Settings Card */}
-      <div onClick={() => setActiveView('system')}
-        className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow cursor-pointer group">
-        <div className="w-12 h-12 bg-purple-50 rounded-lg flex items-center justify-center mb-4 group-hover:bg-purple-100 transition-colors">
-          <FiSettings className="w-6 h-6 text-purple-600" />
+      {/* System Settings Card - Super Admin Only */}
+      {isSuperAdmin && (
+        <div onClick={() => setActiveView('system')}
+          className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow cursor-pointer group">
+          <div className="w-12 h-12 bg-purple-50 rounded-lg flex items-center justify-center mb-4 group-hover:bg-purple-100 transition-colors">
+            <FiSettings className="w-6 h-6 text-purple-600" />
+          </div>
+          <h3 className="text-lg font-bold text-gray-800 mb-2">System & Support</h3>
+          <p className="text-sm text-gray-500">Manage auto-assignment and help contact info</p>
         </div>
-        <h3 className="text-lg font-bold text-gray-800 mb-2">System & Support</h3>
-        <p className="text-sm text-gray-500">Manage auto-assignment and help contact info</p>
-      </div>
+      )}
+
+      {/* City Management Card - Super Admin Only */}
+      {isSuperAdmin && (
+        <div onClick={() => setActiveView('cities')}
+          className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow cursor-pointer group">
+          <div className="w-12 h-12 bg-teal-50 rounded-lg flex items-center justify-center mb-4 group-hover:bg-teal-100 transition-colors">
+            <FiMapPin className="w-6 h-6 text-teal-600" />
+          </div>
+          <h3 className="text-lg font-bold text-gray-800 mb-2">City Management</h3>
+          <p className="text-sm text-gray-500">Manage operational cities and default location</p>
+        </div>
+      )}
 
       {/* Admin Management Card - Super Admin Only */}
       {isSuperAdmin && (
@@ -446,10 +491,22 @@ const AdminSettings = () => {
                 </div>
                 <div>
                   <h2 className="text-xl font-bold text-gray-800">{profile.name || 'Admin'}</h2>
-                  <p className="text-sm text-gray-500 flex items-center gap-1">
-                    {isSuperAdmin && <FiShield className="text-amber-500" />}
-                    {isSuperAdmin ? 'Super Admin' : 'Admin'} • {profile.email}
-                  </p>
+                  <div className="flex flex-wrap items-center gap-2 mt-1">
+                    <p className="text-sm text-gray-500 flex items-center gap-1">
+                      {isSuperAdmin && <FiShield className="text-amber-500" />}
+                      {isSuperAdmin ? 'Super Admin' : 'Admin'} • {profile.email}
+                    </p>
+                    {profile.role !== 'super_admin' ? (
+                      <span className="px-2 py-0.5 bg-teal-50 text-teal-700 text-[10px] font-bold rounded-lg border border-teal-100 flex items-center gap-1">
+                        <FiMapPin className="w-2.5 h-2.5" />
+                        {profile.assignedCity || 'Restricted Access'}
+                      </span>
+                    ) : (
+                      <span className="px-2 py-0.5 bg-amber-50 text-amber-700 text-[10px] font-bold rounded-lg border border-amber-100">
+                        Global Access
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -486,369 +543,408 @@ const AdminSettings = () => {
                 </div>
               </form>
             </div>
-          </motion.div>
+          </motion.div >
         )}
 
         {/* Financial View */}
-        {activeView === 'financial' && (
-          <motion.div key="financial" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}
-            className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {
+          activeView === 'financial' && (
+            <motion.div key="financial" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}
+              className="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
-            {/* General Financial Settings */}
-            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 h-fit">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <FiDollarSign className="w-5 h-5 text-green-600" />
-                </div>
-                <h2 className="text-lg font-bold text-gray-800">Financial Configuration</h2>
-              </div>
-
-              <form onSubmit={handleFinancialSave} className="space-y-5">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5">Visit Charges (₹)</label>
-                    <input type="number" name="visitedCharges" value={financialSettings.visitedCharges} onChange={handleFinancialChange}
-                      className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-green-500 transition-all" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5">Vendor Cash Limit (₹)</label>
-                    <input type="number" name="vendorCashLimit" value={financialSettings.vendorCashLimit} onChange={handleFinancialChange}
-                      className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-green-500 transition-all" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5">GST Percentage (%)</label>
-                    <input type="number" name="gstPercentage" value={financialSettings.gstPercentage} onChange={handleFinancialChange}
-                      className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-green-500 transition-all" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5">Commission (%)</label>
-                    <input type="number" name="commissionPercentage" value={financialSettings.commissionPercentage} onChange={handleFinancialChange}
-                      className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-green-500 transition-all" />
-                  </div>
-                </div>
-                <div className="flex justify-end pt-2">
-                  <button type="submit" disabled={loading}
-                    className="px-6 py-2.5 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 flex items-center gap-2 disabled:opacity-60 shadow-lg shadow-green-200">
-                    {loading ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <FiSave className="w-4 h-4" />}
-                    Save Changes
-                  </button>
-                </div>
-              </form>
-            </div>
-
-            {/* Billing Information - Super Admin Only */}
-            {isSuperAdmin && (
+              {/* General Financial Settings */}
               <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 h-fit">
                 <div className="flex items-center gap-3 mb-6">
-                  <div className="p-2 bg-indigo-100 rounded-lg">
-                    <FiFileText className="w-5 h-5 text-indigo-600" />
+                  <div className="p-2 bg-green-100 rounded-lg">
+                    <FiDollarSign className="w-5 h-5 text-green-600" />
                   </div>
-                  <div>
-                    <h2 className="text-lg font-bold text-gray-800">Billing & Company Details</h2>
-                    <p className="text-xs text-gray-500">For invoices and tax documents</p>
-                  </div>
+                  <h2 className="text-lg font-bold text-gray-800">Financial Configuration</h2>
                 </div>
 
-                <form onSubmit={handleBillingSave} className="space-y-4">
-                  <div>
-                    <label className="block text-xs font-medium text-gray-500 mb-1">Company Name</label>
-                    <input type="text" name="companyName" value={billingSettings.companyName} onChange={handleBillingChange}
-                      className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-indigo-500" />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
+                <form onSubmit={handleFinancialSave} className="space-y-5">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-1">GSTIN</label>
-                      <input type="text" name="companyGSTIN" value={billingSettings.companyGSTIN} onChange={handleBillingChange}
-                        className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-indigo-500 uppercase" />
+                      <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5">Visit Charges (₹)</label>
+                      <input type="number" name="visitedCharges" value={financialSettings.visitedCharges} onChange={handleFinancialChange}
+                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-green-500 transition-all" />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-1">PAN</label>
-                      <input type="text" name="companyPAN" value={billingSettings.companyPAN} onChange={handleBillingChange}
-                        className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-indigo-500 uppercase" />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-medium text-gray-500 mb-1">Full Address</label>
-                    <textarea name="companyAddress" value={billingSettings.companyAddress} onChange={handleBillingChange} rows="2"
-                      className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-indigo-500 resize-none" />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-1">Company Email</label>
-                      <input type="email" name="companyEmail" value={billingSettings.companyEmail} onChange={handleBillingChange}
-                        className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-indigo-500" />
+                      <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5">Vendor Cash Limit (₹)</label>
+                      <input type="number" name="vendorCashLimit" value={financialSettings.vendorCashLimit} onChange={handleFinancialChange}
+                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-green-500 transition-all" />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-1">Company Phone</label>
-                      <input type="text" name="companyPhone" value={billingSettings.companyPhone} onChange={handleBillingChange}
-                        className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-indigo-500" />
+                      <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5">GST Percentage (%)</label>
+                      <input type="number" name="gstPercentage" value={financialSettings.gstPercentage} onChange={handleFinancialChange}
+                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-green-500 transition-all" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-500 uppercase mb-1.5">Commission (%)</label>
+                      <input type="number" name="commissionPercentage" value={financialSettings.commissionPercentage} onChange={handleFinancialChange}
+                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-green-500 transition-all" />
                     </div>
                   </div>
-
-                  <div className="grid grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-1">City</label>
-                      <input type="text" name="companyCity" value={billingSettings.companyCity} onChange={handleBillingChange}
-                        className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-indigo-500" />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-1">State</label>
-                      <input type="text" name="companyState" value={billingSettings.companyState} onChange={handleBillingChange}
-                        className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-indigo-500" />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-1">Pincode</label>
-                      <input type="text" name="companyPincode" value={billingSettings.companyPincode} onChange={handleBillingChange}
-                        className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-indigo-500" />
-                    </div>
-                  </div>
-
-                  <div className="pt-4 border-t border-gray-100">
-                    <h4 className="text-xs font-bold text-gray-700 mb-3">Invoice Settings</h4>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-xs font-medium text-gray-500 mb-1">Prefix</label>
-                        <input type="text" name="invoicePrefix" value={billingSettings.invoicePrefix} onChange={handleBillingChange}
-                          className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-indigo-500 uppercase" />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-gray-500 mb-1">SAC Code</label>
-                        <input type="text" name="sacCode" value={billingSettings.sacCode} onChange={handleBillingChange}
-                          className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-indigo-500" />
-                      </div>
-                    </div>
-                  </div>
-
                   <div className="flex justify-end pt-2">
-                    <button type="submit" disabled={billingLoading}
-                      className="px-6 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700 flex items-center gap-2 disabled:opacity-60">
-                      {billingLoading ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <FiSave className="w-4 h-4" />}
-                      Update Billing
+                    <button type="submit" disabled={loading}
+                      className="px-6 py-2.5 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 flex items-center gap-2 disabled:opacity-60 shadow-lg shadow-green-200">
+                      {loading ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <FiSave className="w-4 h-4" />}
+                      Save Changes
                     </button>
                   </div>
                 </form>
               </div>
-            )}
-          </motion.div>
-        )}
+
+              {/* Billing Information - Super Admin Only */}
+              {isSuperAdmin && (
+                <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 h-fit">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="p-2 bg-indigo-100 rounded-lg">
+                      <FiFileText className="w-5 h-5 text-indigo-600" />
+                    </div>
+                    <div>
+                      <h2 className="text-lg font-bold text-gray-800">Billing & Company Details</h2>
+                      <p className="text-xs text-gray-500">For invoices and tax documents</p>
+                    </div>
+                  </div>
+
+                  <form onSubmit={handleBillingSave} className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 mb-1">Company Name</label>
+                      <input type="text" name="companyName" value={billingSettings.companyName} onChange={handleBillingChange}
+                        className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-indigo-500" />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">GSTIN</label>
+                        <input type="text" name="companyGSTIN" value={billingSettings.companyGSTIN} onChange={handleBillingChange}
+                          className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-indigo-500 uppercase" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">PAN</label>
+                        <input type="text" name="companyPAN" value={billingSettings.companyPAN} onChange={handleBillingChange}
+                          className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-indigo-500 uppercase" />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 mb-1">Full Address</label>
+                      <textarea name="companyAddress" value={billingSettings.companyAddress} onChange={handleBillingChange} rows="2"
+                        className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-indigo-500 resize-none" />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">Company Email</label>
+                        <input type="email" name="companyEmail" value={billingSettings.companyEmail} onChange={handleBillingChange}
+                          className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-indigo-500" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">Company Phone</label>
+                        <input type="text" name="companyPhone" value={billingSettings.companyPhone} onChange={handleBillingChange}
+                          className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-indigo-500" />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">City</label>
+                        <input type="text" name="companyCity" value={billingSettings.companyCity} onChange={handleBillingChange}
+                          className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-indigo-500" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">State</label>
+                        <input type="text" name="companyState" value={billingSettings.companyState} onChange={handleBillingChange}
+                          className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-indigo-500" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">Pincode</label>
+                        <input type="text" name="companyPincode" value={billingSettings.companyPincode} onChange={handleBillingChange}
+                          className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-indigo-500" />
+                      </div>
+                    </div>
+
+                    <div className="pt-4 border-t border-gray-100">
+                      <h4 className="text-xs font-bold text-gray-700 mb-3">Invoice Settings</h4>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-500 mb-1">Prefix</label>
+                          <input type="text" name="invoicePrefix" value={billingSettings.invoicePrefix} onChange={handleBillingChange}
+                            className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-indigo-500 uppercase" />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-500 mb-1">SAC Code</label>
+                          <input type="text" name="sacCode" value={billingSettings.sacCode} onChange={handleBillingChange}
+                            className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-indigo-500" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end pt-2">
+                      <button type="submit" disabled={billingLoading}
+                        className="px-6 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700 flex items-center gap-2 disabled:opacity-60">
+                        {billingLoading ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <FiSave className="w-4 h-4" />}
+                        Update Billing
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              )}
+            </motion.div>
+          )
+        }
 
         {/* System & Support View */}
-        {activeView === 'system' && (
-          <motion.div key="system" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}
-            className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {
+          activeView === 'system' && (
+            <motion.div key="system" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}
+              className="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
-            {/* System Settings */}
-            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 h-fit">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-2 bg-gray-100 rounded-lg">
-                  <FiSettings className="w-5 h-5 text-gray-600" />
+              {/* System Settings */}
+              <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 h-fit">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="p-2 bg-gray-100 rounded-lg">
+                    <FiSettings className="w-5 h-5 text-gray-600" />
+                  </div>
+                  <h2 className="text-lg font-bold text-gray-800">System Preferences</h2>
                 </div>
-                <h2 className="text-lg font-bold text-gray-800">System Preferences</h2>
+
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100">
+                    <div className="flex-1">
+                      <p className="font-semibold text-gray-800">Auto-Assign Workers</p>
+                      <p className="text-xs text-gray-500 mt-1">Automatically find new worker if booking is rejected</p>
+                    </div>
+                    <button onClick={() => handleToggle('workerAutoAssignment')}
+                      className={`relative w-12 h-7 rounded-full transition-all duration-300 ${settings.workerAutoAssignment ? 'bg-blue-600' : 'bg-gray-200'}`}>
+                      <div className={`absolute top-1 left-1 w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-300 ${settings.workerAutoAssignment ? 'translate-x-5' : 'translate-x-0'}`} />
+                    </button>
+                  </div>
+
+                  <div className="p-4 bg-blue-50 rounded-xl border border-blue-100 flex items-start gap-3">
+                    <FiGrid className="w-5 h-5 text-blue-600 mt-0.5" />
+                    <div>
+                      <h4 className="font-semibold text-blue-900 text-sm">Service Mode</h4>
+                      <p className="text-xs text-blue-700 mt-1">Current configuration: <span className="font-bold">{serviceMode === 'single' ? 'Single Service' : 'Multi Service'}</span></p>
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100">
-                  <div className="flex-1">
-                    <p className="font-semibold text-gray-800">Auto-Assign Workers</p>
-                    <p className="text-xs text-gray-500 mt-1">Automatically find new worker if booking is rejected</p>
+              {/* Support Settings */}
+              <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 h-fit">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="p-2 bg-blue-100 rounded-lg">
+                    <FiHeadphones className="w-5 h-5 text-blue-600" />
                   </div>
-                  <button onClick={() => handleToggle('workerAutoAssignment')}
-                    className={`relative w-12 h-7 rounded-full transition-all duration-300 ${settings.workerAutoAssignment ? 'bg-blue-600' : 'bg-gray-200'}`}>
-                    <div className={`absolute top-1 left-1 w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-300 ${settings.workerAutoAssignment ? 'translate-x-5' : 'translate-x-0'}`} />
-                  </button>
+                  <h2 className="text-lg font-bold text-gray-800">Contact & Support</h2>
                 </div>
 
-                <div className="p-4 bg-blue-50 rounded-xl border border-blue-100 flex items-start gap-3">
-                  <FiGrid className="w-5 h-5 text-blue-600 mt-0.5" />
+                <form onSubmit={handleSupportSave} className="space-y-4">
                   <div>
-                    <h4 className="font-semibold text-blue-900 text-sm">Service Mode</h4>
-                    <p className="text-xs text-blue-700 mt-1">Current configuration: <span className="font-bold">{serviceMode === 'single' ? 'Single Service' : 'Multi Service'}</span></p>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">Support Email</label>
+                    <div className="relative">
+                      <FiMail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                      <input type="email" name="supportEmail" value={supportSettings.supportEmail} onChange={handleSupportChange}
+                        className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-blue-500 transition-all" />
+                    </div>
                   </div>
-                </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">Support Phone</label>
+                    <div className="relative">
+                      <FiPhone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                      <input type="tel" name="supportPhone" value={supportSettings.supportPhone} onChange={handleSupportChange}
+                        className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-blue-500 transition-all" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">WhatsApp Support</label>
+                    <div className="relative">
+                      <FiMessageCircle className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                      <input type="tel" name="supportWhatsapp" value={supportSettings.supportWhatsapp} onChange={handleSupportChange}
+                        className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-blue-500 transition-all" />
+                    </div>
+                  </div>
+                  <div className="flex justify-end pt-2">
+                    <button type="submit" disabled={supportLoading}
+                      className="px-6 py-2.5 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 flex items-center gap-2 disabled:opacity-60 shadow-lg shadow-blue-200">
+                      {supportLoading ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <FiSave className="w-4 h-4" />}
+                      Save Details
+                    </button>
+                  </div>
+                </form>
               </div>
-            </div>
+            </motion.div>
+          )
+        }
 
-            {/* Support Settings */}
-            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 h-fit">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <FiHeadphones className="w-5 h-5 text-blue-600" />
-                </div>
-                <h2 className="text-lg font-bold text-gray-800">Contact & Support</h2>
-              </div>
-
-              <form onSubmit={handleSupportSave} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">Support Email</label>
-                  <div className="relative">
-                    <FiMail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-                    <input type="email" name="supportEmail" value={supportSettings.supportEmail} onChange={handleSupportChange}
-                      className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-blue-500 transition-all" />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">Support Phone</label>
-                  <div className="relative">
-                    <FiPhone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-                    <input type="tel" name="supportPhone" value={supportSettings.supportPhone} onChange={handleSupportChange}
-                      className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-blue-500 transition-all" />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">WhatsApp Support</label>
-                  <div className="relative">
-                    <FiMessageCircle className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-                    <input type="tel" name="supportWhatsapp" value={supportSettings.supportWhatsapp} onChange={handleSupportChange}
-                      className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-blue-500 transition-all" />
-                  </div>
-                </div>
-                <div className="flex justify-end pt-2">
-                  <button type="submit" disabled={supportLoading}
-                    className="px-6 py-2.5 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 flex items-center gap-2 disabled:opacity-60 shadow-lg shadow-blue-200">
-                    {supportLoading ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <FiSave className="w-4 h-4" />}
-                    Save Details
-                  </button>
-                </div>
-              </form>
-            </div>
-          </motion.div>
-        )}
+        {/* City Management View */}
+        {
+          activeView === 'cities' && (
+            <motion.div key="cities" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
+              <CityManagement />
+            </motion.div>
+          )
+        }
 
         {/* Admin Management View - Super Admin Only */}
-        {activeView === 'admins' && isSuperAdmin && (
-          <motion.div key="admins" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-              <div className="p-6 border-b border-gray-100 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-amber-100 rounded-lg">
-                    <FiUsers className="w-5 h-5 text-amber-600" />
+        {
+          activeView === 'admins' && isSuperAdmin && (
+            <motion.div key="admins" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-amber-100 rounded-lg">
+                      <FiUsers className="w-5 h-5 text-amber-600" />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-bold text-gray-800">Admin Management</h2>
+                      <p className="text-sm text-gray-500">Total {admins.length} administrators found</p>
+                    </div>
                   </div>
-                  <div>
-                    <h2 className="text-xl font-bold text-gray-800">Admin Management</h2>
-                    <p className="text-sm text-gray-500">Total {admins.length} administrators found</p>
-                  </div>
+                  <button onClick={() => { setNewAdmin({ name: '', email: '', password: '', role: 'admin', cityId: '' }); setShowAddAdmin(!showAddAdmin); }}
+                    className={`px-5 py-2.5 rounded-lg text-sm font-medium flex items-center gap-2 shadow-lg transition-all ${showAddAdmin ? 'bg-gray-100 text-gray-600' : 'bg-amber-600 text-white hover:bg-amber-700 shadow-amber-100'}`}>
+                    {showAddAdmin ? <FiX className="w-4 h-4" /> : <FiPlus className="w-4 h-4" />}
+                    {showAddAdmin ? 'Cancel' : 'Add New Admin'}
+                  </button>
                 </div>
-                <button onClick={() => { setNewAdmin({ name: '', email: '', password: '', role: 'admin' }); setShowAddAdmin(!showAddAdmin); }}
-                  className={`px-5 py-2.5 rounded-lg text-sm font-medium flex items-center gap-2 shadow-lg transition-all ${showAddAdmin ? 'bg-gray-100 text-gray-600' : 'bg-amber-600 text-white hover:bg-amber-700 shadow-amber-100'}`}>
-                  {showAddAdmin ? <FiX className="w-4 h-4" /> : <FiPlus className="w-4 h-4" />}
-                  {showAddAdmin ? 'Cancel' : 'Add New Admin'}
-                </button>
-              </div>
 
-              {/* Add/Edit Admin Form */}
-              <AnimatePresence>
-                {showAddAdmin && (
-                  <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="border-b border-gray-100 bg-amber-50/50">
-                    <form onSubmit={handleCreateAdmin} className="p-6">
-                      <h3 className="text-sm font-bold text-gray-800 mb-4">{newAdmin.id ? 'Edit Administrator' : 'Create New Administrator'}</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <input type="text" placeholder="Full Name" value={newAdmin.name} onChange={e => setNewAdmin(p => ({ ...p, name: e.target.value }))}
-                          className="px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200" />
-                        <input type="email" placeholder="Email Address" value={newAdmin.email} onChange={e => setNewAdmin(p => ({ ...p, email: e.target.value }))}
-                          className="px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200" />
-                        <input type="password" placeholder={newAdmin.id ? "Password (leave blank to keep)" : "Password"} value={newAdmin.password} onChange={e => setNewAdmin(p => ({ ...p, password: e.target.value }))}
-                          className="px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200" />
-                        <div className="flex gap-2">
+                {/* Add/Edit Admin Form */}
+                <AnimatePresence>
+                  {showAddAdmin && (
+                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="border-b border-gray-100 bg-amber-50/50">
+                      <form onSubmit={handleCreateAdmin} className="p-6">
+                        <h3 className="text-sm font-bold text-gray-800 mb-4">{newAdmin.id ? 'Edit Administrator' : 'Create New Administrator'}</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-5 gap-4"> {/* Increased columns */}
+                          <input type="text" placeholder="Full Name" value={newAdmin.name} onChange={e => setNewAdmin(p => ({ ...p, name: e.target.value }))}
+                            className="px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200" />
+                          <input type="email" placeholder="Email Address" value={newAdmin.email} onChange={e => setNewAdmin(p => ({ ...p, email: e.target.value }))}
+                            className="px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200" />
+                          <input type="password" placeholder={newAdmin.id ? "Password (leave blank to keep)" : "Password"} value={newAdmin.password} onChange={e => setNewAdmin(p => ({ ...p, password: e.target.value }))}
+                            className="px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200" />
+
+                          {/* Role Selection */}
                           <select value={newAdmin.role} onChange={e => setNewAdmin(p => ({ ...p, role: e.target.value }))}
-                            className="flex-1 px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200">
+                            className="px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200">
                             <option value="admin">Admin</option>
                             <option value="super_admin">Super Admin</option>
                           </select>
+
+                          {/* City Selection */}
+                          <select value={newAdmin.cityId} onChange={e => setNewAdmin(p => ({ ...p, cityId: e.target.value }))}
+                            className="px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200">
+                            <option value="">All Cities (Global)</option>
+                            {cities.map(city => (
+                              <option key={city._id} value={city._id}>
+                                {city.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div className="flex justify-end mt-4">
                           <button type="submit" disabled={adminLoading}
-                            className="px-6 bg-amber-600 text-white rounded-lg hover:bg-amber-700 disabled:opacity-60 font-medium">
-                            {adminLoading ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : (newAdmin.id ? 'Update' : 'Create')}
+                            className="px-6 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 disabled:opacity-60 font-medium text-sm">
+                            {adminLoading ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : (newAdmin.id ? 'Update Admin' : 'Create Admin')}
                           </button>
                         </div>
-                      </div>
-                    </form>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                      </form>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
-              {/* Admins Table List */}
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-gray-50 text-gray-600 text-xs uppercase tracking-wider border-b border-gray-100">
-                      <th className="px-6 py-4 font-semibold">Administrator</th>
-                      <th className="px-6 py-4 font-semibold">Role</th>
-                      <th className="px-6 py-4 font-semibold">Status</th>
-                      <th className="px-6 py-4 font-semibold text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-50">
-                    {admins.map(admin => (
-                      <tr key={admin._id} className="hover:bg-gray-50/50 transition-colors">
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center font-bold text-gray-600 shadow-sm border border-white">
-                              {admin.name?.charAt(0).toUpperCase()}
-                            </div>
-                            <div>
-                              <p className="font-semibold text-gray-800 text-sm">{admin.name}</p>
-                              <p className="text-xs text-gray-500">{admin.email}</p>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className={`px-3 py-1 text-xs font-bold rounded-full border ${admin.role === 'super_admin'
-                            ? 'bg-amber-50 text-amber-700 border-amber-100'
-                            : 'bg-blue-50 text-blue-700 border-blue-100'
-                            }`}>
-                            {admin.role === 'super_admin' ? 'Super Admin' : 'Admin'}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className={`flex items-center gap-1.5 text-xs font-medium ${admin.isActive !== false ? 'text-green-600' : 'text-red-500'}`}>
-                            <span className={`w-2 h-2 rounded-full ${admin.isActive !== false ? 'bg-green-500' : 'bg-red-500'}`}></span>
-                            {admin.isActive !== false ? 'Active' : 'Blocked'}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          {admin._id !== profile.id && admin.email !== 'admin@admin.com' && (
-                            <div className="flex justify-end gap-2">
-                              <button onClick={() => handleEditClick(admin)}
-                                className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-                                title="Edit Admin">
-                                <FiEdit className="w-4 h-4" />
-                              </button>
-
-                              <button onClick={() => handleBlockAdmin(admin._id, admin.isActive !== false)}
-                                className={`p-2 text-gray-400 rounded-lg transition-all ${admin.isActive !== false ? 'hover:text-amber-600 hover:bg-amber-50' : 'hover:text-green-600 hover:bg-green-50'
-                                  }`}
-                                title={admin.isActive !== false ? "Block Admin" : "Unblock Admin"}>
-                                {admin.isActive !== false ? <FiLock className="w-4 h-4" /> : <FiUnlock className="w-4 h-4" />}
-                              </button>
-
-                              <button onClick={() => handleDeleteAdmin(admin._id, admin.name)}
-                                className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                                title="Delete Admin">
-                                <FiTrash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                          )}
-                        </td>
+                {/* Admins Table List */}
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-gray-50 text-gray-600 text-xs uppercase tracking-wider border-b border-gray-100">
+                        <th className="px-6 py-4 font-semibold">Administrator</th>
+                        <th className="px-6 py-4 font-semibold">Role</th>
+                        <th className="px-6 py-4 font-semibold">Assigned City</th>
+                        <th className="px-6 py-4 font-semibold">Status</th>
+                        <th className="px-6 py-4 font-semibold text-right">Actions</th>
                       </tr>
-                    ))}
-                    {admins.length === 0 && (
-                      <tr>
-                        <td colSpan="4" className="px-6 py-12 text-center text-gray-400">
-                          <FiUsers className="w-12 h-12 mx-auto mb-3 opacity-20" />
-                          <p>No administrators found</p>
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                      {admins.map((admin) => (
+                        <tr key={admin._id} className="hover:bg-gray-50/50 transition-colors">
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center font-bold text-gray-600 shadow-sm border border-white">
+                                {admin.name?.charAt(0).toUpperCase()}
+                              </div>
+                              <div>
+                                <p className="font-semibold text-gray-800 text-sm">{admin.name}</p>
+                                <p className="text-xs text-gray-500">{admin.email}</p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className={`px-3 py-1 text-xs font-bold rounded-full border ${admin.role === 'super_admin'
+                              ? 'bg-amber-50 text-amber-700 border-amber-100'
+                              : 'bg-blue-50 text-blue-700 border-blue-100'
+                              }`}>
+                              {admin.role === 'super_admin' ? 'Super Admin' : 'Admin'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            {admin.cityId ? (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-teal-100 text-teal-800">
+                                {admin.cityId.name || 'Unknown City'}
+                              </span>
+                            ) : (
+                              <span className="text-xs text-gray-400">All Cities</span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className={`flex items-center gap-1.5 text-xs font-medium ${admin.isActive !== false ? 'text-green-600' : 'text-red-500'}`}>
+                              <span className={`w-2 h-2 rounded-full ${admin.isActive !== false ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                              {admin.isActive !== false ? 'Active' : 'Blocked'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            {admin._id !== profile.id && admin.email !== 'admin@admin.com' && (
+                              <div className="flex justify-end gap-2">
+                                <button onClick={() => handleEditClick(admin)}
+                                  className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                                  title="Edit Admin">
+                                  <FiEdit className="w-4 h-4" />
+                                </button>
+
+                                <button onClick={() => handleBlockAdmin(admin._id, admin.isActive !== false)}
+                                  className={`p-2 text-gray-400 rounded-lg transition-all ${admin.isActive !== false ? 'hover:text-amber-600 hover:bg-amber-50' : 'hover:text-green-600 hover:bg-green-50'
+                                    }`}
+                                  title={admin.isActive !== false ? "Block Admin" : "Unblock Admin"}>
+                                  {admin.isActive !== false ? <FiLock className="w-4 h-4" /> : <FiUnlock className="w-4 h-4" />}
+                                </button>
+
+                                <button onClick={() => handleDeleteAdmin(admin._id, admin.name)}
+                                  className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                                  title="Delete Admin">
+                                  <FiTrash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                      {admins.length === 0 && (
+                        <tr>
+                          <td colSpan="4" className="px-6 py-12 text-center text-gray-400">
+                            <FiUsers className="w-12 h-12 mx-auto mb-3 opacity-20" />
+                            <p>No administrators found</p>
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
+            </motion.div>
+          )
+        }
+      </AnimatePresence >
+    </motion.div >
   );
 };
 export default AdminSettings;

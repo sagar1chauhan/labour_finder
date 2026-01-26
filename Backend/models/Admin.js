@@ -24,6 +24,15 @@ const adminSchema = new mongoose.Schema({
     enum: ['super_admin', 'admin'],
     default: 'admin'
   },
+  cityId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'City',
+    default: null // null implies Super Admin or access to all cities (if logic allows)
+  },
+  cityName: {
+    type: String,
+    default: ''
+  },
   profilePhoto: {
     type: String,
     default: null

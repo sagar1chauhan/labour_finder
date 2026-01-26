@@ -8,13 +8,14 @@ const { SERVICE_STATUS } = require('../../utils/constants');
  */
 const getAllCategories = async (req, res) => {
   try {
-    const { status, showOnHome, isPopular } = req.query;
+    const { status, showOnHome, isPopular, cityId } = req.query;
 
     // Build query
     const query = {};
     if (status) query.status = status;
     if (showOnHome !== undefined) query.showOnHome = showOnHome === 'true';
     if (isPopular !== undefined) query.isPopular = isPopular === 'true';
+    if (cityId) query.cityIds = cityId;
 
     const categories = await Category.find(query)
       .select('-__v')
@@ -37,6 +38,7 @@ const getAllCategories = async (req, res) => {
         imageUrl: cat.imageUrl,
         status: cat.status,
         isPopular: cat.isPopular,
+        cityIds: cat.cityIds || [],
         metaTitle: cat.metaTitle,
         metaDescription: cat.metaDescription,
         createdAt: cat.createdAt,
@@ -127,7 +129,8 @@ const createCategory = async (req, res) => {
       status,
       isPopular,
       metaTitle,
-      metaDescription
+      metaDescription,
+      cityIds
     } = req.body;
 
     // Check if category with same title or slug exists
@@ -159,6 +162,7 @@ const createCategory = async (req, res) => {
       isPopular: Boolean(isPopular),
       metaTitle: metaTitle?.trim() || null,
       metaDescription: metaDescription?.trim() || null,
+      cityIds: cityIds || [],
       createdBy: req.user.id
     });
 
@@ -229,7 +233,8 @@ const updateCategory = async (req, res) => {
       status,
       isPopular,
       metaTitle,
-      metaDescription
+      metaDescription,
+      cityIds: updateCityIds
     } = req.body;
 
     const category = await Category.findById(id);
@@ -273,6 +278,7 @@ const updateCategory = async (req, res) => {
     if (isPopular !== undefined) category.isPopular = Boolean(isPopular);
     if (metaTitle !== undefined) category.metaTitle = metaTitle?.trim() || null;
     if (metaDescription !== undefined) category.metaDescription = metaDescription?.trim() || null;
+    if (updateCityIds !== undefined) category.cityIds = updateCityIds;
 
     await category.save();
 

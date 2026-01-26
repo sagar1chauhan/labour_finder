@@ -42,8 +42,8 @@ const ProtectedRoute = ({ children, userType = 'user', redirectTo = null }) => {
           break;
       }
 
-      const token = localStorage.getItem(tokenKey);
-      const userData = localStorage.getItem(dataKey);
+      const token = sessionStorage.getItem(tokenKey) || localStorage.getItem(tokenKey);
+      const userData = sessionStorage.getItem(dataKey) || localStorage.getItem(dataKey);
 
       // If token exists, verify it's not expired (basic check)
       if (token && userData) {

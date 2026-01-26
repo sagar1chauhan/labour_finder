@@ -7,6 +7,7 @@ import SearchBar from './components/SearchBar';
 import ServiceCategories from './components/ServiceCategories';
 import { publicCatalogService } from '../../../../services/catalogService';
 import { useCart } from '../../../../context/CartContext';
+import { useCity } from '../../../../context/CityContext';
 import { toast } from 'react-hot-toast';
 import { registerFCMToken } from '../../../../services/pushNotificationService';
 import { motion } from 'framer-motion';
@@ -36,14 +37,120 @@ const toAssetUrl = (url) => {
 const Home = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [address, setAddress] = useState('Select Location');
+  const [address, setAddress] = useState(localStorage.getItem('currentAddress') || 'Select Location');
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
   const [houseNumber, setHouseNumber] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isLocationSupported, setIsLocationSupported] = useState(true);
+  const [detectedCityName, setDetectedCityName] = useState(localStorage.getItem('currentCity') || null);
+
+  const { cartCount, addToCart } = useCart();
+  const { currentCity, cities, selectCity, loading: cityLoading } = useCity();
+
+  // Clean up legacy storage keys on mount
+  useEffect(() => {
+    ['userAddress', 'detectedCity', 'user_formatted_address', 'user_city'].forEach(key => localStorage.removeItem(key));
+  }, []);
+
+  // Sync detectedCityName with Address on mount/update if not already set
+  useEffect(() => {
+    if (address && address !== 'Select Location' && cities && cities.length > 0) {
+      const foundCity = cities.find(c =>
+        address.toLowerCase().includes(c.name.toLowerCase())
+      );
+      if (foundCity) {
+        if (detectedCityName !== foundCity.name) {
+          setDetectedCityName(foundCity.name);
+          localStorage.setItem('currentCity', foundCity.name);
+        }
+      } else {
+        // Address is present but doesn't contain any supported city name
+        // Try to parse ANY city from the address string (e.g. "Bhopal")
+        const parts = address.split(',').map(p => p.trim());
+        // Usually city is 2nd or 3rd to last in Google address strings
+        const cityCandidate = parts.length > 2 ? parts[parts.length - 3] : (parts.length > 1 ? parts[parts.length - 2] : parts[0]);
+
+        if (detectedCityName !== cityCandidate) {
+          setDetectedCityName(cityCandidate);
+          localStorage.setItem('currentCity', cityCandidate);
+        }
+        setIsLocationSupported(false);
+      }
+    }
+  }, [address, cities, detectedCityName]);
+
+  // Validate city whenever detected name or cities list changes
+  useEffect(() => {
+    if (!detectedCityName || !cities || cities.length === 0) return;
+
+    const matchedCity = cities.find(c =>
+      c.name.toLowerCase() === detectedCityName.toLowerCase() ||
+      c.name.toLowerCase().includes(detectedCityName.toLowerCase()) ||
+      detectedCityName.toLowerCase().includes(c.name.toLowerCase())
+    );
+
+    if (matchedCity) {
+      setIsLocationSupported(true);
+      const matchedId = matchedCity._id || matchedCity.id;
+      const currentId = currentCity?._id || currentCity?.id;
+
+      if (!cityLoading && currentId && matchedId !== currentId) {
+        selectCity(matchedCity);
+        toast.success(`Location updated to ${matchedCity.name}`);
+        setTimeout(() => {
+          window.location.reload();
+        }, 500);
+      }
+    } else {
+      setIsLocationSupported(false);
+      if (currentCity) selectCity(null);
+    }
+  }, [detectedCityName, cities, currentCity, cityLoading]);
+
 
   const handleAddressSave = (savedHouseNumber, locationObj) => {
     if (locationObj) {
-      setAddress(locationObj.address);
+      const newAddress = locationObj.address;
+      setAddress(newAddress);
+      localStorage.setItem('currentAddress', newAddress);
+
+      // Try to parse city from location object (Google Places)
+      const components = locationObj.components || locationObj.address_components;
+      let city = '';
+      if (components) {
+        const getComponent = (type) => components.find(c => c.types.includes(type))?.long_name || '';
+        city = getComponent('locality') || getComponent('administrative_area_level_2');
+      }
+
+      // Fallback city parsing from address string if components failed
+      if (!city && newAddress) {
+        const parts = newAddress.split(',').map(p => p.trim());
+        city = parts.length > 2 ? parts[parts.length - 3] : (parts.length > 1 ? parts[parts.length - 2] : parts[0]);
+      }
+
+      if (city) {
+        setDetectedCityName(city);
+        localStorage.setItem('currentCity', city);
+
+        // Immediate update of selected city if supported
+        if (cities && cities.length > 0) {
+          const matchedCity = cities.find(c =>
+            c.name.toLowerCase() === city.toLowerCase() ||
+            c.name.toLowerCase().includes(city.toLowerCase()) ||
+            city.toLowerCase().includes(c.name.toLowerCase())
+          );
+          if (matchedCity) {
+            selectCity(matchedCity);
+          } else {
+            selectCity(null);
+          }
+        }
+
+        toast.success(`Location set to ${city}`);
+        setTimeout(() => {
+          window.location.reload();
+        }, 500);
+      }
     }
     setHouseNumber(savedHouseNumber);
     setIsAddressModalOpen(false);
@@ -72,8 +179,28 @@ const Home = () => {
                 const city = getComponent('locality') || getComponent('administrative_area_level_2');
                 const state = getComponent('administrative_area_level_1');
 
-                const formattedAddress = `${area}- ${city}- ${state}`;
+                const formattedAddress = `${area}, ${city}, ${state}`;
                 setAddress(formattedAddress);
+                localStorage.setItem('currentAddress', formattedAddress);
+
+                if (city) {
+                  setDetectedCityName(city);
+                  localStorage.setItem('currentCity', city);
+
+                  // Immediate update of selected city if supported
+                  if (cities && cities.length > 0) {
+                    const matchedCity = cities.find(c =>
+                      c.name.toLowerCase() === city.toLowerCase() ||
+                      c.name.toLowerCase().includes(city.toLowerCase()) ||
+                      city.toLowerCase().includes(c.name.toLowerCase())
+                    );
+                    if (matchedCity) {
+                      selectCity(matchedCity);
+                    } else {
+                      selectCity(null);
+                    }
+                  }
+                }
               }
             } catch (error) {
               // Silent fail
@@ -92,9 +219,6 @@ const Home = () => {
     registerFCMToken('user', true).catch(err => {/* Silent fail */ });
   }, []);
 
-  // Use cart context for instant cart count updates (no polling!)
-  const { cartCount, addToCart } = useCart();
-
   const [categories, setCategories] = useState([]);
   const [homeContent, setHomeContent] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -110,14 +234,16 @@ const Home = () => {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
 
-  // Fetch categories and home content on mount
+  // Fetch categories and home content on mount (and when city changes)
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
+        const cityId = currentCity?._id || currentCity?.id;
+
         const [categoriesRes, homeContentRes] = await Promise.all([
-          publicCatalogService.getCategories(),
-          publicCatalogService.getHomeContent()
+          publicCatalogService.getCategories(cityId),
+          publicCatalogService.getHomeContent(cityId)
         ]);
 
         let hasData = false;
@@ -141,17 +267,18 @@ const Home = () => {
         }
 
         if (!hasData && categoriesRes.categories?.length === 0 && !homeContentRes.homeContent) {
-          return;
+          // If no data, maybe we should still stop loading?
         }
 
         setLoading(false);
       } catch (error) {
         // Silent fail
+        setLoading(false);
       }
     };
 
     fetchData();
-  }, []);
+  }, [currentCity]);
 
   const handleSearch = (query) => {
     // Navigate to search results page
@@ -338,188 +465,215 @@ const Home = () => {
         </motion.div>
 
         <main className="pt-6 space-y-8 pb-24 max-w-screen-xl mx-auto w-full">
-          {/* Hero Section - Promo Carousel */}
-          {homeContent?.isPromosVisible !== false && (
-            <motion.section variants={itemVariants} className="relative z-0">
-              <PromoCarousel
-                promos={(homeContent?.promos || []).sort((a, b) => (a.order || 0) - (b.order || 0)).map(promo => ({
-                  id: promo.id || promo._id,
-                  title: promo.title || '',
-                  subtitle: promo.subtitle || promo.description || '',
-                  buttonText: promo.buttonText || 'Book now',
-                  className: promo.gradientClass || 'from-[#00A6A6] to-[#008a8a]',
-                  image: toAssetUrl(promo.imageUrl),
-                  targetCategoryId: promo.targetCategoryId,
-                  slug: promo.slug,
-                  scrollToSection: promo.scrollToSection,
-                  route: '/'
-                }))}
-                onPromoClick={handlePromoClick}
-              />
-            </motion.section>
+          {!isLocationSupported ? (
+            <div className="flex flex-col items-center justify-center pt-20 pb-10 px-6 text-center min-h-[60vh]">
+              <div className="w-24 h-24 bg-red-50 rounded-full flex items-center justify-center mb-6">
+                <svg className="w-12 h-12 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3l18 18" />
+                </svg>
+              </div>
+              <h2 className="text-xl font-bold text-gray-900 mb-2">
+                Not service available in your city
+              </h2>
+              <p className="text-gray-500 max-w-xs mx-auto mb-8 font-medium">
+                Please fast! We are coming soon.
+              </p>
+              <button
+                onClick={() => setIsAddressModalOpen(true)}
+                className="px-6 py-3 bg-primary-600 text-white rounded-xl font-semibold shadow-md hover:bg-primary-700 transition-all font-bold"
+                style={{ backgroundColor: '#2874f0' }}
+              >
+                Change Location
+              </button>
+            </div>
+          ) : (
+            <>
+              {/* Hero Section - Promo Carousel */}
+              {homeContent?.isPromosVisible !== false && (
+                <motion.section variants={itemVariants} className="relative z-0">
+                  <PromoCarousel
+                    promos={(homeContent?.promos || []).sort((a, b) => (a.order || 0) - (b.order || 0)).map(promo => ({
+                      id: promo.id || promo._id,
+                      title: promo.title || '',
+                      subtitle: promo.subtitle || promo.description || '',
+                      buttonText: promo.buttonText || 'Book now',
+                      className: promo.gradientClass || 'from-[#00A6A6] to-[#008a8a]',
+                      image: toAssetUrl(promo.imageUrl),
+                      targetCategoryId: promo.targetCategoryId,
+                      slug: promo.slug,
+                      scrollToSection: promo.scrollToSection,
+                      route: '/'
+                    }))}
+                    onPromoClick={handlePromoClick}
+                  />
+                </motion.section>
+              )}
+
+              {/* Categories Section */}
+              {homeContent?.isCategoriesVisible !== false && (
+                <motion.section variants={itemVariants} className="relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-b from-blue-50/30 to-transparent pointer-events-none -z-10" />
+                  <ServiceCategories
+                    categories={categories}
+                    onCategoryClick={handleCategoryClick}
+                    onSeeAllClick={() => { }}
+                  />
+                </motion.section>
+              )}
+
+              {/* Curated Services */}
+              {homeContent?.isCuratedVisible !== false && (
+                <motion.div variants={itemVariants}>
+                  <Suspense fallback={<div className="h-40 bg-gray-50 animate-pulse rounded-xl mx-4" />}>
+                    <CuratedServices
+                      services={(homeContent?.curated || []).sort((a, b) => (a.order || 0) - (b.order || 0)).map(item => ({
+                        id: item.id || item._id,
+                        title: item.title,
+                        gif: toAssetUrl(item.gifUrl),
+                        slug: item.slug,
+                        targetCategoryId: item.targetCategoryId
+                      }))}
+                      onServiceClick={handleServiceClick}
+                    />
+                  </Suspense>
+                </motion.div>
+              )}
+
+              {/* New & Noteworthy */}
+              {homeContent?.isNoteworthyVisible !== false && (
+                <motion.div variants={itemVariants}>
+                  <Suspense fallback={<div className="h-40 bg-gray-50 animate-pulse rounded-xl mx-4" />}>
+                    <NewAndNoteworthy
+                      services={(homeContent?.noteworthy || []).sort((a, b) => (a.order || 0) - (b.order || 0)).map(item => ({
+                        id: item.id || item._id,
+                        title: item.title,
+                        image: toAssetUrl(item.imageUrl),
+                        slug: item.slug,
+                        targetCategoryId: item.targetCategoryId
+                      }))}
+                      onServiceClick={handleServiceClick}
+                    />
+                  </Suspense>
+                </motion.div>
+              )}
+
+              {/* Most Booked */}
+              {homeContent?.isBookedVisible !== false && (
+                <motion.div variants={itemVariants}>
+                  <Suspense fallback={<div className="h-40 bg-gray-50 animate-pulse rounded-xl mx-4" />}>
+                    <MostBookedServices
+                      services={(homeContent?.booked || []).sort((a, b) => (a.order || 0) - (b.order || 0)).map(item => ({
+                        id: item.id || item._id,
+                        title: item.title,
+                        rating: item.rating,
+                        reviews: item.reviews,
+                        price: item.price,
+                        originalPrice: item.originalPrice,
+                        discount: item.discount,
+                        image: toAssetUrl(item.imageUrl),
+                        targetCategoryId: item.targetCategoryId,
+                        slug: item.slug
+                      }))}
+                      onServiceClick={handleServiceClick}
+                      onAddClick={handleAddClick}
+                    />
+                  </Suspense>
+                </motion.div>
+              )}
+
+              {/* Dynamic Banner 1 */}
+              {homeContent?.isBannersVisible !== false && (
+                <motion.div variants={itemVariants}>
+                  <Suspense fallback={<div className="h-32 bg-gray-50 animate-pulse rounded-xl mx-4" />}>
+                    <Banner
+                      imageUrl={homeContent?.banners?.[0] ? toAssetUrl(homeContent.banners[0].imageUrl) : null}
+                      onClick={() => {
+                        const b = homeContent?.banners?.[0];
+                        if (b?.slug) {
+                          navigate(`/user/${b.slug}`);
+                          return;
+                        }
+                        if (b?.targetCategoryId) {
+                          const cat = categories.find(c => c.id === b.targetCategoryId);
+                          if (cat) handleCategoryClick(cat);
+                        }
+                      }}
+                    />
+                  </Suspense>
+                </motion.div>
+              )}
+
+              {/* Dynamic Sections */}
+              {homeContent?.isCategorySectionsVisible !== false && (homeContent?.categorySections || []).sort((a, b) => (a.order || 0) - (b.order || 0)).map((section, sIdx) => (
+                <motion.div key={section._id || sIdx} variants={itemVariants}>
+                  <Suspense fallback={<div className="h-40 bg-gray-50 animate-pulse rounded-xl mx-4" />}>
+                    <ServiceSectionWithRating
+                      title={section.title}
+                      subtitle={section.subtitle}
+                      services={section.cards?.map((card, cIdx) => {
+                        const processedImage = toAssetUrl(card.imageUrl);
+                        return {
+                          id: card._id || cIdx,
+                          title: card.title,
+                          rating: card.rating || "4.8",
+                          reviews: card.reviews || "10k+",
+                          price: card.price,
+                          originalPrice: card.originalPrice,
+                          discount: card.discount,
+                          image: processedImage,
+                          targetCategoryId: card.targetCategoryId,
+                          slug: card.slug
+                        };
+                      }) || []}
+                      onSeeAllClick={() => {
+                        if (section.seeAllSlug) {
+                          navigate(`/user/${section.seeAllSlug}`);
+                          return;
+                        }
+                        if (section.seeAllTargetCategoryId) {
+                          const cat = categories.find(c => c.id === section.seeAllTargetCategoryId);
+                          if (cat) handleCategoryClick(cat);
+                        }
+                      }}
+                      onServiceClick={(service) => handleServiceClick(service)}
+                      onAddClick={handleAddClick}
+                    />
+                  </Suspense>
+                </motion.div>
+              ))}
+
+              {/* Dynamic Banner 2 */}
+              {homeContent?.isBannersVisible !== false && (
+                <motion.div variants={itemVariants}>
+                  <Suspense fallback={<div className="h-32 bg-gray-50 animate-pulse rounded-xl mx-4" />}>
+                    <Banner
+                      imageUrl={homeContent?.banners?.[1] ? toAssetUrl(homeContent.banners[1].imageUrl) : null}
+                      onClick={() => {
+                        const b = homeContent?.banners?.[1];
+                        if (b?.slug) {
+                          navigate(`/user/${b.slug}`);
+                          return;
+                        }
+                        if (b?.targetCategoryId) {
+                          const cat = categories.find(c => c.id === b.targetCategoryId);
+                          if (cat) handleCategoryClick(cat);
+                        }
+                      }}
+                    />
+                  </Suspense>
+                </motion.div>
+              )}
+
+              {/* Refer & Earn Section */}
+              <motion.div variants={itemVariants}>
+                <Suspense fallback={<div className="h-32 bg-gray-50 animate-pulse rounded-xl mx-4" />}>
+                  <ReferEarnSection onReferClick={handleReferClick} />
+                </Suspense>
+              </motion.div>
+            </>
           )}
-
-          {/* Categories Section */}
-          {homeContent?.isCategoriesVisible !== false && (
-            <motion.section variants={itemVariants} className="relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-b from-blue-50/30 to-transparent pointer-events-none -z-10" />
-              <ServiceCategories
-                categories={categories}
-                onCategoryClick={handleCategoryClick}
-                onSeeAllClick={() => { }}
-              />
-            </motion.section>
-          )}
-
-          {/* Curated Services */}
-          {homeContent?.isCuratedVisible !== false && (
-            <motion.div variants={itemVariants}>
-              <Suspense fallback={<div className="h-40 bg-gray-50 animate-pulse rounded-xl mx-4" />}>
-                <CuratedServices
-                  services={(homeContent?.curated || []).sort((a, b) => (a.order || 0) - (b.order || 0)).map(item => ({
-                    id: item.id || item._id,
-                    title: item.title,
-                    gif: toAssetUrl(item.gifUrl),
-                    slug: item.slug,
-                    targetCategoryId: item.targetCategoryId
-                  }))}
-                  onServiceClick={handleServiceClick}
-                />
-              </Suspense>
-            </motion.div>
-          )}
-
-          {/* New & Noteworthy */}
-          {homeContent?.isNoteworthyVisible !== false && (
-            <motion.div variants={itemVariants}>
-              <Suspense fallback={<div className="h-40 bg-gray-50 animate-pulse rounded-xl mx-4" />}>
-                <NewAndNoteworthy
-                  services={(homeContent?.noteworthy || []).sort((a, b) => (a.order || 0) - (b.order || 0)).map(item => ({
-                    id: item.id || item._id,
-                    title: item.title,
-                    image: toAssetUrl(item.imageUrl),
-                    slug: item.slug,
-                    targetCategoryId: item.targetCategoryId
-                  }))}
-                  onServiceClick={handleServiceClick}
-                />
-              </Suspense>
-            </motion.div>
-          )}
-
-          {/* Most Booked */}
-          {homeContent?.isBookedVisible !== false && (
-            <motion.div variants={itemVariants}>
-              <Suspense fallback={<div className="h-40 bg-gray-50 animate-pulse rounded-xl mx-4" />}>
-                <MostBookedServices
-                  services={(homeContent?.booked || []).sort((a, b) => (a.order || 0) - (b.order || 0)).map(item => ({
-                    id: item.id || item._id,
-                    title: item.title,
-                    rating: item.rating,
-                    reviews: item.reviews,
-                    price: item.price,
-                    originalPrice: item.originalPrice,
-                    discount: item.discount,
-                    image: toAssetUrl(item.imageUrl),
-                    targetCategoryId: item.targetCategoryId,
-                    slug: item.slug
-                  }))}
-                  onServiceClick={handleServiceClick}
-                  onAddClick={handleAddClick}
-                />
-              </Suspense>
-            </motion.div>
-          )}
-
-          {/* Dynamic Banner 1 */}
-          {homeContent?.isBannersVisible !== false && (
-            <motion.div variants={itemVariants}>
-              <Suspense fallback={<div className="h-32 bg-gray-50 animate-pulse rounded-xl mx-4" />}>
-                <Banner
-                  imageUrl={homeContent?.banners?.[0] ? toAssetUrl(homeContent.banners[0].imageUrl) : null}
-                  onClick={() => {
-                    const b = homeContent?.banners?.[0];
-                    if (b?.slug) {
-                      navigate(`/user/${b.slug}`);
-                      return;
-                    }
-                    if (b?.targetCategoryId) {
-                      const cat = categories.find(c => c.id === b.targetCategoryId);
-                      if (cat) handleCategoryClick(cat);
-                    }
-                  }}
-                />
-              </Suspense>
-            </motion.div>
-          )}
-
-          {/* Dynamic Sections */}
-          {homeContent?.isCategorySectionsVisible !== false && (homeContent?.categorySections || []).sort((a, b) => (a.order || 0) - (b.order || 0)).map((section, sIdx) => (
-            <motion.div key={section._id || sIdx} variants={itemVariants}>
-              <Suspense fallback={<div className="h-40 bg-gray-50 animate-pulse rounded-xl mx-4" />}>
-                <ServiceSectionWithRating
-                  title={section.title}
-                  subtitle={section.subtitle}
-                  services={section.cards?.map((card, cIdx) => {
-                    const processedImage = toAssetUrl(card.imageUrl);
-                    return {
-                      id: card._id || cIdx,
-                      title: card.title,
-                      rating: card.rating || "4.8",
-                      reviews: card.reviews || "10k+",
-                      price: card.price,
-                      originalPrice: card.originalPrice,
-                      discount: card.discount,
-                      image: processedImage,
-                      targetCategoryId: card.targetCategoryId,
-                      slug: card.slug
-                    };
-                  }) || []}
-                  onSeeAllClick={() => {
-                    if (section.seeAllSlug) {
-                      navigate(`/user/${section.seeAllSlug}`);
-                      return;
-                    }
-                    if (section.seeAllTargetCategoryId) {
-                      const cat = categories.find(c => c.id === section.seeAllTargetCategoryId);
-                      if (cat) handleCategoryClick(cat);
-                    }
-                  }}
-                  onServiceClick={(service) => handleServiceClick(service)}
-                  onAddClick={handleAddClick}
-                />
-              </Suspense>
-            </motion.div>
-          ))}
-
-          {/* Dynamic Banner 2 */}
-          {homeContent?.isBannersVisible !== false && (
-            <motion.div variants={itemVariants}>
-              <Suspense fallback={<div className="h-32 bg-gray-50 animate-pulse rounded-xl mx-4" />}>
-                <Banner
-                  imageUrl={homeContent?.banners?.[1] ? toAssetUrl(homeContent.banners[1].imageUrl) : null}
-                  onClick={() => {
-                    const b = homeContent?.banners?.[1];
-                    if (b?.slug) {
-                      navigate(`/user/${b.slug}`);
-                      return;
-                    }
-                    if (b?.targetCategoryId) {
-                      const cat = categories.find(c => c.id === b.targetCategoryId);
-                      if (cat) handleCategoryClick(cat);
-                    }
-                  }}
-                />
-              </Suspense>
-            </motion.div>
-          )}
-
-          {/* Refer & Earn Section */}
-          <motion.div variants={itemVariants}>
-            <Suspense fallback={<div className="h-32 bg-gray-50 animate-pulse rounded-xl mx-4" />}>
-              <ReferEarnSection onReferClick={handleReferClick} />
-            </Suspense>
-          </motion.div>
         </main>
       </motion.div>
 
@@ -535,6 +689,7 @@ const Home = () => {
         category={selectedCategory}
         location={address}
         cartCount={cartCount}
+        currentCity={currentCity}
       />
 
       {/* Search Overlay */}

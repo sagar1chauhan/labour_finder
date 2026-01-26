@@ -177,30 +177,10 @@ const AddressSelectionModal = ({ isOpen, onClose, address = '', houseNumber = ''
               )}
             </div>
 
-            {/* House Number */}
-            <div className="mb-4">
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                House / Flat Number
-              </label>
-              <div className="relative">
-                <FiHome className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <input
-                  type="text"
-                  placeholder="e.g. Flat 101, Floor 1"
-                  value={houseNumber}
-                  onChange={(e) => onHouseNumberChange(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border-2 rounded-lg text-sm focus:outline-none transition-colors"
-                  style={{ borderColor: '#e5e7eb' }}
-                  onFocus={(e) => e.target.style.borderColor = themeColors.button}
-                  onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
-                />
-              </div>
-            </div>
-
             {/* Save Button */}
             <button
-              onClick={() => onSave(houseNumber, selectedLocation)}
-              disabled={!(houseNumber || '').trim() || !mapAddress}
+              onClick={() => onSave('', selectedLocation)}
+              disabled={!mapAddress}
               className="w-full py-4 rounded-xl font-semibold text-white transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg mb-8"
               style={{
                 backgroundColor: themeColors.button,

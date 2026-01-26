@@ -8,6 +8,7 @@ const getAllAdmins = async (req, res) => {
   try {
     const admins = await Admin.find()
       .select('-password')
+      .populate('cityId', 'name')
       .sort({ createdAt: -1 });
 
     res.status(200).json({
@@ -34,7 +35,7 @@ const createAdmin = async (req, res) => {
       });
     }
 
-    const { name, email, password, role } = req.body;
+    const { name, email, password, role, cityId, cityName } = req.body;
 
     // Check if admin already exists
     const existingAdmin = await Admin.findOne({ email });
@@ -50,7 +51,9 @@ const createAdmin = async (req, res) => {
       name,
       email,
       password,
-      role: role || 'admin'
+      role: role || 'admin',
+      cityId: cityId || null,
+      cityName: cityName || ''
     });
 
     res.status(201).json({
@@ -60,7 +63,9 @@ const createAdmin = async (req, res) => {
         id: admin._id,
         name: admin.name,
         email: admin.email,
-        role: admin.role
+        role: admin.role,
+        cityId: admin.cityId,
+        cityName: admin.cityName
       }
     });
   } catch (error) {
@@ -172,7 +177,7 @@ module.exports = {
   updateAdmin: async (req, res) => {
     try {
       const { id } = req.params;
-      const { name, email, password, role } = req.body;
+      const { name, email, password, role, cityId, cityName } = req.body;
 
       // Find admin
       let admin = await Admin.findById(id);
@@ -192,6 +197,9 @@ module.exports = {
       if (name) admin.name = name;
       if (email) admin.email = email;
       if (password) admin.password = password; // Pre-save hook will hash it
+      if (cityId !== undefined) admin.cityId = cityId || null; // Allow clearing city
+      if (cityName !== undefined) admin.cityName = cityName || '';
+
       if (role && ['super_admin', 'admin'].includes(role)) {
         // Prevent self-demotion
         if (id === req.user.id && role !== 'super_admin' && admin.role === 'super_admin') {
@@ -202,6 +210,9 @@ module.exports = {
 
       await admin.save();
 
+      // Populate city for response
+      await admin.populate('cityId', 'name');
+
       res.status(200).json({
         success: true,
         message: 'Admin updated successfully',
@@ -210,6 +221,8 @@ module.exports = {
           name: admin.name,
           email: admin.email,
           role: admin.role,
+          cityId: admin.cityId,
+          cityName: admin.cityName,
           isActive: admin.isActive
         }
       });

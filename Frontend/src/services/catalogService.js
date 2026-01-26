@@ -16,6 +16,7 @@ export const categoryService = {
     if (params.status) queryParams.append('status', params.status);
     if (params.showOnHome !== undefined) queryParams.append('showOnHome', params.showOnHome);
     if (params.isPopular !== undefined) queryParams.append('isPopular', params.isPopular);
+    if (params.cityId) queryParams.append('cityId', params.cityId);
 
     const response = await api.get(`/admin/categories${queryParams.toString() ? `?${queryParams.toString()}` : ''}`);
     return response.data;
@@ -61,6 +62,7 @@ export const serviceService = {
     const queryParams = new URLSearchParams();
     if (params.status) queryParams.append('status', params.status);
     if (params.categoryId) queryParams.append('categoryId', params.categoryId);
+    if (params.cityId) queryParams.append('cityId', params.cityId);
 
     const response = await api.get(`/admin/services${queryParams.toString() ? `?${queryParams.toString()}` : ''}`);
     return response.data;
@@ -120,14 +122,20 @@ export const serviceService = {
  */
 export const homeContentService = {
   // Get home content
-  get: async () => {
-    const response = await api.get('/admin/home-content');
+  get: async (params = {}) => {
+    const queryParams = new URLSearchParams();
+    if (params.cityId) queryParams.append('cityId', params.cityId);
+
+    const response = await api.get(`/admin/home-content${queryParams.toString() ? `?${queryParams.toString()}` : ''}`);
     return response.data;
   },
 
   // Update home content
-  update: async (data) => {
-    const response = await api.put('/admin/home-content', data);
+  update: async (data, params = {}) => {
+    const queryParams = new URLSearchParams();
+    if (params.cityId) queryParams.append('cityId', params.cityId);
+
+    const response = await api.put(`/admin/home-content${queryParams.toString() ? `?${queryParams.toString()}` : ''}`, data);
     return response.data;
   }
 };
@@ -140,12 +148,13 @@ import { apiCache } from './api';
 
 export const publicCatalogService = {
   // Get all active categories (cached for 5 minutes)
-  getCategories: async () => {
-    const cacheKey = 'public:categories';
+  getCategories: async (cityId) => {
+    const cacheKey = `public:categories:${cityId || 'default'}`;
     const cached = apiCache.get(cacheKey);
     if (cached) return cached;
 
-    const response = await api.get('/public/categories');
+    const query = cityId ? `?cityId=${cityId}` : '';
+    const response = await api.get(`/public/categories${query}`);
     if (response.data.success) {
       apiCache.set(cacheKey, response.data, 300); // 5 minutes
     }
@@ -158,6 +167,7 @@ export const publicCatalogService = {
     if (params.categoryId) queryParams.append('categoryId', params.categoryId);
     if (params.categorySlug) queryParams.append('categorySlug', params.categorySlug);
     if (params.search) queryParams.append('search', params.search);
+    if (params.cityId) queryParams.append('cityId', params.cityId);
 
     const cacheKey = `public:services:${queryParams.toString()}`;
     const cached = apiCache.get(cacheKey);
@@ -171,12 +181,13 @@ export const publicCatalogService = {
   },
 
   // Get service by slug (cached for 1 minute)
-  getServiceBySlug: async (slug) => {
-    const cacheKey = `public:service:${slug}`;
+  getServiceBySlug: async (slug, cityId) => {
+    const cacheKey = `public:service:${slug}:${cityId || 'default'}`;
     const cached = apiCache.get(cacheKey);
     if (cached) return cached;
 
-    const response = await api.get(`/public/services/slug/${slug}`);
+    const query = cityId ? `?cityId=${cityId}` : '';
+    const response = await api.get(`/public/services/slug/${slug}${query}`);
     if (response.data.success) {
       apiCache.set(cacheKey, response.data, 60); // 1 minute
     }
@@ -184,12 +195,13 @@ export const publicCatalogService = {
   },
 
   // Get home content (cached for 2 minutes)
-  getHomeContent: async () => {
-    const cacheKey = 'public:homeContent';
+  getHomeContent: async (cityId) => {
+    const cacheKey = `public:homeContent:${cityId || 'default'}`;
     const cached = apiCache.get(cacheKey);
     if (cached) return cached;
 
-    const response = await api.get('/public/home-content');
+    const query = cityId ? `?cityId=${cityId}` : '';
+    const response = await api.get(`/public/home-content${query}`);
     if (response.data.success) {
       apiCache.set(cacheKey, response.data, 120); // 2 minutes
     }

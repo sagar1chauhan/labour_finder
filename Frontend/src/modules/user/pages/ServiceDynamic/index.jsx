@@ -5,6 +5,7 @@ import { useCart } from '../../../../context/CartContext';
 import { FiArrowLeft, FiSearch, FiShare2, FiStar, FiChevronRight, FiLayers } from 'react-icons/fi';
 import { publicCatalogService } from '../../../../services/catalogService';
 import { themeColors } from '../../../../theme';
+import { useCity } from '../../../../context/CityContext';
 import StickyHeader from '../../components/common/StickyHeader';
 import StickySubHeading from '../../components/common/StickySubHeading';
 import BannerSection from '../../components/common/BannerSection';
@@ -63,6 +64,8 @@ const ServiceDynamic = () => {
 
   // Use cart context for instant updates (no polling!)
   const { cartCount, cartItems, addToCart } = useCart();
+  const { currentCity } = useCity();
+  const cityId = currentCity?._id || currentCity?.id;
 
   const [showStickyHeader, setShowStickyHeader] = useState(false);
   const [currentSection, setCurrentSection] = useState('');
@@ -78,7 +81,7 @@ const ServiceDynamic = () => {
     const fetchService = async () => {
       try {
         setLoading(true);
-        const response = await publicCatalogService.getServiceBySlug(slug);
+        const response = await publicCatalogService.getServiceBySlug(slug, cityId);
         if (response.success) {
           setService(response.service);
         } else {
@@ -94,7 +97,7 @@ const ServiceDynamic = () => {
     };
 
     if (slug) fetchService();
-  }, [slug, navigate]);
+  }, [slug, navigate, cityId]);
 
   useEffect(() => {
     const handleScroll = () => {

@@ -39,7 +39,7 @@ const getTokenKeys = (url) => {
 api.interceptors.request.use(
   (config) => {
     const { access } = getTokenKeys(config.url);
-    const token = localStorage.getItem(access);
+    const token = sessionStorage.getItem(access) || localStorage.getItem(access);
 
     // For debugging
     // console.log(`Request to ${config.url}, using token key: ${access}, token exists: ${!!token}`);
@@ -97,7 +97,7 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       const { access, refresh, role } = getTokenKeys(originalRequest.url);
-      const refreshToken = localStorage.getItem(refresh);
+      const refreshToken = sessionStorage.getItem(refresh) || localStorage.getItem(refresh);
 
       if (!refreshToken) {
         // No refresh token, logout
@@ -119,8 +119,12 @@ api.interceptors.response.use(
 
         const { accessToken } = response.data;
 
-        // Save new access token
-        localStorage.setItem(access, accessToken);
+        // Save new access token - Try session first, then local (update where it was found)
+        if (sessionStorage.getItem(access)) {
+          sessionStorage.setItem(access, accessToken);
+        } else {
+          localStorage.setItem(access, accessToken);
+        }
 
         // Update authorization header
         api.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
@@ -163,26 +167,45 @@ export const handleLogout = (role = null) => {
     else role = 'user';
   }
 
-  // Clear role-specific tokens only
+  // Clear role-specific tokens selectively
+  const clearTokens = (prefix) => {
+    // If we have a session token, we assume this is a session-based login
+    // and we only clear the session storage to protect other tabs using localStorage
+    if (sessionStorage.getItem(`${prefix}AccessToken`)) {
+      sessionStorage.removeItem(`${prefix}AccessToken`);
+      sessionStorage.removeItem(`${prefix}RefreshToken`);
+      sessionStorage.removeItem(`${prefix}Data`);
+    } else {
+      // If no session token found (or we explicitly want to clear local),
+      // we assume it's a localStorage based login
+      localStorage.removeItem(`${prefix}AccessToken`);
+      localStorage.removeItem(`${prefix}RefreshToken`);
+      localStorage.removeItem(`${prefix}Data`);
+
+      // Also clear session just in case of ghost data, but ONLY if we are falling back to clearing local
+      sessionStorage.removeItem(`${prefix}AccessToken`);
+      sessionStorage.removeItem(`${prefix}RefreshToken`);
+      sessionStorage.removeItem(`${prefix}Data`);
+    }
+  };
+
   if (role === 'vendor') {
-    localStorage.removeItem('vendorAccessToken');
-    localStorage.removeItem('vendorRefreshToken');
-    localStorage.removeItem('vendorData');
+    clearTokens('vendor');
     window.location.href = '/vendor/login';
   } else if (role === 'worker') {
-    localStorage.removeItem('workerAccessToken');
-    localStorage.removeItem('workerRefreshToken');
-    localStorage.removeItem('workerData');
+    clearTokens('worker');
     window.location.href = '/worker/login';
   } else if (role === 'admin') {
-    localStorage.removeItem('adminAccessToken');
-    localStorage.removeItem('adminRefreshToken');
-    localStorage.removeItem('adminData');
+    clearTokens('admin');
     window.location.href = '/admin/login';
   } else {
+    // User
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('userData');
+    sessionStorage.removeItem('accessToken');
+    sessionStorage.removeItem('refreshToken');
+    sessionStorage.removeItem('userData');
     window.location.href = '/user/login';
   }
 };

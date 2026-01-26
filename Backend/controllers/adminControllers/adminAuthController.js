@@ -62,7 +62,9 @@ const login = async (req, res) => {
         id: admin._id,
         name: admin.name,
         email: admin.email,
-        role: admin.role
+        role: admin.role,
+        cityId: admin.cityId,
+        cityName: admin.cityName
       },
       ...tokens
     });
@@ -139,7 +141,7 @@ const updateProfile = async (req, res) => {
 
 const getProfile = async (req, res) => {
   try {
-    const admin = await Admin.findById(req.user.id);
+    const admin = await Admin.findById(req.user.id).populate('cityId', 'name');
     if (!admin) {
       return res.status(404).json({ success: false, message: 'Admin not found' });
     }
@@ -149,7 +151,9 @@ const getProfile = async (req, res) => {
         id: admin._id,
         name: admin.name,
         email: admin.email,
-        role: admin.role
+        role: admin.role,
+        cityId: admin.cityId,
+        cityName: admin.cityName
       }
     });
   } catch (error) {

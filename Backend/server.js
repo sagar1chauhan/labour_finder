@@ -148,6 +148,10 @@ app.get('/api/test/redis', async (req, res) => {
 });
 
 // API Routes
+
+app.use('/api/public/cities', require('./routes/public-routes/city.routes.js'));
+
+
 // User routes
 app.use('/api/users/auth', require('./routes/user-routes/auth.routes'));
 app.use('/api/users', require('./routes/user-routes/profile.routes'));
@@ -181,6 +185,7 @@ app.use('/api/workers/fcm-tokens', require('./routes/worker-routes/fcmToken.rout
 
 // Admin routes
 app.use('/api/admin/auth', require('./routes/admin-routes/adminAuth.routes'));
+app.use('/api/admin', require('./routes/admin-routes/cityManagement.routes.js'));
 app.use('/api/admin', require('./routes/admin-routes/dashboard.routes'));
 app.use('/api/admin', require('./routes/admin-routes/userManagement.routes'));
 app.use('/api/admin', require('./routes/admin-routes/vendorManagement.routes'));

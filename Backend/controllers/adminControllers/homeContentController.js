@@ -7,17 +7,15 @@ const { validationResult } = require('express-validator');
  */
 const getHomeContent = async (req, res) => {
   try {
-    let homeContent = await HomeContent.findOne();
-
-    if (!homeContent) {
-      // Create empty home content if none exists
-      homeContent = await HomeContent.create({});
-    }
+    const { cityId } = req.query;
+    // Use the static method which handles default/creation
+    let homeContent = await HomeContent.getHomeContent(cityId);
 
     res.status(200).json({
       success: true,
       homeContent: {
         id: homeContent._id,
+        cityId: homeContent.cityId,
         banners: homeContent.banners || [],
         promos: homeContent.promos || [],
         curated: homeContent.curated || [],
@@ -61,11 +59,10 @@ const updateHomeContent = async (req, res) => {
       });
     }
 
-    let homeContent = await HomeContent.findOne();
+    const { cityId } = req.query;
 
-    if (!homeContent) {
-      homeContent = new HomeContent({});
-    }
+    // Use static method to ensure we get the correct doc (or create if needed)
+    let homeContent = await HomeContent.getHomeContent(cityId);
 
     // Helper to sanitize array items
     const sanitizeItems = (items) => {
@@ -137,6 +134,7 @@ const updateHomeContent = async (req, res) => {
       message: 'Home content updated successfully',
       homeContent: {
         id: homeContent._id,
+        cityId: homeContent.cityId,
         banners: homeContent.banners,
         promos: homeContent.promos,
         curated: homeContent.curated,

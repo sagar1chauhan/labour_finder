@@ -8,10 +8,11 @@ import { ensureIds, saveCatalog, slugify, toAssetUrl } from "../utils";
 
 import { categoryService, serviceService } from "../../../../../services/catalogService";
 
-const CategoriesPage = ({ catalog, setCatalog }) => {
+const CategoriesPage = ({ catalog, setCatalog, selectedCity }) => {
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
+
   const [form, setForm] = useState({
     title: "",
     slug: "",
@@ -27,12 +28,18 @@ const CategoriesPage = ({ catalog, setCatalog }) => {
   const categories = (catalog.categories || []).sort((a, b) => (a.homeOrder || 0) - (b.homeOrder || 0));
   const editing = useMemo(() => categories.find((c) => c.id === editingId) || null, [categories, editingId]);
 
-  // Fetch categories from API on mount
+  // Fetch categories from API on mount or city change
   useEffect(() => {
     const fetchCategories = async () => {
       try {
         setFetching(true);
-        const response = await categoryService.getAll({ status: 'active' });
+        // Pass city filters
+        const params = { status: 'active' };
+        if (selectedCity) {
+          params.cityId = selectedCity;
+        }
+
+        const response = await categoryService.getAll(params);
 
         if (response.success && response.categories) {
           // Map backend format to frontend format
@@ -60,7 +67,7 @@ const CategoriesPage = ({ catalog, setCatalog }) => {
     };
 
     fetchCategories();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [selectedCity]); // Re-fetch when city changes
 
   useEffect(() => {
     if (!editing) {

@@ -6,7 +6,7 @@ import Modal from "../components/Modal";
 import { ensureIds, saveCatalog, slugify, toAssetUrl } from "../utils";
 import { serviceService } from "../../../../../services/catalogService";
 
-const SectionsPage = ({ catalog, setCatalog }) => {
+const SectionsPage = ({ catalog, setCatalog, selectedCity }) => {
   const services = catalog.services || [];
   const categories = catalog.categories || [];
 

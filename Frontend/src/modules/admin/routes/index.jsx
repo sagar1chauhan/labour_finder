@@ -27,6 +27,8 @@ const Scrap = lazy(() => import('../pages/Scrap'));
 const Settlements = lazy(() => import('../pages/Settlements'));
 const Reviews = lazy(() => import('../pages/Reviews'));
 
+
+
 // Loading fallback component
 import LogoLoader from '../../../components/common/LogoLoader';
 

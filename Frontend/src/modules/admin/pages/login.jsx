@@ -15,12 +15,7 @@ const AdminLogin = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Clear any existing admin tokens on page load
-  useEffect(() => {
-    localStorage.removeItem('adminAccessToken');
-    localStorage.removeItem('adminRefreshToken');
-    localStorage.removeItem('adminData');
-  }, []);
+
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -40,7 +35,7 @@ const AdminLogin = () => {
 
     setIsLoading(true);
     try {
-      const response = await adminAuthService.login(formData.email, formData.password);
+      const response = await adminAuthService.login(formData.email, formData.password, rememberMe);
       if (response.success) {
         setIsLoading(false);
         // Store remember me preference

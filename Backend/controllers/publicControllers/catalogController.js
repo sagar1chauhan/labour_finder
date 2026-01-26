@@ -13,7 +13,15 @@ const HomeContent = require('../../models/HomeContent');
  */
 const getPublicCategories = async (req, res) => {
   try {
-    const categories = await Category.find({ status: 'active' })
+    const { cityId } = req.query;
+
+    // Build query
+    const query = { status: 'active' };
+    if (cityId) {
+      query.cityIds = cityId;
+    }
+
+    const categories = await Category.find(query)
       .select('title slug homeIconUrl homeBadge hasSaleBadge homeOrder showOnHome')
       .sort({ homeOrder: 1, createdAt: -1 })
       .lean();
@@ -32,10 +40,16 @@ const getPublicCategories = async (req, res) => {
 
     // Fetch services for these categories
     const categoryIds = categories.map(c => c._id);
-    const services = await Service.find({
+
+    const serviceQuery = {
       categoryIds: { $in: categoryIds },
       status: 'active'
-    }).select('title categoryIds').lean();
+    };
+    if (cityId) {
+      serviceQuery.cityIds = cityId;
+    }
+
+    const services = await Service.find(serviceQuery).select('title categoryIds').lean();
 
     // Map services to categories
     const categoriesWithServices = initialCategories.map(cat => {
@@ -64,13 +78,12 @@ const getPublicCategories = async (req, res) => {
  */
 const getPublicServices = async (req, res) => {
   try {
-    const { categoryId, categorySlug, search } = req.query;
+    const { categoryId, categorySlug, search, cityId } = req.query;
 
     // Build query
     const query = { status: 'active' };
-    if (categoryId) {
-      query.categoryIds = categoryId;
-    }
+    if (categoryId) query.categoryIds = categoryId;
+    if (cityId) query.cityIds = cityId;
 
     if (search) {
       // Escape special characters for regex to prevent ReDoS or invalid regex
@@ -199,7 +212,9 @@ const getPublicServiceBySlug = async (req, res) => {
  */
 const getPublicHomeContent = async (req, res) => {
   try {
-    const homeContent = await HomeContent.findOne().lean();
+    const { cityId } = req.query;
+    // Use the static method to get city-specific content
+    const homeContent = await HomeContent.getHomeContent(cityId);
 
     if (!homeContent) {
       return res.status(200).json({
