@@ -80,14 +80,15 @@ const AddressSelectionModal = ({ isOpen, onClose, address = '', houseNumber = ''
         className={`fixed inset-0 bg-black/50 z-50 transition-opacity ${isClosing ? 'opacity-0' : 'opacity-100'}`}
         onClick={handleClose}
       />
-      <div className="fixed bottom-0 left-0 right-0 z-50">
+      <div className="fixed bottom-20 left-4 right-4 z-50">
         <div
-          className={`bg-white rounded-t-3xl ${isClosing ? 'animate-slide-down' : 'animate-slide-up'}`}
+          className={`bg-white rounded-[32px] shadow-2xl ${isClosing ? 'animate-slide-down' : 'animate-slide-up'}`}
           style={{
-            maxHeight: '90vh',
+            maxHeight: '80vh',
             display: 'flex',
             flexDirection: 'column',
-            overflow: 'hidden'
+            overflow: 'hidden',
+            border: '1px solid rgba(0,0,0,0.05)'
           }}
           onClick={(e) => e.stopPropagation()}
         >
@@ -139,8 +140,8 @@ const AddressSelectionModal = ({ isOpen, onClose, address = '', houseNumber = ''
           >
             {/* Address Search */}
             <div className="mb-4">
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Address
+              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">
+                Pinpoint your Address
               </label>
               {isLoaded ? (
                 <Autocomplete
@@ -148,20 +149,17 @@ const AddressSelectionModal = ({ isOpen, onClose, address = '', houseNumber = ''
                   onPlaceChanged={onPlaceChanged}
                   options={{
                     componentRestrictions: { country: 'in' },
-                    fields: ['formatted_address', 'geometry', 'name']
+                    fields: ['formatted_address', 'geometry', 'name', 'address_components']
                   }}
                 >
                   <div className="relative">
-                    <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5 z-10" />
+                    <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 z-10" />
                     <input
                       type="text"
                       placeholder="Search for area, street name..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 border-2 rounded-lg text-sm focus:outline-none transition-colors"
-                      style={{ borderColor: '#e5e7eb' }}
-                      onFocus={(e) => e.target.style.borderColor = themeColors.button}
-                      onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
+                      className="w-full pl-9 pr-4 py-3 bg-gray-50 border-none rounded-xl text-sm focus:ring-1 focus:ring-primary-500 transition-all font-medium"
                     />
                   </div>
                 </Autocomplete>
@@ -171,23 +169,40 @@ const AddressSelectionModal = ({ isOpen, onClose, address = '', houseNumber = ''
                     type="text"
                     placeholder="Loading Maps..."
                     disabled
-                    className="w-full pl-4 py-3 border-2 rounded-lg text-sm bg-gray-100"
+                    className="w-full pl-4 py-3 bg-gray-100 rounded-xl text-sm"
                   />
                 </div>
               )}
             </div>
 
+            {/* House/Flat Number - NEW */}
+            <div className="mb-6">
+              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">
+                House / Flat / Office No. (Optional)
+              </label>
+              <div className="relative">
+                <FiHome className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 z-10" />
+                <input
+                  type="text"
+                  placeholder="e.g. Flat 101, Appzeto Tower"
+                  value={houseNumber}
+                  onChange={(e) => onHouseNumberChange(e.target.value)}
+                  className="w-full pl-9 pr-4 py-3 bg-gray-50 border-none rounded-xl text-sm focus:ring-1 focus:ring-primary-500 transition-all font-medium"
+                />
+              </div>
+            </div>
+
             {/* Save Button */}
             <button
-              onClick={() => onSave('', selectedLocation)}
+              onClick={() => onSave(houseNumber, selectedLocation)}
               disabled={!mapAddress}
-              className="w-full py-4 rounded-xl font-semibold text-white transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg mb-24"
+              className="w-full py-4 rounded-xl font-black text-white transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-xl mb-12 uppercase tracking-wider text-xs"
               style={{
                 backgroundColor: themeColors.button,
-                boxShadow: `0 4px 12px ${themeColors.button}40`
+                boxShadow: `0 8px 16px ${themeColors.button}30`
               }}
             >
-              Save Address
+              Verify & Save Address
             </button>
           </div>
         </div>

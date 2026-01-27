@@ -99,13 +99,20 @@ const PendingBookings = memo(({ bookings, setPendingBookings, setActiveAlertBook
               <div className="flex items-center gap-1 text-xs text-gray-500">
                 <FiClock className="w-4 h-4" />
                 <span>
-                  {booking.timeSlot?.date ? `${booking.timeSlot.date} • ` : ''}
-                  {booking.timeSlot?.time || 'N/A'}
+                  {booking.timeSlot?.date || (booking.scheduledDate ? new Date(booking.scheduledDate).toLocaleDateString() : '')}
+                  {(booking.timeSlot?.date || booking.scheduledDate) ? ' • ' : ''}
+                  {booking.timeSlot?.time || booking.scheduledTime || 'N/A'}
                 </span>
               </div>
               <div className="flex items-center gap-1 text-xs text-gray-500">
                 <FiMapPin className="w-4 h-4" />
-                <span>{booking.location?.distance || 'N/A'} km</span>
+                <span>
+                  {(() => {
+                    const dist = booking.location?.distance || booking.distance;
+                    if (!dist || dist === 'N/A') return 'N/A';
+                    return String(dist).includes('km') ? dist : `${dist} km`;
+                  })()}
+                </span>
               </div>
               <div className="text-sm font-bold text-gray-800">
                 ₹{booking.price || 0}

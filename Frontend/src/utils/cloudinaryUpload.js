@@ -17,7 +17,8 @@ import api from '../services/api';
 export const uploadToCloudinary = async (file, folder = 'appzeto', onProgress) => {
   try {
     // 1. Get signature from our backend
-    const signResponse = await api.get(`/admin/upload/sign-signature?folder=${folder}`);
+    // Use the generic /upload/sign-signature instead of /admin prefix to ensure User access
+    const signResponse = await api.get(`/upload/sign-signature?folder=${folder}`);
 
     if (!signResponse.data.success) {
       throw new Error('Failed to get upload signature');

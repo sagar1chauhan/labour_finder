@@ -83,15 +83,31 @@ const Dashboard = memo(() => {
 
     // Build pending bookings map
     const mergedMap = new Map();
+    const vendorData = JSON.parse(localStorage.getItem('vendorData') || '{}');
+    const vendorId = vendorData._id || vendorData.id;
+
     requestedBookings.forEach(b => {
       const id = String(b._id || b.id);
+
+      // Find distance for this vendor if available
+      let distance = 'N/A';
+      if (b.potentialVendors && vendorId) {
+        const potentialVendor = b.potentialVendors.find(pv =>
+          String(pv.vendorId?._id || pv.vendorId) === String(vendorId)
+        );
+        if (potentialVendor && potentialVendor.distance) {
+          distance = `${potentialVendor.distance.toFixed(1)} km`;
+        }
+      }
+
       mergedMap.set(id, {
+        ...b, // Spread first!
         id,
         serviceType: b.serviceId?.title || 'Service Request',
         customerName: b.userId?.name || 'Customer',
         location: {
           address: b.address?.addressLine1 || 'Address not available',
-          distance: 'N/A'
+          distance: distance
         },
         // Prioritize vendorEarnings, fallback to 90% of finalAmount if it's not a free plan (finalAmount > 0)
         price: (b.vendorEarnings > 0 ? b.vendorEarnings : (b.finalAmount > 0 ? b.finalAmount * 0.9 : 0)).toFixed(2),
@@ -100,8 +116,7 @@ const Dashboard = memo(() => {
           date: new Date(b.scheduledDate).toLocaleDateString(),
           time: b.scheduledTime || 'Time not set'
         },
-        status: b.status,
-        ...b
+        status: b.status
       });
     });
 
@@ -119,6 +134,7 @@ const Dashboard = memo(() => {
     });
 
     setPendingBookings(finalPendingBookings);
+    localStorage.setItem('vendorPendingJobs', JSON.stringify(finalPendingBookings));
 
     // Recent jobs (non-requested)
     const recentJobsData = otherBookings.slice(0, 3).map(booking => ({
@@ -130,7 +146,7 @@ const Dashboard = memo(() => {
       vendorEarnings: booking.vendorEarnings,
       timeSlot: {
         date: new Date(booking.scheduledDate).toLocaleDateString(),
-        time: booking.scheduledTimeSlot || 'Time not set'
+        time: booking.scheduledTime || 'Time not set'
       },
       status: booking.status,
       assignedTo: booking.workerId ? { name: booking.workerId.name } : null,
@@ -665,8 +681,19 @@ const Dashboard = memo(() => {
           } catch (e) {
             toast.error('Failed to claim job');
           }
-        }
-        }
+        }}
+        onAssign={async (id) => {
+          try {
+            await acceptBooking(id);
+            setActiveAlertBooking(null);
+            setPendingBookings(prev => prev.filter(b => b.id !== id));
+            window.dispatchEvent(new Event('vendorJobsUpdated'));
+            toast.success('Job claimed! Redirecting to assign...');
+            navigate(`/vendor/booking/${id}/assign-worker`);
+          } catch (e) {
+            toast.error('Failed to claim job');
+          }
+        }}
         onReject={async (id) => {
           try {
             await rejectBooking(id, 'Vendor Declined');

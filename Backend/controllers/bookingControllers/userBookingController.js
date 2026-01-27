@@ -552,9 +552,20 @@ const createBooking = async (req, res) => {
       // specific error shouldn't fail the booking response
     }
 
+    // Clear user's cart COMPLETELY after booking setup (if vendors were found)
+    // This addresses the user's request while allowing retries if no vendors found
+    try {
+      if (wave1Vendors.length > 0) {
+        await Cart.findOneAndUpdate({ userId }, { $set: { items: [] } });
+      }
+    } catch (e) {
+      console.error('Final cart clear failed:', e);
+    }
+
     res.status(201).json({
       success: true,
-      message: 'Booking created successfully',
+      message: wave1Vendors.length > 0 ? 'Booking created successfully' : 'No vendors found nearby',
+      noVendorsFound: wave1Vendors.length === 0,
       data: populatedBooking
     });
   } catch (error) {

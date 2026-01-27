@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { themeColors } from '../../../../theme';
 import {
@@ -92,10 +92,11 @@ const SearchingAnimation = () => {
 
 const BookingConfirmation = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { id } = useParams();
   const [booking, setBooking] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [isSearching, setIsSearching] = useState(true); // Show searching by default
+  const [isSearching, setIsSearching] = useState(!location.state?.noVendorsFound); // Respect passed state
   const [confirmDialog, setConfirmDialog] = useState(false);
 
   useEffect(() => {
@@ -295,6 +296,19 @@ const BookingConfirmation = () => {
             </div>
           )}
 
+          {/* Request Sent Icon - Show when status is requested but searching animation is stopped */}
+          {!isSearching && booking?.status?.toLowerCase() === 'requested' && (
+            <div className="flex flex-col items-center justify-center mb-6">
+              <div className="w-20 h-20 rounded-full bg-amber-50 flex items-center justify-center mb-4 border border-amber-100 shadow-sm">
+                <FiBell className="w-10 h-10 text-amber-500 animate-pulse" />
+              </div>
+              <h1 className="text-2xl font-black text-gray-900 mb-2 italic tracking-tight">REQUEST SENT!</h1>
+              <p className="text-sm text-gray-500 text-center max-w-[260px] font-medium leading-relaxed">
+                Your request has been broadcasted to all nearby experts. We'll notify you the moment someone accepts.
+              </p>
+            </div>
+          )}
+
           {/* Failure Icon - Show when expired/cancelled/rejected */}
           {!isSearching && ['expired', 'cancelled', 'rejected', 'failed', 'timeout'].includes(booking?.status?.toLowerCase()) && (
             <div className="flex flex-col items-center justify-center mb-6">
@@ -322,8 +336,13 @@ const BookingConfirmation = () => {
                 <p className="text-xs text-gray-500 mb-1">Booking ID</p>
                 <p className="text-base font-bold text-black">{booking.bookingNumber || booking._id || booking.id}</p>
               </div>
-              <div className={`px-3 py-1.5 rounded-full ${isSearching ? 'bg-yellow-50 text-yellow-700 border border-yellow-200' : 'bg-green-50 text-green-700 border border-green-200'}`}>
-                <span className="text-sm font-semibold">{isSearching ? 'Finding Vendor...' : 'Confirmed'}</span>
+              <div className={`px-3 py-1.5 rounded-full ${(isSearching || booking?.status?.toLowerCase() === 'requested')
+                ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                : 'bg-green-50 text-green-700 border border-green-200'
+                }`}>
+                <span className="text-sm font-semibold">
+                  {isSearching ? 'Finding Vendor...' : (booking?.status?.toLowerCase() === 'requested' ? 'Request Sent' : 'Confirmed')}
+                </span>
               </div>
             </div>
           </div>

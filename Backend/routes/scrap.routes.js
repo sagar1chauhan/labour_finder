@@ -9,7 +9,8 @@ const {
   getMyAcceptedScrap,
   acceptScrap,
   completeScrap,
-  getAllScrapAdmin
+  getAllScrapAdmin,
+  getScrapById
 } = require('../controllers/scrapController');
 
 // User Routes
@@ -21,6 +22,7 @@ router.get('/available', authenticate, isVendor, getAvailableScrap);
 router.get('/my-accepted', authenticate, isVendor, getMyAcceptedScrap);
 router.put('/:id/accept', authenticate, isVendor, acceptScrap);
 router.put('/:id/complete', authenticate, isVendor, completeScrap);
+router.get('/:id', authenticate, getScrapById);
 
 // Admin Routes
 router.get('/all', authenticate, isAdmin, getAllScrapAdmin);

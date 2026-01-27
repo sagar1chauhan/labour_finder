@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiPlus, FiMapPin, FiClock, FiCheckCircle, FiBell, FiArrowLeft, FiTrash2 } from 'react-icons/fi';
+import { FiPlus, FiMapPin, FiClock, FiCheckCircle, FiBell, FiArrowLeft, FiTrash2, FiCamera, FiX, FiLoader } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
 import api from '../../../../services/api';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -8,6 +8,7 @@ import BottomNav from '../../components/layout/BottomNav';
 import AddressSelectionModal from '../Checkout/components/AddressSelectionModal';
 import { themeColors } from '../../../../theme';
 import NotificationBell from '../../components/common/NotificationBell';
+import { uploadToCloudinary } from '../../../../utils/cloudinaryUpload';
 
 const UserScrapPage = () => {
   const navigate = useNavigate();
@@ -18,6 +19,7 @@ const UserScrapPage = () => {
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [houseNumber, setHouseNumber] = useState('');
   const [addressDetails, setAddressDetails] = useState(null);
+  const [selectedScrap, setSelectedScrap] = useState(null);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -26,6 +28,7 @@ const UserScrapPage = () => {
     quantity: '',
     expectedPrice: '',
     description: '',
+    images: [],
     address: {
       addressLine1: '',
       city: '',
@@ -33,6 +36,9 @@ const UserScrapPage = () => {
       pincode: ''
     }
   });
+
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     fetchMyScrap();
@@ -53,6 +59,32 @@ const UserScrapPage = () => {
     }
   };
 
+  const handleImageSelect = (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length + selectedFiles.length > 5) {
+      return toast.error('Maximum 5 images allowed');
+    }
+
+    const newFiles = files.map(file => ({
+      id: Math.random().toString(36).substr(2, 9),
+      file,
+      preview: URL.createObjectURL(file),
+      progress: 0,
+      status: 'idle'
+    }));
+
+    setSelectedFiles(prev => [...prev, ...newFiles]);
+  };
+
+  const removeImage = (index) => {
+    setSelectedFiles(prev => {
+      const newFiles = [...prev];
+      URL.revokeObjectURL(newFiles[index].preview);
+      newFiles.splice(index, 1);
+      return newFiles;
+    });
+  };
+
   const handleCreate = async (e) => {
     e.preventDefault();
     try {
@@ -61,20 +93,63 @@ const UserScrapPage = () => {
         return toast.error('Please fill required fields');
       }
 
-      const res = await api.post('/scrap', formData);
+      setIsUploading(true);
+      toast.loading('Uploading images and listing items...', { id: 'scrap' });
+
+      // 1. Upload images to Cloudinary
+      const imageUrls = [];
+      const updatedFiles = [...selectedFiles];
+
+      for (let i = 0; i < updatedFiles.length; i++) {
+        const item = updatedFiles[i];
+        try {
+          // Update status to uploading
+          setSelectedFiles(prev => prev.map(f => f.id === item.id ? { ...f, status: 'uploading' } : f));
+
+          const url = await uploadToCloudinary(item.file, 'scrap_items', (pct) => {
+            setSelectedFiles(prev => prev.map(f => f.id === item.id ? { ...f, progress: pct } : f));
+          });
+
+          imageUrls.push(url);
+          setSelectedFiles(prev => prev.map(f => f.id === item.id ? { ...f, status: 'done', progress: 100 } : f));
+        } catch (err) {
+          console.error('Image upload failed', err);
+          setSelectedFiles(prev => prev.map(f => f.id === item.id ? { ...f, status: 'error' } : f));
+          toast.error(`Failed to upload image ${i + 1}`);
+        }
+      }
+
+      // Check if we have at least one image if images were selected
+      if (selectedFiles.length > 0 && imageUrls.length === 0) {
+        setIsUploading(false);
+        toast.dismiss('scrap');
+        return toast.error('Failed to upload images. Please try again.');
+      }
+
+      // 2. Prepare final data
+      const finalData = {
+        ...formData,
+        images: imageUrls
+      };
+
+      const res = await api.post('/scrap', finalData);
       if (res.data.success) {
-        toast.success('Scrap item listed!');
+        toast.success('Scrap item listed!', { id: 'scrap' });
         setShowAddModal(false);
         setFormData({
           title: '', category: 'Other Appliance', quantity: '', expectedPrice: '', description: '',
+          images: [],
           address: { addressLine1: '', city: '', state: '', pincode: '', lat: null, lng: null }
         });
+        setSelectedFiles([]);
         setHouseNumber('');
         setAddressDetails(null);
         fetchMyScrap();
       }
     } catch (err) {
-      toast.error('Failed to create listing');
+      toast.error('Failed to create listing', { id: 'scrap' });
+    } finally {
+      setIsUploading(false);
     }
   };
   const getAddressComponent = (components, type) => {
@@ -205,33 +280,47 @@ const UserScrapPage = () => {
             </div>
           ) : (
             (activeTab === 'active' ? activeScraps : historyScraps).map(item => (
-              <div key={item._id} className="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <span className="inline-block px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-600 mb-2">
-                      {item.category}
-                    </span>
-                    <h3 className="font-bold text-gray-900">{item.title}</h3>
-                    <p className="text-sm text-gray-500 mt-0.5">{item.quantity} • ₹{item.expectedPrice || 'Best Offer'}</p>
-                  </div>
-                  <div className={`px-2 py-1 rounded text-xs font-bold uppercase
-                  ${item.status === 'pending' ? 'bg-yellow-50 text-yellow-600' : ''}
-                  ${item.status === 'accepted' ? 'bg-green-50 text-green-600' : ''}
-                  ${item.status === 'completed' ? 'bg-gray-100 text-gray-600' : ''}
-                `}>
-                    {item.status}
+              <div
+                key={item._id}
+                className="bg-white rounded-[24px] shadow-sm p-4 border border-gray-100 active:scale-[0.98] transition-all cursor-pointer overflow-hidden relative"
+                onClick={() => setSelectedScrap(item)}
+              >
+                <div className="flex gap-4">
+                  {item.images && item.images.length > 0 && (
+                    <div className="w-20 h-20 rounded-2xl overflow-hidden shrink-0 border border-gray-50 bg-gray-50/50">
+                      <img src={item.images[0]} alt={item.title} className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                  <div className="flex-1">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <span className="inline-block px-3 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-blue-50 text-blue-600 mb-1.5 border border-blue-100/50">
+                          {item.category}
+                        </span>
+                        <h3 className="font-extrabold text-gray-900 leading-tight line-clamp-1">{item.title}</h3>
+                        <p className="text-xs font-bold text-gray-500 mt-1">{item.quantity} • ₹{item.expectedPrice || 'Best Offer'}</p>
+                      </div>
+                      <div className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border
+                        ${item.status === 'pending' ? 'bg-amber-50 text-amber-600 border-amber-100' : ''}
+                        ${item.status === 'accepted' ? 'bg-green-50 text-green-600 border-green-100' : ''}
+                        ${item.status === 'completed' ? 'bg-gray-100 text-gray-600 border-gray-200' : ''}
+                        ${item.status === 'cancelled' ? 'bg-red-50 text-red-600 border-red-100' : ''}
+                      `}>
+                        {item.status}
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                <div className="mt-3 pt-3 border-t border-gray-50 flex items-center justify-between text-sm text-gray-500">
-                  <div className="flex items-center gap-1">
-                    <FiClock className="w-4 h-4" />
-                    <span>{new Date(item.createdAt).toLocaleDateString()}</span>
+                <div className="mt-3 pt-3 border-t border-gray-50 flex items-center justify-between text-[11px] font-bold text-gray-400">
+                  <div className="flex items-center gap-1.5">
+                    <FiClock className="w-3.5 h-3.5" />
+                    <span>Listed on {new Date(item.createdAt).toLocaleDateString()}</span>
                   </div>
                   {item.status === 'accepted' && (
-                    <div className="flex items-center gap-1 text-green-600 font-medium">
-                      <FiCheckCircle className="w-4 h-4" />
-                      <span>Pickup Scheduled</span>
+                    <div className="flex items-center gap-1.5 text-green-600">
+                      <FiCheckCircle className="w-3.5 h-3.5" />
+                      <span>Pickup Confirmed</span>
                     </div>
                   )}
                 </div>
@@ -262,12 +351,15 @@ const UserScrapPage = () => {
                 className="fixed inset-0 bg-black/50 z-50 backdrop-blur-sm"
               />
               <motion.div
-                initial={{ y: "100%" }}
-                animate={{ y: 0 }}
-                exit={{ y: "100%" }}
-                transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                className="fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl z-50 max-h-[90vh] overflow-y-auto shadow-2xl"
+                initial={{ y: "100%", opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: "100%", opacity: 0 }}
+                transition={{ type: "spring", damping: 30, stiffness: 350 }}
+                className="fixed bottom-20 left-4 right-4 bg-white rounded-[32px] z-50 max-h-[80vh] overflow-y-auto shadow-2xl border border-gray-100"
                 onClick={e => e.stopPropagation()}
+                style={{
+                  boxShadow: '0 -20px 40px -15px rgba(0,0,0,0.1), 0 25px 50px -12px rgba(0,0,0,0.25)'
+                }}
               >
                 <div className="p-4 border-b border-gray-100 flex justify-between items-center sticky top-0 bg-white z-10">
                   <h2 className="text-lg font-bold">Add Scrap Item</h2>
@@ -337,12 +429,71 @@ const UserScrapPage = () => {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
                     <textarea
-                      className="w-full p-3 bg-gray-50 rounded-xl border-none"
+                      className="w-full p-3 bg-gray-50 rounded-xl border-none focus:ring-1 focus:ring-primary-500"
                       rows="2"
                       placeholder="Condition, model year, etc."
                       value={formData.description}
                       onChange={e => setFormData({ ...formData, description: e.target.value })}
                     />
+                  </div>
+
+                  {/* Image Upload Selection */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Item Images (Max 5)</label>
+                    <div className="grid grid-cols-3 gap-3">
+                      {selectedFiles.map((item, index) => (
+                        <div key={item.id || index} className="relative aspect-square rounded-xl overflow-hidden border border-gray-100 group">
+                          <img src={item.preview} alt="Preview" className="w-full h-full object-cover" />
+
+                          {/* Upload Progress Overlay */}
+                          {item.status === 'uploading' && (
+                            <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center p-2">
+                              <div className="w-full bg-gray-200 rounded-full h-1.5 mb-1">
+                                <div
+                                  className="bg-blue-500 h-1.5 rounded-full transition-all duration-300"
+                                  style={{ width: `${item.progress}%` }}
+                                ></div>
+                              </div>
+                              <span className="text-[8px] text-white font-black">{item.progress}%</span>
+                            </div>
+                          )}
+
+                          {item.status === 'done' && (
+                            <div className="absolute top-1 left-1 bg-green-500 text-white rounded-full p-0.5">
+                              <FiCheckCircle size={10} />
+                            </div>
+                          )}
+
+                          {item.status === 'error' && (
+                            <div className="absolute inset-0 bg-red-500/20 flex items-center justify-center">
+                              <FiX className="text-red-500" />
+                            </div>
+                          )}
+
+                          <button
+                            type="button"
+                            onClick={() => removeImage(index)}
+                            disabled={isUploading}
+                            className={`absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center transition-opacity ${isUploading ? 'opacity-0' : 'opacity-0 group-hover:opacity-100'}`}
+                          >
+                            <FiX size={14} />
+                          </button>
+                        </div>
+                      ))}
+                      {selectedFiles.length < 5 && !isUploading && (
+                        <label className="aspect-square rounded-xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center gap-1 cursor-pointer hover:bg-gray-50 transition-colors">
+                          <FiCamera className="w-6 h-6 text-gray-400" />
+                          <span className="text-[10px] font-bold text-gray-500 uppercase">Add Photo</span>
+                          <input
+                            type="file"
+                            className="hidden"
+                            accept="image/*"
+                            multiple
+                            onChange={handleImageSelect}
+                          />
+                        </label>
+                      )}
+                    </div>
                   </div>
 
                   {/* Address Section - Matches Checkout */}
@@ -380,11 +531,18 @@ const UserScrapPage = () => {
                   <div className="pt-2">
                     <button
                       type="submit"
-                      disabled={!formData.address.addressLine1}
-                      className="w-full py-4 rounded-xl text-white font-bold shadow-lg active:scale-95 transition-all disabled:opacity-50 disabled:scale-100"
+                      disabled={!formData.address.addressLine1 || isUploading}
+                      className="w-full py-4 rounded-xl text-white font-bold shadow-lg active:scale-95 transition-all disabled:opacity-50 disabled:scale-100 flex items-center justify-center gap-2"
                       style={{ backgroundColor: themeColors.button }}
                     >
-                      List Item for Pickup
+                      {isUploading ? (
+                        <>
+                          <FiLoader className="animate-spin" />
+                          <span>Listing Item...</span>
+                        </>
+                      ) : (
+                        'List Item for Pickup'
+                      )}
                     </button>
                   </div>
                 </form>
@@ -401,6 +559,114 @@ const UserScrapPage = () => {
           onHouseNumberChange={setHouseNumber}
           onSave={handleAddressSave}
         />
+
+        {/* User Scrap Details Modal */}
+        <AnimatePresence>
+          {selectedScrap && (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setSelectedScrap(null)}
+                className="fixed inset-0 bg-black/60 z-[60] backdrop-blur-md"
+              />
+              <motion.div
+                initial={{ y: "100%", opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: "100%", opacity: 0 }}
+                transition={{ type: "spring", damping: 30, stiffness: 350 }}
+                className="fixed bottom-20 left-4 right-4 bg-white rounded-[32px] z-[70] max-h-[85vh] overflow-y-auto shadow-2xl border border-gray-100 flex flex-col"
+                onClick={e => e.stopPropagation()}
+                style={{
+                  boxShadow: '0 -25px 50px -12px rgba(0,0,0,0.5)'
+                }}
+              >
+                {/* Header */}
+                <div className="p-4 border-b border-gray-100 flex justify-between items-center sticky top-0 bg-white/80 backdrop-blur-md z-10">
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-black uppercase text-gray-400 tracking-widest italic">{selectedScrap.category}</span>
+                    <h2 className="text-xl font-black text-gray-900 leading-tight">{selectedScrap.title}</h2>
+                  </div>
+                  <button
+                    onClick={() => setSelectedScrap(null)}
+                    className="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-100 active:scale-90 transition-all"
+                  >
+                    <FiX className="w-6 h-6" />
+                  </button>
+                </div>
+
+                <div className="p-6 space-y-6">
+                  {/* Images */}
+                  {selectedScrap.images && selectedScrap.images.length > 0 && (
+                    <div className="grid grid-cols-2 gap-3">
+                      {selectedScrap.images.map((img, i) => (
+                        <div key={i} className={`rounded-3xl overflow-hidden border border-gray-100 ${i === 0 && selectedScrap.images.length % 2 !== 0 ? 'col-span-2 aspect-video' : 'aspect-square'}`}>
+                          <img src={img} alt="Scrap" className="w-full h-full object-cover" />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Info Cards */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-gray-50/50 p-4 rounded-3xl border border-gray-100">
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Quantity</p>
+                      <p className="font-extrabold text-gray-900">{selectedScrap.quantity}</p>
+                    </div>
+                    <div className="bg-gray-50/50 p-4 rounded-3xl border border-gray-100">
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Expected</p>
+                      <p className="font-extrabold text-blue-600">₹{selectedScrap.expectedPrice || 'Best'}</p>
+                    </div>
+                  </div>
+
+                  {/* Status Badge */}
+                  <div className={`p-4 rounded-3xl border text-center font-black uppercase tracking-widest text-xs
+                    ${selectedScrap.status === 'pending' ? 'bg-amber-50 text-amber-600 border-amber-100' : ''}
+                    ${selectedScrap.status === 'accepted' ? 'bg-green-50 text-green-600 border-green-100' : ''}
+                    ${selectedScrap.status === 'completed' ? 'bg-gray-50 text-gray-500 border-gray-200' : ''}
+                  `}>
+                    Status: {selectedScrap.status}
+                  </div>
+
+                  {/* Description */}
+                  {selectedScrap.description && (
+                    <div className="bg-blue-50/30 p-5 rounded-3xl border border-blue-100/30 italic">
+                      <p className="text-gray-600 font-medium leading-relaxed">"{selectedScrap.description}"</p>
+                    </div>
+                  )}
+
+                  {/* Location */}
+                  <div className="space-y-3">
+                    <h3 className="text-sm font-black text-gray-900 flex items-center gap-2">
+                      <FiMapPin className="text-red-500" /> Pickup Address
+                    </h3>
+                    <div className="bg-gray-50 p-4 rounded-3xl border border-gray-100">
+                      <p className="font-bold text-gray-800">{selectedScrap.address?.addressLine1}</p>
+                      <p className="text-xs text-gray-400 mt-1 uppercase font-bold">{selectedScrap.address?.city}, {selectedScrap.address?.state}</p>
+                    </div>
+                  </div>
+
+                  {/* Timeline */}
+                  <div className="pt-4 border-t border-gray-100 flex items-center justify-between text-[10px] font-black uppercase text-gray-400 tracking-wider">
+                    <span className="flex items-center gap-1"><FiClock /> Posted {new Date(selectedScrap.createdAt).toLocaleDateString()}</span>
+                    {selectedScrap.status === 'accepted' && <span className="text-green-600">Vendor Assigned</span>}
+                  </div>
+                </div>
+
+                {/* Footer Action */}
+                <div className="p-4 bg-gray-50/50 border-t border-gray-100">
+                  <button
+                    onClick={() => setSelectedScrap(null)}
+                    className="w-full py-4 bg-gray-900 text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl active:scale-95 transition-all"
+                  >
+                    Back to Listings
+                  </button>
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
 
         {/* Hide bottom nav when modal is open to prevent z-index issues / clutter */}
       </div>

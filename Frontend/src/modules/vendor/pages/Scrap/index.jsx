@@ -89,52 +89,69 @@ const VendorScrapPage = () => {
           <div className="text-center py-10 text-gray-500">No active requests found.</div>
         ) : (
           scraps.map(item => (
-            <div key={item._id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-              <div className="flex justify-between">
-                <div>
-                  <span className="text-xs bg-gray-100 px-2 py-0.5 rounded text-gray-600">{item.category}</span>
-                  <h3 className="font-bold text-gray-900 mt-1">{item.title}</h3>
-                  <p className="text-sm text-gray-600">{item.quantity} • Est: ₹{item.expectedPrice || 'N/A'}</p>
+            <div
+              key={item._id}
+              className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 cursor-pointer active:scale-[0.98] transition-all"
+              onClick={() => navigate(`/vendor/scrap/${item._id}`)}
+            >
+              <div className="flex gap-4">
+                {item.images && item.images.length > 0 && (
+                  <div className="w-20 h-20 rounded-lg overflow-hidden shrink-0 border border-gray-100">
+                    <img src={item.images[0]} alt={item.title} className="w-full h-full object-cover" />
+                  </div>
+                )}
+                <div className="flex-1">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <span className="text-[10px] font-bold uppercase tracking-wider bg-gray-100 px-2 py-0.5 rounded text-gray-600">{item.category}</span>
+                      <h3 className="font-extrabold text-gray-900 mt-1 line-clamp-1">{item.title}</h3>
+                      <p className="text-sm font-bold text-gray-600 mt-0.5">{item.quantity} • ₹{item.expectedPrice || '0'}</p>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <div className="mt-3 flex items-start gap-2 text-sm text-gray-500 bg-gray-50 p-3 rounded-lg">
-                <FiMapPin className="w-4 h-4 mt-0.5" />
-                <div>
-                  <p>{item.address?.addressLine1}</p>
-                  <p>{item.address?.city} - {item.address?.pincode}</p>
+              <div className="mt-3 flex items-start gap-2 text-[11px] font-medium text-gray-500 bg-gray-50 p-3 rounded-lg border border-gray-100/50">
+                <FiMapPin className="w-3.5 h-3.5 mt-0.5 text-red-500" />
+                <div className="line-clamp-2">
+                  <span>{item.address?.addressLine1}, {item.address?.city}</span>
                 </div>
               </div>
 
               {activeTab === 'available' && (
                 <button
-                  onClick={() => handleAccept(item._id)}
-                  className="w-full mt-4 py-2.5 rounded-lg text-white font-semibold shadow-md active:scale-95"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleAccept(item._id);
+                  }}
+                  className="w-full mt-4 py-3 rounded-xl text-white font-black text-sm shadow-lg active:scale-95 transition-all shadow-blue-100"
                   style={{ backgroundColor: themeColors.button }}
                 >
-                  Confirm Buying / Pickup
+                  Confirm Pickup / Buy
                 </button>
               )}
 
               {activeTab === 'my' && (
-                <div className="mt-4 border-t border-gray-100 pt-3">
-                  <div className="flex items-center gap-2 mb-3 text-sm font-medium text-gray-700">
-                    <FiPhone className="text-blue-600" />
-                    <a href={`tel:${item.userId?.phone}`} className="hover:text-blue-600">
+                <div className="mt-4 border-t border-gray-100 pt-3 flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-sm font-bold text-gray-700">
+                    <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center">
+                      <FiPhone className="w-4 h-4 text-blue-600" />
+                    </div>
+                    <a
+                      href={`tel:${item.userId?.phone}`}
+                      className="hover:text-blue-600"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       {item.userId?.phone || 'No Phone'}
                     </a>
-                    <span className="text-gray-400 mx-1">|</span>
-                    <span className="capitalize text-xs px-2 py-0.5 bg-gray-100 rounded">{item.status}</span>
                   </div>
 
-                  {item.status === 'accepted' && (
-                    <button
-                      onClick={() => handleComplete(item._id)}
-                      className="w-full py-2.5 rounded-lg border-2 font-bold text-sm active:scale-95 transition-all text-green-600 border-green-600 hover:bg-green-50"
-                    >
-                      Mark as Completed
-                    </button>
-                  )}
+                  <div className="flex items-center gap-2">
+                    <span className={`capitalize text-[10px] font-black px-3 py-1 rounded-full border ${item.status === 'accepted' ? 'bg-amber-50 text-amber-600 border-amber-100' : 'bg-gray-100 text-gray-600 border-gray-200'
+                      }`}>
+                      {item.status}
+                    </span>
+                  </div>
                 </div>
               )}
             </div>

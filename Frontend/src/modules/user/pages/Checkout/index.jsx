@@ -14,6 +14,7 @@ import { cartService } from '../../../../services/cartService';
 import { configService } from '../../../../services/configService';
 import { getPlans } from '../../services/planService';
 import { userAuthService } from '../../../../services/authService';
+import { useCart } from '../../../../context/CartContext';
 import LiveBookingCard from '../../components/booking/LiveBookingCard';
 
 const toAssetUrl = (url) => {
@@ -29,6 +30,7 @@ const Checkout = () => {
   const location = useLocation();
   const category = location.state?.category || null;
   const plan = location.state?.plan || null;
+  const { fetchCart: fetchCartGlobal, clearCart: clearCartGlobal, removeCategoryItems: removeCategoryGlobal } = useCart();
 
   const [cartItems, setCartItems] = useState([]);
   const [showAddressModal, setShowAddressModal] = useState(false);
@@ -164,7 +166,11 @@ const Checkout = () => {
       if (response.success) {
         let items = response.data || [];
         if (category) {
-          items = items.filter(item => item.category === category);
+          const normalizedCategory = category.toLowerCase().trim();
+          items = items.filter(item => {
+            const itemCat = (item.category || 'Other').toLowerCase().trim();
+            return itemCat === normalizedCategory;
+          });
         }
         setCartItems(items);
       } else {
@@ -192,12 +198,19 @@ const Checkout = () => {
       const response = await cartService.updateItem(itemId, newCount);
 
       if (response.success) {
+        // Refresh global cart badge
+        fetchCartGlobal();
+
         // Reload cart and filter by category
         const cartResponse = await cartService.getCart();
         if (cartResponse.success) {
           let items = cartResponse.data || [];
           if (category) {
-            items = items.filter(item => item.category === category);
+            const normalizedCategory = category.toLowerCase().trim();
+            items = items.filter(item => {
+              const itemCat = (item.category || 'Other').toLowerCase().trim();
+              return itemCat === normalizedCategory;
+            });
           }
           setCartItems(items);
         }
@@ -214,6 +227,8 @@ const Checkout = () => {
       const response = await cartService.removeItem(itemId);
       if (response.success) {
         toast.success('Item removed');
+        // Refresh global cart badge
+        fetchCartGlobal();
         loadCart();
       } else {
         toast.error(response.message || 'Failed to remove item');
@@ -391,7 +406,7 @@ const Checkout = () => {
         return;
       }
 
-      if (cartItems.length === 0) {
+      if (cartItems.length === 0 && !bookingRequest) {
         toast.error('Cart is empty');
         return;
       }
@@ -490,22 +505,47 @@ const Checkout = () => {
       setBookingRequest(booking);
       toast.dismiss();
 
-      // Clear cart immediately as search starts (consumes items)
-      try {
-        if (category) {
-          await cartService.removeCategoryItems(category);
-        } else {
-          await cartService.clearCart();
+      // Clear cart immediately as search starts (consumes items) - ONLY if vendors found
+      if (!bookingResponse.noVendorsFound) {
+        try {
+          if (category) {
+            await removeCategoryGlobal(category);
+          } else {
+            await clearCartGlobal();
+          }
+          setCartItems([]);
+        } catch (err) {
+          console.error('Failed to clear cart after search start', err);
         }
-        // catch silently - search is primary, cart clear is secondary cleanup
-      } catch (err) {
-        console.error('Failed to clear cart after search start', err);
       }
 
-      // Move to waiting state - alerts sent to nearby vendors
-      setCurrentStep('waiting');
-      // Keep searchingVendors true to disable button
-      toast.success('Finding nearby vendors... Alerts sent to vendors within 10km!');
+      // If no vendors found, redirect to confirmation page immediately
+      if (bookingResponse.noVendorsFound) {
+        toast.dismiss();
+        const bookingId = booking?._id || booking?.id;
+
+        // Ensure we stop searching and close the modal
+        setSearchingVendors(false);
+        setShowVendorModal(false);
+
+        if (bookingId) {
+          navigate(`/user/booking/${bookingId}`, {
+            replace: true,
+            state: { noVendorsFound: true }
+          });
+        } else {
+          // Fallback if ID is missing for some reason
+          setCurrentStep('details');
+          toast.error('Booking created but ID missing. Check My Bookings.');
+        }
+      } else {
+        // Move to waiting state - alerts sent to nearby vendors
+        setCurrentStep('waiting');
+        toast.success('Finding nearby vendors... Alerts sent to vendors within 10km!');
+      }
+
+      // REMOVED local setCartItems([]) - The summary should remain visible while searching
+      // The cart is already cleared in server database by the backend and previous API call.
 
     } catch (error) {
       toast.dismiss();
@@ -573,9 +613,9 @@ const Checkout = () => {
               // Clear cart (or just category items)
               try {
                 if (category) {
-                  await cartService.removeCategoryItems(category);
+                  await removeCategoryGlobal(category);
                 } else {
-                  await cartService.clearCart();
+                  await clearCartGlobal();
                 }
                 setCartItems([]);
               } catch (error) {
@@ -628,9 +668,9 @@ const Checkout = () => {
         // Clear cart (or just category items)
         try {
           if (category) {
-            await cartService.removeCategoryItems(category);
+            await removeCategoryGlobal(category);
           } else {
-            await cartService.clearCart();
+            await clearCartGlobal();
           }
           setCartItems([]);
         } catch (error) {
@@ -654,7 +694,7 @@ const Checkout = () => {
       toast.success('Booking confirmed!');
       // Clear cart
       try {
-        await cartService.clearCart();
+        await clearCartGlobal();
         setCartItems([]);
       } catch (error) { }
 
@@ -927,7 +967,7 @@ const Checkout = () => {
     );
   }
 
-  if (cartItems.length === 0) {
+  if (cartItems.length === 0 && currentStep === 'details' && !searchingVendors && !showVendorModal) {
     return (
       <div className="min-h-screen bg-white pb-32">
         <header className="bg-white">
@@ -1289,10 +1329,15 @@ const Checkout = () => {
           setShowVendorModal(false);
           if (currentStep === 'accepted') {
             setCurrentStep('payment');
+          } else if (currentStep === 'failed') {
+            setCurrentStep('details');
           }
         }}
         currentStep={currentStep}
         acceptedVendor={acceptedVendor}
+        onRetry={() => {
+          handleSearchVendors();
+        }}
       />
 
       {/* Contact Details Edit Modal */}

@@ -58,6 +58,7 @@ const Settings = lazyLoad(() => import('../pages/Settings'));
 const AddressManagement = lazyLoad(() => import('../pages/AddressManagement'));
 const Notifications = lazyLoad(() => import('../pages/Notifications'));
 const Scrap = lazyLoad(() => import('../pages/Scrap'));
+const ScrapDetails = lazyLoad(() => import('../pages/Scrap/Details'));
 const SettlementRequest = lazyLoad(() => import('../pages/Wallet/SettlementRequest'));
 const SettlementHistory = lazyLoad(() => import('../pages/Wallet/SettlementHistory'));
 const MyRatings = lazyLoad(() => import('../pages/MyRatings'));
@@ -118,6 +119,7 @@ const VendorRoutes = () => {
               <Route path="/address-management" element={<ProtectedRoute userType="vendor"><AddressManagement /></ProtectedRoute>} />
               <Route path="/notifications" element={<ProtectedRoute userType="vendor"><Notifications /></ProtectedRoute>} />
               <Route path="/scrap" element={<ProtectedRoute userType="vendor"><Scrap /></ProtectedRoute>} />
+              <Route path="/scrap/:id" element={<ProtectedRoute userType="vendor"><ScrapDetails /></ProtectedRoute>} />
               <Route path="/my-ratings" element={<ProtectedRoute userType="vendor"><MyRatings /></ProtectedRoute>} />
               <Route path="/about-homster" element={<ProtectedRoute userType="vendor"><AboutHomster /></ProtectedRoute>} />
             </Routes>

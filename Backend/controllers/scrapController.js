@@ -1,5 +1,6 @@
 const Scrap = require('../models/Scrap');
 const { validationResult } = require('express-validator');
+const { createNotification } = require('./notificationControllers/notificationController');
 
 // Create a new scrap item (User)
 exports.createScrap = async (req, res) => {
@@ -92,6 +93,16 @@ exports.acceptScrap = async (req, res) => {
     scrap.pickupDate = new Date(); // Default to now, or accept from body
     await scrap.save();
 
+    // Notify User
+    await createNotification({
+      userId: scrap.userId,
+      type: 'SCRAP_ACCEPTED',
+      title: 'Scrap Request Accepted!',
+      message: `A vendor has accepted your scrap request for "${scrap.title}". They will contact you shortly.`,
+      relatedId: scrap._id,
+      relatedType: 'SCRAP'
+    });
+
     res.json({ success: true, data: scrap, message: 'Request accepted. Please contact user for pickup.' });
   } catch (error) {
     console.error(error);
@@ -116,6 +127,16 @@ exports.completeScrap = async (req, res) => {
     if (finalPrice) scrap.finalPrice = finalPrice;
     await scrap.save();
 
+    // Notify User
+    await createNotification({
+      userId: scrap.userId,
+      type: 'SCRAP_COMPLETED',
+      title: 'Scrap Pickup Completed',
+      message: `Your scrap item "${scrap.title}" has been successfully picked up and completed.`,
+      relatedId: scrap._id,
+      relatedType: 'SCRAP'
+    });
+
     res.json({ success: true, data: scrap, message: 'Transactions completed' });
   } catch (error) {
     console.error(error);
@@ -132,6 +153,24 @@ exports.getAllScrapAdmin = async (req, res) => {
       .sort({ createdAt: -1 });
 
     res.json({ success: true, data: scraps });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Server Error' });
+  }
+};
+
+// Get single scrap by ID
+exports.getScrapById = async (req, res) => {
+  try {
+    const scrap = await Scrap.findById(req.params.id)
+      .populate('userId', 'name phone email profilePhoto')
+      .populate('vendorId', 'name businessName phone profilePhoto');
+
+    if (!scrap) {
+      return res.status(404).json({ success: false, message: 'Scrap not found' });
+    }
+
+    res.json({ success: true, data: scrap });
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, message: 'Server Error' });

@@ -284,8 +284,8 @@ export const SocketProvider = ({ children }) => {
         window.dispatchEvent(new Event('vendorStatsUpdated'));
         window.dispatchEvent(new Event('vendorNotificationsUpdated'));
 
-        // Navigate to Alert Page
-        navigate(`/vendor/booking-alert/${data.bookingId}`);
+        // Navigate to Alert Page (using replace to avoid history loops)
+        navigate(`/vendor/booking-alert/${data.bookingId}`, { replace: true });
       });
 
       // Listen for booking_taken - when another vendor accepts a job

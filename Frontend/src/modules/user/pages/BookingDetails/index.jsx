@@ -217,6 +217,9 @@ const BookingDetails = () => {
       case 'awaiting_payment':
       case 'work_done':
         return <FiClock className="w-5 h-5 text-orange-500" />;
+      case 'requested':
+      case 'searching':
+        return <FiSearch className="w-5 h-5 text-amber-500 animate-pulse" />;
       default:
         return <FiClock className="w-5 h-5 text-gray-500" />;
     }
@@ -238,6 +241,9 @@ const BookingDetails = () => {
       case 'awaiting_payment':
       case 'work_done':
         return 'bg-orange-50 text-orange-700 border-orange-200';
+      case 'requested':
+      case 'searching':
+        return 'bg-amber-50 text-amber-700 border-amber-200';
       default:
         return 'bg-gray-50 text-gray-700 border-gray-200';
     }
@@ -252,7 +258,8 @@ const BookingDetails = () => {
       case 'work_done': return 'Work Done'; // Payment Pending
       case 'completed': return 'Completed';
       case 'cancelled': return 'Cancelled';
-      case 'awaiting_payment': return 'Request Accepted';
+      case 'requested':
+      case 'searching': return 'Finding Expert';
       default: return status?.replace('_', ' ') || 'Pending';
     }
   };
@@ -569,7 +576,7 @@ const BookingDetails = () => {
               <div className="flex justify-between relative z-10">
                 {/* Step 1: Booked */}
                 <div className="flex flex-col items-center gap-2 w-1/4">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${['pending', 'confirmed', 'assigned', 'journey_started', 'visited', 'in_progress', 'work_done', 'completed'].includes(booking.status?.toLowerCase())
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${['pending', 'requested', 'searching', 'confirmed', 'assigned', 'journey_started', 'visited', 'in_progress', 'work_done', 'completed'].includes(booking.status?.toLowerCase())
                     ? 'bg-teal-600 text-white shadow-lg shadow-teal-200' : 'bg-gray-100 text-gray-400'
                     }`}>
                     <FiCheckCircle className="w-4 h-4" />
@@ -626,6 +633,36 @@ const BookingDetails = () => {
               <span className="text-xs font-black uppercase tracking-wider">{getStatusLabel(booking.status)}</span>
             </div>
           </div>
+
+          {/* Broadcast/Searching State Card */}
+          {!booking.workerId && !booking.assignedTo && ['requested', 'searching'].includes(booking.status?.toLowerCase()) && (
+            <div className="bg-white rounded-3xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-amber-100 relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-amber-50 rounded-full -translate-y-16 translate-x-16 blur-3xl opacity-50 group-hover:opacity-80 transition-opacity"></div>
+              
+              <div className="relative z-10">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 rounded-2xl bg-amber-50 flex items-center justify-center border border-amber-100 shadow-sm">
+                    <FiSearch className="w-6 h-6 text-amber-500 animate-pulse" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-black text-gray-900 leading-tight">Finding Your Expert</h3>
+                    <p className="text-[10px] font-bold text-amber-600 uppercase tracking-widest">Broadcast in Progress</p>
+                  </div>
+                </div>
+                
+                <p className="text-sm text-gray-600 mb-4 leading-relaxed font-medium">
+                  We've sent your request to all verified experts in your area. You'll be notified automatically as soon as someone accepts.
+                </p>
+                
+                <div className="flex flex-col gap-2">
+                   <div className="flex items-center gap-2 text-xs text-gray-400 bg-gray-50 rounded-xl p-3 border border-gray-100">
+                     <span className="w-1.5 h-1.5 bg-amber-400 rounded-full animate-ping"></span>
+                     <span>Waiting for response from 12+ nearby partners...</span>
+                   </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Service Partner Card */}
           {(booking.workerId || booking.assignedTo || booking.vendorId) && ['confirmed', 'assigned', 'journey_started', 'visited', 'in_progress', 'work_done'].includes(booking.status?.toLowerCase()) && (
