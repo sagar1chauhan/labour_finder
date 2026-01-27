@@ -176,7 +176,9 @@ const BookingAlertModal = ({ isOpen, booking, onAccept, onReject, onMinimize, ti
 
             <div className="text-center mb-6">
               <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1 block">Expected Earnings</span>
-              <div className="text-4xl font-black text-gray-900 tracking-tighter">₹{(booking.vendorEarnings || ((booking.price || booking.finalAmount || booking.totalAmount || 0) * 0.9)).toFixed(0)}</div>
+              <div className="text-4xl font-black text-gray-900 tracking-tighter">
+                ₹{((booking.vendorEarnings > 0 ? booking.vendorEarnings : (booking.price > 0 ? booking.price : (booking.finalAmount > 0 ? booking.finalAmount * 0.9 : 0))) || 0).toFixed(0)}
+              </div>
             </div>
 
             {/* Booking Card Details */}
@@ -202,9 +204,11 @@ const BookingAlertModal = ({ isOpen, booking, onAccept, onReject, onMinimize, ti
                   </div>
                   <div className="flex-1">
                     <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Arrival Location</p>
-                    <p className="text-sm font-bold text-gray-800 line-clamp-2">{booking.location?.address}</p>
+                    <p className="text-sm font-bold text-gray-800 line-clamp-2">
+                      {booking.location?.address || booking.address?.addressLine1 || 'Address not available'}
+                    </p>
                     <span className="text-[9px] font-black text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded mt-1 inline-block">
-                      {booking.location?.distance || '2.5 km'} AWAY
+                      {booking.location?.distance || (booking.distance ? `${booking.distance} km` : 'Near you')}
                     </span>
                   </div>
                 </div>
@@ -216,8 +220,9 @@ const BookingAlertModal = ({ isOpen, booking, onAccept, onReject, onMinimize, ti
                   <div>
                     <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Scheduled Time</p>
                     <p className="text-sm font-bold text-gray-800">
-                      {booking.timeSlot?.date ? `${booking.timeSlot.date} • ` : ''}
-                      {booking.timeSlot?.time || 'N/A'}
+                      {booking.timeSlot?.date || (booking.scheduledDate ? new Date(booking.scheduledDate).toLocaleDateString() : '')}
+                      {(booking.timeSlot?.date || booking.scheduledDate) ? ' • ' : ''}
+                      {booking.timeSlot?.time || booking.scheduledTime || 'N/A'}
                     </p>
                   </div>
                 </div>

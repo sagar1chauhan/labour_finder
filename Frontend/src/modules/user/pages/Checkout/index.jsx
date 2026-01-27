@@ -456,7 +456,7 @@ const Checkout = () => {
         quantity: item.serviceCount || 1
       }));
 
-      console.log('BookedItems payload constructed:', JSON.stringify(bookedItemsData, null, 2));
+
 
       const bookingResponse = await bookingService.create({
         serviceId: serviceId,
@@ -778,7 +778,7 @@ const Checkout = () => {
               freeCategories: activePlan.freeCategories || [],
               freeServices: activePlan.freeServices || []
             });
-            console.log('Active Plan Benefits:', activePlan);
+
           }
         }
       } catch (e) {

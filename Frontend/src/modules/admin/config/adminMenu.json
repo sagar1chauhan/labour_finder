@@ -120,8 +120,7 @@
     "children": [
       "Revenue Report",
       "Booking Report",
-      "Worker Report",
-      "Vendor Report"
+      "Payment Report"
     ]
   },
   {

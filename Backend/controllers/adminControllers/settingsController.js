@@ -31,6 +31,7 @@ exports.updateSettings = async (req, res, next) => {
       visitedCharges,
       gstPercentage,
       commissionPercentage,
+      tdsPercentage,
       vendorCashLimit, // Add this
       cancellationPenalty,
       razorpayKeyId,
@@ -53,6 +54,7 @@ exports.updateSettings = async (req, res, next) => {
         visitedCharges,
         gstPercentage,
         commissionPercentage,
+        tdsPercentage,
         vendorCashLimit, // Add this
         cancellationPenalty,
         razorpayKeyId,
@@ -67,6 +69,7 @@ exports.updateSettings = async (req, res, next) => {
       if (visitedCharges !== undefined) settings.visitedCharges = visitedCharges;
       if (gstPercentage !== undefined) settings.gstPercentage = gstPercentage;
       if (commissionPercentage !== undefined) settings.commissionPercentage = commissionPercentage;
+      if (tdsPercentage !== undefined) settings.tdsPercentage = tdsPercentage;
       if (vendorCashLimit !== undefined) settings.vendorCashLimit = vendorCashLimit; // Add this
       if (cancellationPenalty !== undefined) settings.cancellationPenalty = cancellationPenalty;
       if (razorpayKeyId !== undefined) settings.razorpayKeyId = razorpayKeyId;

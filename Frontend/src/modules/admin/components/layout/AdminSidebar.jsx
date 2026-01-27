@@ -82,8 +82,7 @@ const getChildRoute = (parentRoute, childName) => {
     "/admin/reports": {
       "Revenue Report": "/admin/reports/revenue",
       "Booking Report": "/admin/reports/bookings",
-      "Worker Report": "/admin/reports/workers",
-      "Vendor Report": "/admin/reports/vendors",
+      "Payment Report": "/admin/payments/reports",
     },
     "/admin/notifications": {
       "Push Notifications": "/admin/notifications/push",

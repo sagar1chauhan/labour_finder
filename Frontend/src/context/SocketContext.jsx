@@ -253,10 +253,13 @@ export const SocketProvider = ({ children }) => {
           customerName: data.customerName,
           customerPhone: data.customerPhone,
           location: {
-            address: 'Location shared',
+            address: data.address?.addressLine1 || 'Location shared',
             distance: data.distance ? `${data.distance.toFixed(1)} km` : 'Near you'
           },
           price: data.price,
+          vendorEarnings: data.vendorEarnings, // Add this
+          scheduledDate: data.scheduledDate,
+          scheduledTime: data.scheduledTime,
           timeSlot: {
             date: new Date(data.scheduledDate).toLocaleDateString(),
             time: data.scheduledTime

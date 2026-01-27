@@ -93,10 +93,12 @@ const Dashboard = memo(() => {
           address: b.address?.addressLine1 || 'Address not available',
           distance: 'N/A'
         },
-        price: (b.vendorEarnings || (b.finalAmount ? b.finalAmount * 0.9 : 0)).toFixed(2),
+        // Prioritize vendorEarnings, fallback to 90% of finalAmount if it's not a free plan (finalAmount > 0)
+        price: (b.vendorEarnings > 0 ? b.vendorEarnings : (b.finalAmount > 0 ? b.finalAmount * 0.9 : 0)).toFixed(2),
+        vendorEarnings: b.vendorEarnings, // Ensure it's explicitly passed
         timeSlot: {
           date: new Date(b.scheduledDate).toLocaleDateString(),
-          time: b.scheduledTimeSlot || 'Time not set'
+          time: b.scheduledTime || 'Time not set'
         },
         status: b.status,
         ...b
@@ -124,7 +126,8 @@ const Dashboard = memo(() => {
       serviceType: booking.serviceId?.title || 'Service',
       customerName: booking.userId?.name || 'Customer',
       location: booking.address?.addressLine1 || 'Address not available',
-      price: (booking.vendorEarnings || (booking.finalAmount ? booking.finalAmount * 0.9 : 0)).toFixed(2),
+      price: (booking.vendorEarnings > 0 ? booking.vendorEarnings : (booking.finalAmount ? booking.finalAmount * 0.9 : 0)).toFixed(2),
+      vendorEarnings: booking.vendorEarnings,
       timeSlot: {
         date: new Date(booking.scheduledDate).toLocaleDateString(),
         time: booking.scheduledTimeSlot || 'Time not set'

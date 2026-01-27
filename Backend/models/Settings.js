@@ -23,6 +23,12 @@ const settingsSchema = new mongoose.Schema({
     min: 0,
     max: 100
   },
+  tdsPercentage: {
+    type: Number,
+    default: 1, // 1% default TDS u/s 194-O
+    min: 0,
+    max: 100
+  },
   vendorCashLimit: {
     type: Number,
     default: 10000,

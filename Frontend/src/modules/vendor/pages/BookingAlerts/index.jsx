@@ -227,7 +227,7 @@ const BookingAlerts = () => {
                   </div>
                   <div className="text-right">
                     <p className="text-xl font-extrabold" style={{ color: themeColors.primary }}>
-                      ₹{alert.vendorEarnings || alert.finalAmount || 0}
+                      ₹{alert.vendorEarnings > 0 ? alert.vendorEarnings : (alert.finalAmount > 0 ? (alert.finalAmount * 0.9).toFixed(0) : 0)}
                     </p>
                     <p className="text-xs text-gray-400">Earnings</p>
                   </div>

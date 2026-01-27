@@ -306,16 +306,14 @@ const createBooking = async (req, res) => {
       serviceCategory: category?.title || 'General',
       description: service.description,
       serviceImages: service.images || [],
-      serviceImages: service.images || [],
       bookedItems: (Array.isArray(bookedItems) && bookedItems.length > 0) ? bookedItems : [],
-      // Force bookedItems assignment and verify
       basePrice,
       discount,
       tax,
       visitingCharges,
       finalAmount,
-      vendorEarnings,
-      adminCommission,
+      vendorEarnings: vendorEarnings || 0,
+      adminCommission: adminCommission || 0,
       address: {
         type: address.type || 'home',
         addressLine1: address.addressLine1,
@@ -416,7 +414,8 @@ const createBooking = async (req, res) => {
           scheduledDate: scheduledDate,
           scheduledTime: scheduledTime,
           location: address,
-          price: finalAmount,
+          price: finalAmount, // Keep price for info
+          vendorEarnings: booking.vendorEarnings, // Use model field name
           distance: vendor.distance // Distance in km
         },
         // Ensure proper push notification style for booking request
@@ -444,8 +443,10 @@ const createBooking = async (req, res) => {
           scheduledDate: scheduledDate,
           scheduledTime: scheduledTime,
           price: finalAmount,
+          vendorEarnings: booking.vendorEarnings,
+          address: address, // Add this
           distance: vendor.distance,
-          playSound: true, // Trigger sound alert
+          playSound: true,
           message: `New booking request within ${vendor.distance?.toFixed(1) || '?'}km!`
         });
       });
@@ -476,6 +477,13 @@ const createBooking = async (req, res) => {
         // dataOnly: true // Removed to ensure User sees the visual notification
       }
     });
+
+    // Clear user's cart (both category and main carts if applicable, generally all items for the user)
+    // Ensures cart is empty after successful booking
+    await Cart.findOneAndUpdate(
+      { userId },
+      { $set: { items: [] } }
+    );
 
     // Send notification to vendor only if assigned (Direct Booking)
     let vendorObj = null;

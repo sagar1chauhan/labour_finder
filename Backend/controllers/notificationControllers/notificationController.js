@@ -82,8 +82,8 @@ const createNotification = async ({
     // Override skipPush if user is online (to avoid double notification)
     if (isOnline) {
       console.log(`[Notification] User ${room} is ONLINE. Sending Socket event.`);
-      // We DO NOT skip push anymore. Rely on client-side handling or just send both to ensure delivery.
-      // skipPush = true; // REMOVED to fix missing notifications
+      // Prevent duplicate notification on active device
+      // skipPush = true; // REVERTED: Causes missing notifications if mobile app is background
 
       // Emit Socket Event immediately
       if (io && room) {
