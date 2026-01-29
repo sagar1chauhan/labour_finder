@@ -21,7 +21,7 @@ const createCategoryValidation = [
     .isLength({ min: 2, max: 100 })
     .withMessage('Title must be between 2 and 100 characters'),
   body('slug')
-    .optional()
+    .optional({ checkFalsy: true })
     .trim()
     .toLowerCase()
     .matches(/^[a-z0-9-]+$/)

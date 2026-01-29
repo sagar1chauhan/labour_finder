@@ -98,7 +98,19 @@ const getPublicServices = async (req, res) => {
 
     // If categorySlug is provided, filter by category
     if (categorySlug) {
-      const category = await Category.findOne({ slug: categorySlug, status: 'active' }).lean();
+      const catQuery = { slug: categorySlug, status: 'active' };
+      if (cityId) {
+        catQuery.cityIds = cityId;
+      }
+
+      // Try finding specific category for city, fallback to any if unique constraint removed
+      let category = await Category.findOne(catQuery).lean();
+
+      // If not found with cityId, try finding any (fallback)
+      if (!category && cityId) {
+        category = await Category.findOne({ slug: categorySlug, status: 'active' }).lean();
+      }
+
       if (category) {
         services = services.filter(s =>
           Array.isArray(s.categoryIds) &&

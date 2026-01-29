@@ -109,6 +109,7 @@ const createCategory = async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.log('Category Create Validation Errors:', errors.array());
       return res.status(400).json({
         success: false,
         message: 'Validation failed',
@@ -133,15 +134,45 @@ const createCategory = async (req, res) => {
       cityIds
     } = req.body;
 
-    // Check if category with same title or slug exists
-    const existingCategory = await Category.findOne({
-      $or: [
-        { title: title.trim() },
-        { slug: slug?.trim().toLowerCase() }
-      ]
-    });
+    console.log('Creating category with payload:', req.body);
 
+    // Check for duplicate slug ONLY within the same cities
+    // Logic:
+    // 1. If cityIds provided, check if any existing category with same slug has overlapping cityIds
+    // 2. If no cityIds (global), check if global category with same slug exists
+
+    const slugToCheck = slug?.trim().toLowerCase() || title.trim().toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-');
+
+    // Build query for duplicate check
+    const duplicateQuery = {
+      $or: [
+        { slug: slugToCheck }
+      ]
+    };
+
+    const existingCategory = await Category.findOne(duplicateQuery);
+
+    let isDuplicate = false;
     if (existingCategory) {
+      // If found, check city overlap
+      const existingCities = existingCategory.cityIds.map(id => id.toString());
+      const newCities = (cityIds || []).map(id => id.toString());
+
+      if (newCities.length === 0) {
+        // Trying to create Global. Duplicate if existing is also Global
+        if (existingCities.length === 0) isDuplicate = true;
+      } else {
+        // Trying to create City-specific. Duplicate if ANY overlap
+        const hasOverlap = newCities.some(cityId => existingCities.includes(cityId));
+        if (hasOverlap) isDuplicate = true;
+
+        // Also duplicate if existing is Global (Global covers all cities)
+        if (existingCities.length === 0) isDuplicate = true;
+      }
+    }
+
+    if (isDuplicate && existingCategory) {
+      console.log('Category with this title/slug already exists:', existingCategory.title, existingCategory.slug);
       return res.status(400).json({
         success: false,
         message: 'Category with this title or slug already exists'
@@ -246,21 +277,37 @@ const updateCategory = async (req, res) => {
       });
     }
 
-    // Check if title or slug conflicts with another category
-    if (title || slug) {
-      const existingCategory = await Category.findOne({
+    // Check for duplicate slug ONLY within the same cities
+    if (title || slug || updateCityIds) {
+      const slugToCheck = slug?.trim().toLowerCase() || (title ? title.trim().toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-') : category.slug);
+
+      const duplicateQuery = {
         _id: { $ne: id },
-        $or: [
-          title ? { title: title.trim() } : {},
-          slug ? { slug: slug.trim().toLowerCase() } : {}
-        ]
-      });
+        slug: slugToCheck
+      };
+
+      const existingCategory = await Category.findOne(duplicateQuery);
 
       if (existingCategory) {
-        return res.status(400).json({
-          success: false,
-          message: 'Category with this title or slug already exists'
-        });
+        let isDuplicate = false;
+        const existingCities = existingCategory.cityIds.map(id => id.toString());
+        // For update, if updateCityIds provided use it, else use existing category.cityIds
+        const newCities = (updateCityIds ? updateCityIds : category.cityIds).map(id => id.toString());
+
+        if (newCities.length === 0) {
+          if (existingCities.length === 0) isDuplicate = true;
+        } else {
+          const hasOverlap = newCities.some(cityId => existingCities.includes(cityId));
+          if (hasOverlap) isDuplicate = true;
+          if (existingCities.length === 0) isDuplicate = true;
+        }
+
+        if (isDuplicate) {
+          return res.status(400).json({
+            success: false,
+            message: 'Category with this title or slug already exists'
+          });
+        }
       }
     }
 
@@ -278,7 +325,11 @@ const updateCategory = async (req, res) => {
     if (isPopular !== undefined) category.isPopular = Boolean(isPopular);
     if (metaTitle !== undefined) category.metaTitle = metaTitle?.trim() || null;
     if (metaDescription !== undefined) category.metaDescription = metaDescription?.trim() || null;
-    if (updateCityIds !== undefined) category.cityIds = updateCityIds;
+
+    if (updateCityIds !== undefined) {
+      category.cityIds = updateCityIds;
+      category.markModified('cityIds'); // Explicitly mark modified for array
+    }
 
     await category.save();
 
