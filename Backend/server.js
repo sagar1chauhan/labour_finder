@@ -76,6 +76,23 @@ app.use('/api/users/bookings', (req, res, next) => {
   next();
 });
 
+// DEBUG: Log Vendor Register Request
+app.use('/api/vendors/auth/register', (req, res, next) => {
+  console.log('------------------------------------------------');
+  console.log('DEBUG: Vendor Register Request Received');
+  console.log('Headers Content-Type:', req.headers['content-type']);
+  console.log('Body Keys:', Object.keys(req.body));
+  if (req.body.aadharDocument) {
+    console.log('Aadhar Document Length:', req.body.aadharDocument.length);
+    console.log('Aadhar Start:', req.body.aadharDocument.substring(0, 50));
+  } else {
+    console.log('Aadhar Document: UNDEFINED');
+  }
+  console.log('req.file:', req.file); // Expected to be undefined in current setup
+  console.log('------------------------------------------------');
+  next();
+});
+
 
 
 // Logging middleware
