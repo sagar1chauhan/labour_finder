@@ -68,6 +68,10 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use(cookieParser());
 
+//For camera clicks feature 
+app.use(express.json({ limit: "20mb" }));
+app.use(express.urlencoded({ extended: true, limit: "20mb" }));
+
 // DEBUG: Log Booking Request Body
 app.use('/api/users/bookings', (req, res, next) => {
   if (req.method === 'POST') {
