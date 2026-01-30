@@ -6,6 +6,7 @@ import { themeColors } from '../../../theme';
 import { register, sendOTP as sendVendorOTP } from '../services/authService';
 import LogoLoader from '../../../components/common/LogoLoader';
 import Logo from '../../../components/common/Logo';
+import { compressImage } from '../../../utils/imageCompression';
 
 import { z } from "zod";
 
@@ -36,6 +37,7 @@ const VendorSignup = () => {
   const [verificationToken, setVerificationToken] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [documentPreview, setDocumentPreview] = useState({});
+  const [uploadingDocs, setUploadingDocs] = useState({});
   const [resendTimer, setResendTimer] = useState(0);
 
   // Timer countdown effect
@@ -85,7 +87,7 @@ const VendorSignup = () => {
     }));
   };
 
-  const handleDocumentUpload = (e, type) => {
+  const handleDocumentUpload = async (e, type) => {
     const file = e.target.files[0];
     if (!file) return;
 
@@ -95,23 +97,51 @@ const VendorSignup = () => {
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('File size should be less than 5MB');
+    if (file.size > 15 * 1024 * 1024) {
+      toast.error('File size should be less than 15MB');
       return;
     }
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setFormData(prev => ({
-        ...prev,
-        documents: [...prev.documents.filter(d => d.type !== type), { type, file, url: reader.result }]
-      }));
-      setDocumentPreview(prev => ({
-        ...prev,
-        [type]: reader.result
-      }));
-    };
-    reader.readAsDataURL(file);
+    setUploadingDocs(prev => ({ ...prev, [type]: true }));
+
+    try {
+      let fileToUpload = file;
+      let previewUrl = '';
+
+      // Compress if it is an image
+      if (file.type.startsWith('image/')) {
+        try {
+          const compressedFile = await compressImage(file, {
+            maxWidth: 1280, // Reasonable max width for documents
+            maxHeight: 1280,
+            quality: 0.8
+          });
+          fileToUpload = compressedFile;
+        } catch (compressionError) {
+          console.error("Compression failed, using original file", compressionError);
+        }
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        previewUrl = reader.result;
+        setFormData(prev => ({
+          ...prev,
+          documents: [...prev.documents.filter(d => d.type !== type), { type, file: fileToUpload, url: previewUrl }]
+        }));
+        setDocumentPreview(prev => ({
+          ...prev,
+          [type]: previewUrl
+        }));
+        setUploadingDocs(prev => ({ ...prev, [type]: false }));
+      };
+      reader.readAsDataURL(fileToUpload);
+
+    } catch (error) {
+      console.error("Upload processing error", error);
+      toast.error("Failed to process file");
+      setUploadingDocs(prev => ({ ...prev, [type]: false }));
+    }
   };
 
   const removeDocument = (type) => {
@@ -419,26 +449,19 @@ const VendorSignup = () => {
                           </div>
                         </div>
                       ) : (
-                        <div className="flex flex-col items-center justify-center w-full h-28 border-2 border-dashed border-gray-200 rounded-xl hover:bg-gray-50 transition-all duration-300 hover:border-[#347989] group bg-white">
-                          <div className="flex items-center gap-4">
-                            <label className="flex flex-col items-center cursor-pointer transform hover:scale-105 transition-transform">
-                              <div className="p-2.5 bg-blue-50 text-blue-600 rounded-full mb-1 hover:bg-blue-100">
-                                <FiUpload className="w-5 h-5" />
-                              </div>
-                              <span className="text-[10px] text-gray-500 font-bold">Gallery</span>
-                              <input type="file" className="hidden" accept="image/*,.pdf" onChange={(e) => handleDocumentUpload(e, 'aadhar')} />
-                            </label>
-
-                            <div className="w-[1px] h-8 bg-gray-200"></div>
-
-                            <label className="flex flex-col items-center cursor-pointer transform hover:scale-105 transition-transform">
-                              <div className="p-2.5 bg-teal-50 text-teal-600 rounded-full mb-1 hover:bg-teal-100">
-                                <FiCamera className="w-5 h-5" />
-                              </div>
-                              <span className="text-[10px] text-gray-500 font-bold">Camera</span>
-                              <input type="file" className="hidden" accept="image/*" capture="environment" onChange={(e) => handleDocumentUpload(e, 'aadhar')} />
-                            </label>
-                          </div>
+                        <div className="flex flex-col items-center justify-center w-full h-28 border-2 border-dashed border-gray-200 rounded-xl hover:bg-gray-50 transition-all duration-300 hover:border-[#347989] group bg-white relative">
+                          {uploadingDocs.aadhar ? (
+                            <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-10 rounded-xl">
+                              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#347989]"></div>
+                            </div>
+                          ) : null}
+                          <label className="flex flex-col items-center cursor-pointer w-full h-full justify-center">
+                            <div className="p-2.5 bg-blue-50 text-blue-600 rounded-full mb-1 hover:bg-blue-100">
+                              <FiUpload className="w-5 h-5" />
+                            </div>
+                            <span className="text-[10px] text-gray-500 font-bold">Upload Image</span>
+                            <input type="file" className="hidden" accept="image/*,.pdf" onChange={(e) => handleDocumentUpload(e, 'aadhar')} disabled={uploadingDocs.aadhar} />
+                          </label>
                         </div>
                       )}
                     </div>
@@ -456,26 +479,19 @@ const VendorSignup = () => {
                           </div>
                         </div>
                       ) : (
-                        <div className="flex flex-col items-center justify-center w-full h-28 border-2 border-dashed border-gray-200 rounded-xl hover:bg-gray-50 transition-all duration-300 hover:border-[#347989] group bg-white">
-                          <div className="flex items-center gap-4">
-                            <label className="flex flex-col items-center cursor-pointer transform hover:scale-105 transition-transform">
-                              <div className="p-2.5 bg-blue-50 text-blue-600 rounded-full mb-1 hover:bg-blue-100">
-                                <FiUpload className="w-5 h-5" />
-                              </div>
-                              <span className="text-[10px] text-gray-500 font-bold">Gallery</span>
-                              <input type="file" className="hidden" accept="image/*,.pdf" onChange={(e) => handleDocumentUpload(e, 'pan')} />
-                            </label>
-
-                            <div className="w-[1px] h-8 bg-gray-200"></div>
-
-                            <label className="flex flex-col items-center cursor-pointer transform hover:scale-105 transition-transform">
-                              <div className="p-2.5 bg-teal-50 text-teal-600 rounded-full mb-1 hover:bg-teal-100">
-                                <FiCamera className="w-5 h-5" />
-                              </div>
-                              <span className="text-[10px] text-gray-500 font-bold">Camera</span>
-                              <input type="file" className="hidden" accept="image/*" capture="environment" onChange={(e) => handleDocumentUpload(e, 'pan')} />
-                            </label>
-                          </div>
+                        <div className="flex flex-col items-center justify-center w-full h-28 border-2 border-dashed border-gray-200 rounded-xl hover:bg-gray-50 transition-all duration-300 hover:border-[#347989] group bg-white relative">
+                          {uploadingDocs.pan ? (
+                            <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-10 rounded-xl">
+                              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#347989]"></div>
+                            </div>
+                          ) : null}
+                          <label className="flex flex-col items-center cursor-pointer w-full h-full justify-center">
+                            <div className="p-2.5 bg-blue-50 text-blue-600 rounded-full mb-1 hover:bg-blue-100">
+                              <FiUpload className="w-5 h-5" />
+                            </div>
+                            <span className="text-[10px] text-gray-500 font-bold">Upload Image</span>
+                            <input type="file" className="hidden" accept="image/*,.pdf" onChange={(e) => handleDocumentUpload(e, 'pan')} disabled={uploadingDocs.pan} />
+                          </label>
                         </div>
                       )}
                     </div>
@@ -595,8 +611,8 @@ const VendorSignup = () => {
             Login here
           </Link>
         </p>
-      </div>
-    </div>
+      </div >
+    </div >
   );
 };
 
