@@ -35,14 +35,20 @@ const ServicesPage = ({ catalog, setCatalog, selectedCity }) => {
     const filterId = String(selectedCategoryFilter);
 
     return servicesData.filter(s => {
-      // 1. Check legacy categoryId (could be string or object with $oid)
-      const directId = s.categoryId?.$oid || s.categoryId;
+      // 1. Check legacy categoryId
+      let directId = s.categoryId?.$oid || s.categoryId;
+      if (directId && typeof directId === 'object') {
+        directId = directId._id || directId.id; // Extract ID if populated
+      }
       if (String(directId) === filterId) return true;
 
-      // 2. Check categoryIds array (could be strings or objects)
+      // 2. Check categoryIds array
       if (Array.isArray(s.categoryIds) && s.categoryIds.length > 0) {
         return s.categoryIds.some(cat => {
-          const id = cat?.$oid || cat;
+          let id = cat?.$oid || cat;
+          if (id && typeof id === 'object') {
+            id = id._id || id.id; // Extract ID if populated
+          }
           return String(id) === filterId;
         });
       }
@@ -181,12 +187,21 @@ const ServicesPage = ({ catalog, setCatalog, selectedCity }) => {
   // Form Actions
   const resetForm = () => {
     setEditingId(null);
+
+    // Default to strict category if filter is active
+    let defaultCat = "";
+    if (selectedCategoryFilter !== "all") {
+      defaultCat = selectedCategoryFilter;
+    } else {
+      defaultCat = activeBrand?.categoryIds?.[0] || activeBrand?.categoryId || "";
+    }
+
     setForm({
       title: "",
       basePrice: "",
       gstPercentage: 18,
       discountPrice: "",
-      categoryId: activeBrand?.categoryIds?.[0] || activeBrand?.categoryId || ""
+      categoryId: defaultCat
     });
     setIsModalOpen(false);
   };
@@ -231,8 +246,11 @@ const ServicesPage = ({ catalog, setCatalog, selectedCity }) => {
         if (response.success) {
           toast.success("Service updated");
           // Refresh list locally
-          setBrandServices(prev => prev.map(s => (s.id === editingId || s._id === editingId ? { ...s, ...result.data } : s)));
+          setBrandServices(prev => prev.map(s => (s.id === editingId || s._id === editingId ? { ...s, ...result.data, categoryId: result.data.categoryId } : s)));
           resetForm();
+          // Reload to ensure population
+          const reloadRes = await serviceService.getAll({ brandId: activeBrandId });
+          if (reloadRes.success) setBrandServices(reloadRes.services);
         }
       } else {
         const response = await serviceService.create({
@@ -241,7 +259,7 @@ const ServicesPage = ({ catalog, setCatalog, selectedCity }) => {
         });
         if (response.success) {
           toast.success("Service created");
-          setBrandServices(prev => [...prev, response.service || response.data]); // Adapt based on actual response structure
+          setBrandServices(prev => [...prev, response.service || response.data]);
           resetForm();
           // Reload to be safe
           const reloadRes = await serviceService.getAll({ brandId: activeBrandId });
@@ -268,12 +286,23 @@ const ServicesPage = ({ catalog, setCatalog, selectedCity }) => {
     }
   };
 
-  // Filtered Services List based on search
+  // Filtered Services List based on search AND Selected Category
   const displayedServices = useMemo(() => {
-    if (!searchTerm) return brandServices;
+    let result = brandServices;
+
+    // Filter by Category if selected
+    if (selectedCategoryFilter !== "all" && selectedCategoryFilter) {
+      result = result.filter(s => {
+        // Handle populated object or direct string ID
+        const sCatId = s.categoryId?._id || s.categoryId;
+        return String(sCatId) === String(selectedCategoryFilter);
+      });
+    }
+
+    if (!searchTerm) return result;
     const lower = searchTerm.toLowerCase();
-    return brandServices.filter(s => s.title.toLowerCase().includes(lower));
-  }, [brandServices, searchTerm]);
+    return result.filter(s => s.title.toLowerCase().includes(lower));
+  }, [brandServices, searchTerm, selectedCategoryFilter]);
 
   return (
     <div className="space-y-6">
@@ -334,9 +363,13 @@ const ServicesPage = ({ catalog, setCatalog, selectedCity }) => {
                         {brand.title}
                       </div>
                       <div className="text-xs text-gray-400 truncate">
-                        {brand.categoryTitles && brand.categoryTitles.length > 0
-                          ? brand.categoryTitles[0]
-                          : ((categories.find(c => String(c.id) === String(brand.categoryId))?.title) || 'Uncategorized')}
+                        {selectedCategoryFilter !== "all"
+                          ? categories.find(c => String(c.id) === String(selectedCategoryFilter))?.title
+                          : (brand.categoryTitles && brand.categoryTitles.length > 0
+                            ? brand.categoryTitles[0]
+                            : ((categories.find(c => String(c.id) === String(brand.categoryId))?.title) || 'Uncategorized')
+                          )
+                        }
                       </div>
                     </div>
                   </div>
@@ -397,38 +430,49 @@ const ServicesPage = ({ catalog, setCatalog, selectedCity }) => {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {displayedServices.map((service) => (
-                    <div key={service.id || service._id} className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow relative group">
-                      <div className="flex justify-between items-start mb-2">
-                        <h4 className="font-bold text-gray-900 pr-6">{service.title}</h4>
-                        <span className="bg-green-50 text-green-700 text-[10px] px-2 py-0.5 rounded font-bold border border-green-100">
-                          {service.gstPercentage}% GST
-                        </span>
-                      </div>
+                  {displayedServices.map((service) => {
+                    const catId = service.categoryId?._id || service.categoryId;
+                    const cat = categories.find(c => String(c.id) === String(catId));
+                    const catTitle = service.categoryId?.title || cat?.title || "Uncategorized";
 
-                      <div className="space-y-1">
-                        <div className="flex justify-between items-baseline">
-                          <span className="text-xs text-gray-500">Base Price</span>
-                          <span className="font-semibold text-gray-900">₹{service.basePrice}</span>
-                        </div>
-                        {service.discountPrice && (
-                          <div className="flex justify-between items-baseline">
-                            <span className="text-xs text-gray-500">Discounted</span>
-                            <span className="font-bold text-primary-600">₹{service.discountPrice}</span>
+                    return (
+                      <div key={service.id || service._id} className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow relative group">
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <h4 className="font-bold text-gray-900 pr-6">{service.title}</h4>
+                            <span className="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded mr-2 mt-1 inline-block">
+                              {catTitle}
+                            </span>
                           </div>
-                        )}
-                      </div>
+                          <span className="bg-green-50 text-green-700 text-[10px] px-2 py-0.5 rounded font-bold border border-green-100 whitespace-nowrap">
+                            {service.gstPercentage}% GST
+                          </span>
+                        </div>
 
-                      <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 p-1 rounded-lg backdrop-blur-sm shadow-sm">
-                        <button onClick={() => handleEdit(service)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded">
-                          <FiEdit2 className="w-3.5 h-3.5" />
-                        </button>
-                        <button onClick={() => handleDelete(service.id || service._id)} className="p-1.5 text-red-600 hover:bg-red-50 rounded">
-                          <FiTrash2 className="w-3.5 h-3.5" />
-                        </button>
+                        <div className="space-y-1 mt-2">
+                          <div className="flex justify-between items-baseline">
+                            <span className="text-xs text-gray-500">Base Price</span>
+                            <span className="font-semibold text-gray-900">₹{service.basePrice}</span>
+                          </div>
+                          {service.discountPrice && (
+                            <div className="flex justify-between items-baseline">
+                              <span className="text-xs text-gray-500">Discounted</span>
+                              <span className="font-bold text-primary-600">₹{service.discountPrice}</span>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 p-1 rounded-lg backdrop-blur-sm shadow-sm">
+                          <button onClick={() => handleEdit(service)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded">
+                            <FiEdit2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button onClick={() => handleDelete(service.id || service._id)} className="p-1.5 text-red-600 hover:bg-red-50 rounded">
+                            <FiTrash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </CardShell>

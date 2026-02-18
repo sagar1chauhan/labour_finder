@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FiCheck, FiTool, FiPackage, FiFileText, FiPlus, FiTrash2, FiArrowLeft, FiDollarSign, FiClock, FiCreditCard, FiArrowRight, FiKey } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
@@ -17,7 +17,25 @@ const BillingPage = () => {
 
   // --- VIEW MODE: 'timeline' | 'select-services' | 'select-parts' ---
   const [viewMode, setViewMode] = useState('timeline');
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(() => {
+    const saved = localStorage.getItem(`billing_step_${id}`);
+    return saved ? parseInt(saved) : 1;
+  });
+  const [maxStep, setMaxStep] = useState(() => {
+    const saved = localStorage.getItem(`billing_max_step_${id}`);
+    return saved ? parseInt(saved) : 1;
+  });
+
+  // Track max step reached for timeline highlighting
+  useEffect(() => {
+    if (id) {
+      localStorage.setItem(`billing_step_${id}`, currentStep);
+      if (currentStep > maxStep) {
+        setMaxStep(currentStep);
+        localStorage.setItem(`billing_max_step_${id}`, currentStep);
+      }
+    }
+  }, [currentStep, id]);
 
   // Catalogs
   const [servicesCatalog, setServicesCatalog] = useState([]);
@@ -43,6 +61,22 @@ const BillingPage = () => {
   useEffect(() => {
     fetchData();
   }, [id]);
+
+  // Scroll to top on mount or view change or loading complete
+  useLayoutEffect(() => {
+    const scrollToTop = () => {
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+      document.documentElement.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+      if (typeof document !== 'undefined' && document.body) {
+        document.body.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+      }
+    };
+
+    scrollToTop();
+    // Small timeout as safety for dynamic content shifts
+    const timer = setTimeout(scrollToTop, 50);
+    return () => clearTimeout(timer);
+  }, [id, viewMode, currentStep, loading]);
 
   const fetchData = async () => {
     try {
@@ -71,6 +105,16 @@ const BillingPage = () => {
           setSelectedServices(billRes.bill.services || []);
           setSelectedParts(billRes.bill.parts || []);
           setCustomItems(billRes.bill.customItems || []);
+
+          // Determine data-driven step progress
+          let reachedStep = 1;
+          if (billRes.bill.customItems?.length > 0) reachedStep = 4;
+          else if (billRes.bill.parts?.length > 0) reachedStep = 3;
+          else if (billRes.bill.services?.length > 0) reachedStep = 2;
+
+          setMaxStep(prev => Math.max(prev, reachedStep));
+          // If starting fresh but bill exists, maybe jump to last data step?
+          // For now, let the user's last visited step (from localStorage) take precedence.
         }
       } catch (err) { /* ignore */ }
 
@@ -247,6 +291,8 @@ const BillingPage = () => {
 
       if (res.success) {
         toast.success('Bill generated successfully!');
+        localStorage.removeItem(`billing_step_${id}`);
+        localStorage.removeItem(`billing_max_step_${id}`);
         navigate(`/vendor/booking/${id}`);
       } else {
         toast.error(res.message || 'Failed to generate bill');
@@ -303,6 +349,8 @@ const BillingPage = () => {
       if (res.success) {
         setShowOtpModal(false);
         toast.success('Payment verified successfully!');
+        localStorage.removeItem(`billing_step_${id}`);
+        localStorage.removeItem(`billing_max_step_${id}`);
         navigate(`/vendor/booking/${id}`);
       } else {
         toast.error(res.message || 'Invalid OTP');
@@ -330,7 +378,7 @@ const BillingPage = () => {
   if (viewMode === 'select-services') {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col">
-        <div className="bg-white sticky top-0 z-40 shadow-sm border-b border-gray-100">
+        <div className="bg-white sticky top-0 z-50 shadow-sm border-b border-gray-100">
           <div className="px-4 py-3 flex items-center gap-3">
             <button onClick={() => setViewMode('timeline')}><FiArrowLeft className="w-6 h-6 text-gray-600" /></button>
             <div className="flex-1 relative">
@@ -348,7 +396,7 @@ const BillingPage = () => {
             ))}
           </div>
         </div>
-        <div className="flex-1 overflow-y-auto p-4 space-y-3 pb-48">
+        <div className="p-4 space-y-3 pb-48">
           {filteredServices.map(item => {
             const selected = isServiceSelected(item._id);
             return (
@@ -404,7 +452,7 @@ const BillingPage = () => {
             );
           })}
         </div>
-        <div className="fixed bottom-[80px] left-0 right-0 p-4 bg-white/80 backdrop-blur-md border-t border-gray-100 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-30 flex gap-3">
+        <div className="fixed bottom-[80px] left-0 right-0 p-4 bg-white/80 backdrop-blur-md border-t border-gray-100 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-50 flex gap-3">
           <button onClick={() => setViewMode('timeline')} className="flex-1 py-3.5 bg-white text-gray-700 font-bold rounded-xl border border-gray-200">
             Save & Exit
           </button>
@@ -422,7 +470,7 @@ const BillingPage = () => {
   if (viewMode === 'select-parts') {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col">
-        <div className="bg-white sticky top-0 z-40 shadow-sm border-b border-gray-100">
+        <div className="bg-white sticky top-0 z-50 shadow-sm border-b border-gray-100">
           <div className="px-4 py-3 flex items-center gap-3">
             <button onClick={() => setViewMode('timeline')}><FiArrowLeft className="w-6 h-6 text-gray-600" /></button>
             <div className="flex-1 relative">
@@ -434,7 +482,7 @@ const BillingPage = () => {
             </div>
           </div>
         </div>
-        <div className="flex-1 overflow-y-auto p-4 space-y-3 pb-48">
+        <div className="p-4 space-y-3 pb-48">
           {filteredParts.map(item => {
             const selected = isPartSelected(item._id);
             return (
@@ -455,7 +503,7 @@ const BillingPage = () => {
             );
           })}
         </div>
-        <div className="fixed bottom-[80px] left-0 right-0 p-4 bg-white/80 backdrop-blur-md border-t border-gray-100 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-30 flex gap-3">
+        <div className="fixed bottom-[80px] left-0 right-0 p-4 bg-white/80 backdrop-blur-md border-t border-gray-100 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-50 flex gap-3">
           <button onClick={() => setViewMode('timeline')} className="flex-1 py-3.5 bg-white text-gray-700 font-bold rounded-xl border border-gray-200">
             Save & Exit
           </button>
@@ -472,35 +520,48 @@ const BillingPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-0 flex flex-col">
-      <div className="bg-white sticky top-0 z-20 px-4 py-4 shadow-sm border-b border-gray-100 flex items-center gap-3">
-        <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-full"><FiArrowLeft className="w-5 h-5" /></button>
-        <div>
-          <h1 className="text-lg font-bold text-gray-800">Generate Bill</h1>
-          <p className="text-xs text-gray-500">Booking #{booking.bookingNumber}</p>
-        </div>
-      </div>
-
-      <div className="bg-white sticky top-[72px] z-10 px-4 py-4 border-b border-gray-50 flex justify-between relative overflow-hidden shadow-sm">
-        {[
-          { id: 1, label: 'Services', icon: FiTool },
-          { id: 2, label: 'Parts', icon: FiPackage },
-          { id: 3, label: 'Extras', icon: FiPlus },
-          { id: 4, label: 'Review', icon: FiFileText }
-        ].map((step) => (
-          <button key={step.id} onClick={() => setCurrentStep(step.id)}
-            className={`flex flex-col items-center gap-1 z-10 relative transition-all ${currentStep === step.id ? 'opacity-100 scale-105' : 'opacity-50'}`}>
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${currentStep >= step.id ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'bg-gray-100 text-gray-400'}`}>
-              <step.icon />
-            </div>
-            <span className="text-[10px] font-bold text-gray-600">{step.label}</span>
+      {/* Unified Sticky Header */}
+      <div className="sticky top-0 z-50 bg-white">
+        {/* Title Bar */}
+        <div className="px-4 py-4 shadow-sm border-b border-gray-100 flex items-center gap-3">
+          <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-full">
+            <FiArrowLeft className="w-5 h-5" />
           </button>
-        ))}
-        <div className="absolute top-8 left-0 right-0 h-0.5 bg-gray-200 -z-0 mx-8">
-          <div className="h-full bg-blue-600 transition-all duration-300" style={{ width: `${((currentStep - 1) / 3) * 100}%` }}></div>
+          <div>
+            <h1 className="text-lg font-bold text-gray-800">Generate Bill</h1>
+            <p className="text-xs text-gray-500">Booking #{booking.bookingNumber}</p>
+          </div>
+        </div>
+
+        {/* Step Indicator */}
+        <div className="px-4 py-4 border-b border-gray-50 flex justify-between relative overflow-hidden shadow-sm">
+          {[
+            { id: 1, label: 'Services', icon: FiTool },
+            { id: 2, label: 'Parts', icon: FiPackage },
+            { id: 3, label: 'Extras', icon: FiPlus },
+            { id: 4, label: 'Review', icon: FiFileText }
+          ].map((step) => {
+            const isCompleted = step.id < currentStep;
+            const isActive = step.id === currentStep;
+            const isReached = step.id <= maxStep;
+
+            return (
+              <button key={step.id} onClick={() => isReached && setCurrentStep(step.id)}
+                className={`flex flex-col items-center gap-1 z-10 relative transition-all ${isActive ? 'opacity-100 scale-105' : isReached ? 'opacity-80' : 'opacity-40'}`}>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${isReached ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'bg-gray-100 text-gray-400'} ${isActive ? 'ring-4 ring-blue-50' : ''}`}>
+                  {isCompleted ? <FiCheck className="w-4 h-4" /> : <step.icon />}
+                </div>
+                <span className={`text-[10px] font-bold ${isReached ? 'text-gray-800' : 'text-gray-400'}`}>{step.label}</span>
+              </button>
+            );
+          })}
+          <div className="absolute top-8 left-0 right-0 h-0.5 bg-gray-200 -z-0 mx-8">
+            <div className="h-full bg-blue-600 transition-all duration-300" style={{ width: `${((maxStep - 1) / 3) * 100}%` }}></div>
+          </div>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-6 pb-48">
+      <div className="p-4 space-y-6 pb-48">
         {currentStep === 1 && (
           <div className="animate-in fade-in slide-in-from-right-4">
             <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 mb-4">
@@ -718,7 +779,7 @@ const BillingPage = () => {
       </div>
 
       {/* Fixed Bottom Navigation for Timeline View */}
-      <div className="fixed bottom-[80px] left-0 right-0 p-4 bg-white/80 backdrop-blur-md border-t border-gray-100 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-30 flex gap-3">
+      <div className="fixed bottom-[80px] left-0 right-0 p-4 bg-white/80 backdrop-blur-md border-t border-gray-100 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] z-50 flex gap-3">
         {currentStep === 1 && (
           <button onClick={() => setCurrentStep(2)} className="w-full py-3.5 bg-gray-900 text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-lg">
             Next: Parts <FiArrowRight />

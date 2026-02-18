@@ -214,7 +214,9 @@ const updateService = async (req, res) => {
 const deleteService = async (req, res) => {
   try {
     const { id } = req.params;
-    const service = await Service.findById(id);
+
+    // Hard delete as requested
+    const service = await Service.findByIdAndDelete(id);
 
     if (!service) {
       return res.status(404).json({
@@ -223,15 +225,9 @@ const deleteService = async (req, res) => {
       });
     }
 
-    // Soft delete or Hard delete?
-    // Constants defines SERVICE_STATUS.DELETED.
-    // UserService schema has status.
-    service.status = SERVICE_STATUS.DELETED;
-    await service.save();
-
     res.status(200).json({
       success: true,
-      message: 'Service deleted successfully'
+      message: 'Service deleted permanently'
     });
   } catch (error) {
     console.error('Delete service error:', error);
