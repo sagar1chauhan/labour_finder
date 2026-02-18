@@ -5,18 +5,39 @@ import { motion, AnimatePresence } from 'framer-motion';
 const PaymentVerificationModal = ({ isOpen, onClose, booking, onPayOnline }) => {
   if (!isOpen || !booking) return null;
 
-  const baseAmount = parseFloat(booking.basePrice) || 0;
-  const discount = parseFloat(booking.discount) || 0;
-  const tax = parseFloat(booking.tax) || 0;
-  const convenienceFee = parseFloat(booking.visitationFee || booking.visitingCharges) || 0;
+  // Calculate totals matching Vendor Billing logic
+  const originalBase = parseFloat(booking.basePrice) || 0;
+  const originalGST = (originalBase * 18) / 100;
+  const baseAmount = originalBase; // Alias for legacy support
 
-  // Extra items added by worker/vendor
-  const extraItems = booking.workDoneDetails?.items || [];
-  const extraTotal = extraItems.reduce((sum, item) => sum + (parseFloat(item.price) * (item.qty || 1)), 0);
+  // Extra Services & Parts from vendor bill
+  const services = booking.bill?.services || [];
+  const parts = booking.bill?.parts || [];
+  const customItems = booking.bill?.customItems || [];
 
-  const finalTotal = (booking.finalAmount !== undefined && booking.finalAmount !== null)
-    ? booking.finalAmount
-    : (baseAmount - discount + tax + convenienceFee + extraTotal);
+  let extraServiceBase = 0;
+  let extraServiceGST = 0;
+  services.forEach(s => {
+    const total = s.total || 0;
+    const base = total / 1.18;
+    const gst = total - base;
+    extraServiceBase += base;
+    extraServiceGST += gst;
+  });
+
+  let partsBase = 0;
+  let partsGST = 0;
+  parts.forEach(p => {
+    partsBase += ((p.price || 0) * (p.quantity || 1));
+    partsGST += (p.gstAmount || 0);
+  });
+  customItems.forEach(c => {
+    partsBase += ((c.price || 0) * (c.quantity || 1));
+    partsGST += (c.gstAmount || 0);
+  });
+
+  const totalGST = originalGST + extraServiceGST + partsGST;
+  const finalTotal = (originalBase + originalGST) + (extraServiceBase + extraServiceGST) + (partsBase + partsGST);
 
   const isPlanBenefit = booking.paymentMethod === 'plan_benefit';
 
@@ -60,78 +81,93 @@ const PaymentVerificationModal = ({ isOpen, onClose, booking, onPayOnline }) => 
 
           <div className="p-6 overflow-y-auto custom-scrollbar">
             {/* Price Breakdown Section */}
-            <div className="space-y-3 mb-6">
+            <div className="space-y-4 mb-6">
               <div className="flex justify-between items-end mb-2">
                 <h4 className="text-xs font-black text-gray-500 uppercase tracking-wider">Total Payable</h4>
-                <p className="text-2xl font-black text-gray-900">₹{finalTotal.toLocaleString()}</p>
+                <p className="text-3xl font-black text-gray-900">₹{finalTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
               </div>
 
-              <div className="bg-gray-50 rounded-2xl p-5 border border-gray-100 space-y-3">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Base Amount</span>
-                  {isPlanBenefit ? (
-                    <div className="flex items-center gap-2">
-                      <span className="line-through text-gray-400 text-xs">₹{baseAmount.toLocaleString()}</span>
-                      <span className="text-emerald-600 font-bold text-[10px] bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">FREE</span>
+              <div className="bg-gray-50 rounded-2xl p-5 border border-gray-100 space-y-4">
+
+                {/* 1. Services Section */}
+                <div>
+                  <h5 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 flex items-center gap-1">
+                    <FiCheckCircle className="w-3 h-3" /> Services
+                  </h5>
+                  <div className="space-y-2 text-xs">
+                    <div className="flex justify-between text-gray-600">
+                      <span>Original Booking</span>
+                      {isPlanBenefit ? (
+                        <div className="flex items-center gap-1">
+                          <span className="line-through text-gray-400">₹{originalBase.toFixed(2)}</span>
+                          <span className="text-emerald-600 font-bold bg-emerald-50 px-1 rounded">FREE</span>
+                        </div>
+                      ) : (
+                        <span className="font-bold">₹{originalBase.toFixed(2)}</span>
+                      )}
                     </div>
-                  ) : (
-                    <span className="font-bold text-gray-800">₹{baseAmount.toLocaleString()}</span>
-                  )}
-                </div>
-
-                {(tax > 0 || isPlanBenefit) && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Tax</span>
-                    {isPlanBenefit ? (
-                      <div className="flex items-center gap-2">
-                        <span className="line-through text-gray-400 text-xs">₹{tax.toLocaleString()}</span>
-                        <span className="text-emerald-600 font-bold text-[10px] bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">FREE</span>
-                      </div>
-                    ) : (
-                      <span className="font-bold text-gray-800">+₹{tax.toLocaleString()}</span>
-                    )}
-                  </div>
-                )}
-
-                {(convenienceFee > 0 || isPlanBenefit) && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Convenience Fee</span>
-                    {isPlanBenefit ? (
-                      <div className="flex items-center gap-2">
-                        <span className="line-through text-gray-400 text-xs">₹{convenienceFee.toLocaleString()}</span>
-                        <span className="text-emerald-600 font-bold text-[10px] bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">FREE</span>
-                      </div>
-                    ) : (
-                      <span className="font-bold text-gray-800">+₹{convenienceFee.toLocaleString()}</span>
-                    )}
-                  </div>
-                )}
-
-                {discount > 0 && !isPlanBenefit && (
-                  <div className="flex justify-between text-sm text-green-600 font-medium">
-                    <span>Discount</span>
-                    <span>-₹{discount.toLocaleString()}</span>
-                  </div>
-                )}
-
-                {extraItems.length > 0 && (
-                  <div className="pt-3 border-t border-gray-200 mt-2 space-y-2">
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Extra Services Added</p>
-                    {extraItems.map((item, idx) => (
-                      <div key={idx} className="flex justify-between text-xs text-gray-700">
-                        <span className="flex items-center gap-1.5">
-                          <FiPackage className="w-3 h-3 text-teal-600" />
-                          {item.title} <span className="text-[10px] text-gray-400">x{item.qty || 1}</span>
-                        </span>
-                        <span className="font-bold font-mono">₹{(item.price * (item.qty || 1)).toLocaleString()}</span>
+                    {services.map((s, idx) => (
+                      <div key={idx} className="flex justify-between text-gray-600 pl-2 border-l-2 border-gray-200">
+                        <span>{s.name} <span className="text-gray-400">x{s.quantity}</span></span>
+                        <span className="font-mono">₹{(s.total / 1.18).toFixed(2)}</span>
                       </div>
                     ))}
+                    <div className="flex justify-between font-bold text-gray-800 pt-1 border-t border-gray-200 border-dashed">
+                      <span>Total Service Base</span>
+                      <span>₹{(originalBase + extraServiceBase).toFixed(2)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2. Parts Section */}
+                {(parts.length > 0 || customItems.length > 0) && (
+                  <div>
+                    <h5 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 flex items-center gap-1 mt-4">
+                      <FiPackage className="w-3 h-3" /> Parts & Material
+                    </h5>
+                    <div className="space-y-2 text-xs">
+                      {parts.map((p, idx) => (
+                        <div key={`p-${idx}`} className="flex justify-between text-gray-600">
+                          <span>{p.name} <span className="text-gray-400">x{p.quantity}</span></span>
+                          <span className="font-mono">₹{(p.price * p.quantity).toFixed(2)}</span>
+                        </div>
+                      ))}
+                      {customItems.map((c, idx) => (
+                        <div key={`c-${idx}`} className="flex justify-between text-gray-600">
+                          <div>
+                            <span>{c.name} <span className="text-gray-400">x{c.quantity}</span></span>
+                            {c.hsnCode && <span className="text-[8px] block text-gray-400">HSN: {c.hsnCode}</span>}
+                          </div>
+                          <span className="font-mono">₹{(c.price * c.quantity).toFixed(2)}</span>
+                        </div>
+                      ))}
+                      <div className="flex justify-between font-bold text-gray-800 pt-1 border-t border-gray-200 border-dashed">
+                        <span>Total Parts Base</span>
+                        <span>₹{partsBase.toFixed(2)}</span>
+                      </div>
+                    </div>
                   </div>
                 )}
 
-                <div className="pt-3 border-t-2 border-dashed border-gray-200 mt-2 flex justify-between items-center">
-                  <span className="text-sm font-black text-gray-900">Total Amount</span>
-                  <span className="text-xl font-black text-teal-700">₹{finalTotal.toLocaleString()}</span>
+                {/* 3. Taxes */}
+                <div>
+                  <h5 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 flex items-center gap-1 mt-4">
+                    <FiAlertCircle className="w-3 h-3" /> Taxes
+                  </h5>
+                  <div className="flex justify-between text-xs text-gray-600">
+                    <span>Total GST (18%)</span>
+                    {isPlanBenefit && totalGST === 0 ? (
+                      <span className="text-emerald-600 font-bold">Included</span>
+                    ) : (
+                      <span className="font-mono">₹{totalGST.toFixed(2)}</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Final Total */}
+                <div className="pt-4 border-t-2 border-dashed border-gray-200 mt-2 flex justify-between items-center">
+                  <span className="text-sm font-black text-gray-900">Grand Total</span>
+                  <span className="text-xl font-black text-teal-700">₹{finalTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
               </div>
             </div>

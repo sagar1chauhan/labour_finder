@@ -73,13 +73,15 @@ const Dashboard = memo(() => {
 
     const { stats: apiStats, recentBookings } = response.data;
 
-    // Separate REQUESTED/SEARCHING bookings from other bookings
-    const requestedBookings = (recentBookings || []).filter(booking =>
-      booking.status === 'REQUESTED' || booking.status === 'searching'
-    );
-    const otherBookings = (recentBookings || []).filter(booking =>
-      booking.status !== 'REQUESTED' && booking.status !== 'searching'
-    );
+    // Separate requested/searching bookings from other bookings
+    const requestedBookings = (recentBookings || []).filter(booking => {
+      const status = booking.status?.toLowerCase();
+      return status === 'requested' || status === 'searching';
+    });
+    const otherBookings = (recentBookings || []).filter(booking => {
+      const status = booking.status?.toLowerCase();
+      return status !== 'requested' && status !== 'searching';
+    });
 
     // Build pending bookings map
     const mergedMap = new Map();
@@ -120,21 +122,36 @@ const Dashboard = memo(() => {
       });
     });
 
-    const finalPendingBookings = Array.from(mergedMap.values());
+    // Merge with local storage to avoid losing real-time updates that haven't hit API yet
+    const localPending = JSON.parse(localStorage.getItem('vendorPendingJobs') || '[]');
+    const apiPending = Array.from(mergedMap.values());
+    const mergedPending = [...apiPending];
+
+    localPending.forEach(localJob => {
+      const id = String(localJob.id || localJob._id);
+      if (!mergedPending.find(job => String(job.id || job._id) === id)) {
+        // If it was added recently (last 2 mins), keep it even if not in API yet
+        const createdAt = localJob.createdAt ? new Date(localJob.createdAt).getTime() : Date.now();
+        const age = Date.now() - createdAt;
+        if (age < 120000 && (localJob.status === 'REQUESTED' || localJob.status === 'searching')) {
+          mergedPending.push(localJob);
+        }
+      }
+    });
+
+    setPendingBookings(mergedPending);
+    localStorage.setItem('vendorPendingJobs', JSON.stringify(mergedPending));
 
     // Update stats
     setStats({
       todayEarnings: apiStats.vendorEarnings || 0,
       activeJobs: apiStats.inProgressBookings || 0,
-      pendingAlerts: finalPendingBookings.length,
+      pendingAlerts: mergedPending.length,
       workersOnline: apiStats.workersOnline || 0,
       totalEarnings: apiStats.vendorEarnings || 0,
       completedJobs: apiStats.completedBookings || 0,
       rating: apiStats.rating || 0,
     });
-
-    setPendingBookings(finalPendingBookings);
-    localStorage.setItem('vendorPendingJobs', JSON.stringify(finalPendingBookings));
 
     // Recent jobs (non-requested)
     const recentJobsData = otherBookings.slice(0, 3).map(booking => ({
@@ -231,27 +248,41 @@ const Dashboard = memo(() => {
   ], [stats.activeJobs, stats.workersOnline, stats.totalEarnings]);
 
   const getStatusColor = (status) => {
+    const s = String(status).toLowerCase();
     const statusColors = {
-      'ACCEPTED': '#3B82F6',
-      'ASSIGNED': '#8B5CF6',
-      'VISITED': '#F59E0B',
-      'WORK_DONE': '#10B981',
-      'WORKER_PAID': '#06B6D4',
-      'SETTLEMENT_PENDING': '#F97316',
+      'accepted': '#3B82F6',
+      'confirmed': '#10B981',
+      'assigned': '#8B5CF6',
+      'journey_started': '#F59E0B',
+      'visited': '#F59E0B',
+      'in_progress': '#F59E0B',
+      'work_done': '#10B981',
+      'completed': '#10B981',
+      'worker_paid': '#06B6D4',
+      'settlement_pending': '#F97316',
     };
-    return statusColors[status] || '#6B7280';
+    return statusColors[s] || '#6B7280';
   };
 
   const getStatusLabel = (status) => {
+    const s = String(status).toLowerCase();
     const labels = {
-      'ACCEPTED': 'Accepted',
-      'ASSIGNED': 'Assigned',
-      'VISITED': 'Visited',
-      'WORK_DONE': 'Work Done',
-      'WORKER_PAID': 'Payment Done',
-      'SETTLEMENT_PENDING': 'Settlement',
+      'requested': 'Requested',
+      'searching': 'Searching',
+      'accepted': 'Accepted',
+      'confirmed': 'Confirmed',
+      'assigned': 'Assigned',
+      'journey_started': 'On the way',
+      'visited': 'Visited',
+      'in_progress': 'In Progress',
+      'work_done': 'Work Done',
+      'completed': 'Completed',
+      'worker_paid': 'Payment Done',
+      'settlement_pending': 'Settlement',
+      'cancelled': 'Cancelled',
+      'rejected': 'Rejected'
     };
-    return labels[status] || status;
+    return labels[s] || status;
   };
 
   // Show loading state

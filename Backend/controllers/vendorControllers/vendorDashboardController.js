@@ -103,7 +103,7 @@ const getDashboardStats = async (req, res) => {
     const totalRevenue = revenueResult[0]?.totalRevenue || 0;
     const vendorEarnings = revenueResult[0]?.vendorEarnings || 0;
 
-    // Recent bookings (last 5)
+    // Recent bookings (last 20)
     // Include both assigned and relevant unassigned alerts
     const recentBookings = await Booking.find({
       $or: [
@@ -115,12 +115,12 @@ const getDashboardStats = async (req, res) => {
         }
       ]
     })
-      .populate('userId', 'name phone')  // Only select needed fields
-      .populate('serviceId', 'title iconUrl')  // Only select needed fields
-      .populate('workerId', 'name')  // Only select needed fields
+      .populate('userId', 'name phone')
+      .populate('serviceId', 'title iconUrl')
+      .populate('workerId', 'name')
       .sort({ createdAt: -1 })
-      .limit(5)
-      .lean();  // Use lean() for faster read
+      .limit(20) // Increased limit to ensure alerts are visible
+      .lean();
 
     res.status(200).json({
       success: true,

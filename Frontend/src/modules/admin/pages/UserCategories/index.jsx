@@ -34,10 +34,13 @@ const UserCategories = () => {
           // Auto-select default or first city if none selected
           if (!selectedCity && loadedCities.length > 0) {
             const defaultCity = loadedCities.find(c => c.isDefault);
-            if (defaultCity) {
-              setSelectedCity(defaultCity._id);
-            } else {
-              setSelectedCity(loadedCities[0]._id);
+            // Handle potentially different ID formats
+            const cityId = defaultCity
+              ? (defaultCity._id || defaultCity.id)
+              : (loadedCities[0]._id || loadedCities[0].id);
+
+            if (cityId) {
+              setSelectedCity(cityId);
             }
           }
         }
@@ -76,9 +79,10 @@ const UserCategories = () => {
               className="px-4 py-2 bg-slate-700 text-white border border-slate-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-500 min-w-[200px]"
             >
               <option value="">Default (Global)</option>
-              {cities.map(city => (
-                <option key={city._id} value={city._id}>{city.name}</option>
-              ))}
+              {cities.map(city => {
+                const cityId = city._id || city.id;
+                return <option key={cityId} value={cityId}>{city.name}</option>
+              })}
             </select>
           </div>
         </div>

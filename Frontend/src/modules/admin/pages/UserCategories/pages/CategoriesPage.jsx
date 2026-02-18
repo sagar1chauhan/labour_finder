@@ -167,7 +167,6 @@ const CategoriesPage = ({ catalog, setCatalog, selectedCity }) => {
         hasSaleBadge,
         showOnHome,
         homeOrder,
-        homeOrder,
         cityIds: selectedCity ? [selectedCity] : [],
       };
 

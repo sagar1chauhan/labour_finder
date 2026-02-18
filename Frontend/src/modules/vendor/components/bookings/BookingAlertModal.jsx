@@ -90,7 +90,7 @@ const BookingAlertModal = ({ isOpen, booking, onAccept, onReject, onAssign, onMi
           initial={{ opacity: 0, scale: 0.9, y: 40 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 40 }}
-          className="bg-white w-full max-w-sm rounded-[3rem] overflow-hidden shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] relative"
+          className="bg-white w-full max-w-sm rounded-[3rem] overflow-y-auto max-h-[90vh] shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] relative scrollbar-hide"
         >
           {/* Minimize Button */}
           {onMinimize && (

@@ -157,6 +157,12 @@ export const ensureIds = (catalog) => {
       hasSaleBadge: Boolean(c.hasSaleBadge),
       showOnHome: c.showOnHome !== false,
       homeOrder: Number.isFinite(c.homeOrder) ? c.homeOrder : 0,
+      // Preserve additional fields
+      cityIds: c.cityIds || [],
+      description: c.description || "",
+      imageUrl: c.imageUrl || "",
+      status: c.status || "active",
+      isPopular: Boolean(c.isPopular),
     })),
     services: (catalog.services || []).map((s) => ({
       id: s.id || `usvc-${Date.now()}-${Math.random().toString(16).slice(2)}`,
@@ -165,6 +171,13 @@ export const ensureIds = (catalog) => {
       iconUrl: s.iconUrl || "",
       badge: s.badge || "",
       categoryId: s.categoryId || "",
+      // Preserve additional fields
+      categoryIds: s.categoryIds || [],
+      categoryTitles: s.categoryTitles || [],
+      cityIds: s.cityIds || [],
+      status: s.status || "active",
+      isPopular: Boolean(s.isPopular),
+      isFeatured: Boolean(s.isFeatured),
       routePath: s.slug ? `/user/${s.slug}` : (s.routePath || ""),
       page: {
         banners: Array.isArray(s.page?.banners)

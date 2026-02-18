@@ -12,7 +12,8 @@ const serviceSchema = z.object({
   title: z.string().min(2, "Title is required"),
   basePrice: z.number().min(0, "Price must be non-negative"),
   gstPercentage: z.number().min(0).max(100).default(18),
-  discountPrice: z.number().optional()
+  discountPrice: z.number().optional(),
+  categoryId: z.string().min(1, "Category is required")
 });
 
 const ServicesPage = ({ catalog, setCatalog, selectedCity }) => {
@@ -172,7 +173,8 @@ const ServicesPage = ({ catalog, setCatalog, selectedCity }) => {
     title: "",
     basePrice: "",
     gstPercentage: 18,
-    discountPrice: ""
+    discountPrice: "",
+    categoryId: ""
   });
   const [saving, setSaving] = useState(false);
 
@@ -183,7 +185,8 @@ const ServicesPage = ({ catalog, setCatalog, selectedCity }) => {
       title: "",
       basePrice: "",
       gstPercentage: 18,
-      discountPrice: ""
+      discountPrice: "",
+      categoryId: activeBrand?.categoryIds?.[0] || activeBrand?.categoryId || ""
     });
     setIsModalOpen(false);
   };
@@ -194,7 +197,8 @@ const ServicesPage = ({ catalog, setCatalog, selectedCity }) => {
       title: service.title,
       basePrice: service.basePrice,
       gstPercentage: service.gstPercentage || 18,
-      discountPrice: service.discountPrice || ""
+      discountPrice: service.discountPrice || "",
+      categoryId: service.categoryId?._id || service.categoryId || ""
     });
     setIsModalOpen(true);
   };
@@ -207,7 +211,8 @@ const ServicesPage = ({ catalog, setCatalog, selectedCity }) => {
       title: form.title,
       basePrice: Number(form.basePrice),
       gstPercentage: Number(form.gstPercentage),
-      discountPrice: form.discountPrice ? Number(form.discountPrice) : undefined
+      discountPrice: form.discountPrice ? Number(form.discountPrice) : undefined,
+      categoryId: form.categoryId
     };
 
     const result = serviceSchema.safeParse(data);
@@ -441,6 +446,36 @@ const ServicesPage = ({ catalog, setCatalog, selectedCity }) => {
         title={editingId ? "Edit Service" : "Add Service"}
       >
         <form onSubmit={handleSave} className="space-y-4">
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-1">Category</label>
+            <select
+              value={form.categoryId}
+              onChange={e => setForm({ ...form, categoryId: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 bg-white"
+              required
+            >
+              <option value="">Select Category</option>
+              {(() => {
+                const uniqueIds = new Set(activeBrand?.categoryIds || []);
+                if (activeBrand?.categoryId) uniqueIds.add(activeBrand.categoryId);
+
+                const validOptions = Array.from(uniqueIds).map(catId => {
+                  const category = categories.find(c => String(c.id) === String(catId));
+                  if (!category) return null;
+                  return { id: catId, title: category.title };
+                }).filter(Boolean);
+
+                return validOptions.length > 0 ? (
+                  validOptions.map(opt => (
+                    <option key={opt.id} value={opt.id}>{opt.title}</option>
+                  ))
+                ) : (
+                  <option value="" disabled>No categories assigned to this brand</option>
+                );
+              })()}
+            </select>
+          </div>
+
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-1">Service Title</label>
             <input

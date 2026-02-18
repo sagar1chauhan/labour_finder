@@ -18,7 +18,7 @@ const getAllBrands = async (req, res) => {
     if (cityId) query.cityIds = cityId;
 
     const brands = await Brand.find(query)
-      .populate('categoryIds', 'title slug')
+      // .populate('categoryIds', 'title slug')
       .select('-__v')
       .sort({ createdAt: -1 })
       .lean();
@@ -43,31 +43,47 @@ const getAllBrands = async (req, res) => {
     res.status(200).json({
       success: true,
       count: brands.length,
-      brands: brands.map(brand => ({
-        id: brand._id.toString(),
-        title: brand.title,
-        slug: brand.slug,
-        cityIds: brand.cityIds || [],
-        categoryIds: (brand.categoryIds || []).map(cat => (cat && cat._id) ? cat._id.toString() : cat.toString()),
-        categoryTitles: (brand.categoryIds || []).map(cat => (cat && cat.title) ? cat.title : null).filter(Boolean),
-        categoryId: brand.categoryIds?.[0]?._id?.toString() || brand.categoryIds?.[0]?.toString(),
-        categoryTitle: brand.categoryIds?.[0]?.title || null,
-        iconUrl: brand.iconUrl,
-        logo: brand.logo,
-        badge: brand.badge,
-        routePath: brand.routePath,
-        basePrice: brand.basePrice,
-        discountPrice: brand.discountPrice,
-        status: brand.status,
-        isPopular: brand.isPopular,
-        isFeatured: brand.isFeatured,
-        rating: brand.rating,
-        totalBookings: brand.totalBookings,
-        page: cleanMongoIds(brand.page) || {},
-        sections: cleanMongoIds(brand.sections) || [],
-        createdAt: brand.createdAt,
-        updatedAt: brand.updatedAt
-      }))
+      brands: brands.map(brand => {
+        // Ensure categoryIds is an array of populated objects (or at least handle if populated correctly)
+        // If populate worked, cat will be an object. If not, it might be an ID string/OID.
+
+        const validCats = (Array.isArray(brand.categoryIds) ? brand.categoryIds : []).filter(c => c);
+
+        const catIds = validCats.map(cat => {
+          if (cat._id) return cat._id.toString();
+          if (typeof cat === 'string') return cat;
+          if (cat.toString) return cat.toString();
+          return null;
+        }).filter(Boolean);
+
+        const catTitles = validCats.map(cat => {
+          if (cat.title) return cat.title;
+          return null;
+        }).filter(Boolean);
+
+        return {
+          id: brand._id.toString(),
+          title: brand.title,
+          slug: brand.slug,
+          cityIds: brand.cityIds || [],
+          categoryIds: catIds,
+          categoryTitles: catTitles,
+          categoryId: catIds[0] || null, // fallback to first ID
+          categoryTitle: catTitles[0] || null,
+          iconUrl: brand.iconUrl,
+          badge: brand.badge,
+          routePath: brand.routePath,
+          status: brand.status,
+          isPopular: brand.isPopular,
+          isFeatured: brand.isFeatured,
+          rating: brand.rating,
+          totalBookings: brand.totalBookings,
+          page: cleanMongoIds(brand.page) || {},
+          sections: cleanMongoIds(brand.sections) || [],
+          createdAt: brand.createdAt,
+          updatedAt: brand.updatedAt
+        };
+      })
     });
   } catch (error) {
     console.error('Get all brands error:', error);
@@ -121,16 +137,14 @@ const getBrandById = async (req, res) => {
         id: brand._id.toString(),
         title: brand.title,
         slug: brand.slug,
+        cityIds: brand.cityIds || [],
         categoryIds: (brand.categoryIds || []).map(cat => cat._id?.toString() || cat.toString()),
         categoryTitles: (brand.categoryIds || []).map(cat => cat.title).filter(Boolean),
         categoryId: brand.categoryIds?.[0]?._id?.toString() || brand.categoryIds?.[0]?.toString(),
         categoryTitle: brand.categoryIds?.[0]?.title || null,
         iconUrl: brand.iconUrl,
-        logo: brand.logo,
         badge: brand.badge,
         routePath: brand.routePath,
-        basePrice: brand.basePrice,
-        discountPrice: brand.discountPrice,
         status: brand.status,
         isPopular: brand.isPopular,
         isFeatured: brand.isFeatured,
@@ -257,11 +271,8 @@ const createBrand = async (req, res) => {
       slug: slug?.trim().toLowerCase() || undefined,
       categoryIds: categoryIds,
       iconUrl: iconUrl || null,
-      logo: logo || null,
       badge: badge?.trim() || null,
       routePath: `/user/brand/${slug?.trim().toLowerCase() || title.trim().toLowerCase().replace(/\s+/g, '-')}`,
-      basePrice: basePrice || 0,
-      discountPrice: discountPrice || null,
       page: sanitizedPage,
       sections: sanitizedSections,
       cityIds: cityIds || [],
@@ -386,10 +397,7 @@ const updateBrand = async (req, res) => {
     if (updateCityIds !== undefined) brand.cityIds = updateCityIds;
     if (categoryIds !== undefined) brand.categoryIds = categoryIds;
     if (iconUrl !== undefined) brand.iconUrl = iconUrl || null;
-    if (logo !== undefined) brand.logo = logo || null;
     if (badge !== undefined) brand.badge = badge?.trim() || null;
-    if (basePrice !== undefined) brand.basePrice = Number(basePrice) || 0;
-    if (discountPrice !== undefined) brand.discountPrice = discountPrice ? Number(discountPrice) : null;
     if (page !== undefined) brand.page = page;
     if (sections !== undefined) {
       // Helper to sanitize targetCategoryId

@@ -90,8 +90,12 @@ const BrandsPage = ({ catalog, setCatalog, selectedCity }) => {
       let mappedCategories = [];
 
       if (servicesRes.success) {
-        mappedBrands = servicesRes.brands.map((svc) => {
+        mappedBrands = servicesRes.brands.map((svc, sIdx) => {
           const catIds = (svc.categoryIds || []).map(id => getStrId(id)).filter(Boolean);
+
+          // if (sIdx < 3) {
+          //   console.log(`[BrandDebug] ${svc.title}:`, { raw: svc.categoryIds, processed: catIds });
+          // }
           const primaryCatId = getStrId(svc.categoryId);
 
           return {
@@ -142,16 +146,14 @@ const BrandsPage = ({ catalog, setCatalog, selectedCity }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCity]);
 
-  // Load form data when editing
+  // Load form data when editing or changing city
   useEffect(() => {
     if (!editingId) {
-      setForm({
-        title: "",
-        iconUrl: "",
-        badge: "",
-        categoryIds: [],
+      // In create mode, if selectedCity changes, update cityIds but preserve other fields
+      setForm(prev => ({
+        ...prev,
         cityIds: selectedCity ? [selectedCity] : [],
-      });
+      }));
       return;
     }
     const service = services.find((s) => s.id === editingId);
@@ -405,16 +407,29 @@ const BrandsPage = ({ catalog, setCatalog, selectedCity }) => {
                       </td>
                       <td className="py-4 px-4">
                         <div className="flex flex-wrap gap-1">
-                          {(s.categoryIds && s.categoryIds.length > 0) ? (
+                          {(s.categoryTitles && s.categoryTitles.length > 0) ? (
+                            s.categoryTitles.map((title, tIdx) => (
+                              <span key={`t-${tIdx}`} className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded text-[10px] font-bold border border-blue-100">
+                                {title}
+                              </span>
+                            ))
+                          ) : (s.categoryIds && s.categoryIds.length > 0) ? (
                             s.categoryIds.map((catId, cIdx) => {
                               const cleanCatId = String(catId).trim();
                               const cat = categories.find(c => String(c.id).trim() === cleanCatId);
                               const catKey = catId ? `cat-${catId}-${cIdx}` : `cat-${cIdx}`;
-                              return cat ? (
-                                <span key={catKey} className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded text-[10px] font-bold border border-blue-100">
-                                  {cat.title}
+                              if (cat) {
+                                return (
+                                  <span key={catKey} className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded text-[10px] font-bold border border-blue-100">
+                                    {cat.title}
+                                  </span>
+                                );
+                              }
+                              return (
+                                <span key={catKey} className="px-2 py-0.5 bg-red-50 text-red-700 rounded text-[10px] font-bold border border-red-100" title={`ID: ${cleanCatId}`}>
+                                  Unknown ({cleanCatId.slice(-4)})
                                 </span>
-                              ) : null;
+                              );
                             })
                           ) : (
                             <span className="text-gray-400 italic text-xs">Uncategorized</span>

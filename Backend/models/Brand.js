@@ -41,10 +41,6 @@ const brandSchema = new mongoose.Schema({
     type: String,
     default: null
   },
-  logo: { // specific to Brand
-    type: String,
-    default: null
-  },
   badge: {
     type: String,
     default: null,
@@ -53,33 +49,6 @@ const brandSchema = new mongoose.Schema({
   routePath: {
     type: String,
     default: null
-  },
-  imageUrl: {
-    type: String,
-    default: null
-  },
-  images: [{
-    type: String
-  }],
-  // Pricing (legacy/optional for Brand)
-  basePrice: {
-    type: Number,
-    default: null,
-    min: [0, 'Price cannot be negative']
-  },
-  discountPrice: {
-    type: Number,
-    default: null,
-    min: [0, 'Discount price cannot be negative']
-  },
-  // Details
-  duration: {
-    type: Number,
-    default: 60
-  },
-  unit: {
-    type: String,
-    default: 'per service'
   },
   // Status
   status: {

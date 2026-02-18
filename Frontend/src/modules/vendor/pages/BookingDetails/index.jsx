@@ -18,6 +18,7 @@ import { CashCollectionModal, ConfirmDialog, WorkerPaymentModal } from '../../co
 import VisitVerificationModal from '../../components/common/VisitVerificationModal';
 // Import shared WorkCompletionModal from worker directory or move to shared
 import { WorkCompletionModal } from '../../../worker/components/common';
+// import BillingModal from '../../components/bookings/BillingModal'; // Consumed by page now
 import vendorWalletService from '../../../../services/vendorWalletService';
 import { toast } from 'react-hot-toast';
 import { useAppNotifications } from '../../../../hooks/useAppNotifications';
@@ -28,15 +29,12 @@ export default function BookingDetails() {
   const navigate = useNavigate();
   const [booking, setBooking] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [isCashModalOpen, setIsCashModalOpen] = useState(false);
-  const [cashOTP, setCashOTP] = useState('');
-  const [showOTPInput, setShowOTPInput] = useState(false);
-  const [cashSubmitting, setCashSubmitting] = useState(false);
   const [isPayWorkerModalOpen, setIsPayWorkerModalOpen] = useState(false);
   const [paySubmitting, setPaySubmitting] = useState(false);
   const [isVisitModalOpen, setIsVisitModalOpen] = useState(false);
   const [isWorkDoneModalOpen, setIsWorkDoneModalOpen] = useState(false);
-  const [otpInput, setOtpInput] = useState(['', '', '', '']);
+
+
   const [actionLoading, setActionLoading] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState({
     isOpen: false,
@@ -140,13 +138,7 @@ export default function BookingDetails() {
     };
   }, [id]);
 
-  // Handle modal closing if payment is detected
-  useEffect(() => {
-    if ((booking?.paymentStatus === 'SUCCESS' || booking?.paymentStatus === 'paid') && isCashModalOpen) {
-      setIsCashModalOpen(false);
-      toast.success('Online Payment Received!');
-    }
-  }, [booking?.paymentStatus, isCashModalOpen]);
+
   // ADDED: Socket for Live Location Tracking in Details Page
   const socket = useAppNotifications('vendor'); // Get socket
 
@@ -186,7 +178,6 @@ export default function BookingDetails() {
             data.type === 'payment_success';
 
           if (isPaymentSuccess) {
-            setIsCashModalOpen(false);
             toast.success('Online Payment Received!');
             setTimeout(() => window.location.reload(), 1500);
           }
@@ -392,54 +383,12 @@ export default function BookingDetails() {
     });
   };
 
-  // Handle initiating cash collection (Send OTP) with new Unified Modal
-  const handleInitiateCashCollection = async (totalAmount, extraItems = []) => {
-    try {
-      setCashSubmitting(true);
-      const res = await vendorWalletService.initiateCashCollection(booking.id || booking._id, totalAmount, extraItems);
-      if (res.success) {
-        return res; // Modal handles success toast
-      } else {
-        throw new Error(res.message || 'Failed to send OTP');
-      }
-    } catch (error) {
-      console.error('Initiate cash error:', error);
-      throw error;
-    } finally {
-      setCashSubmitting(false);
-    }
-  };
 
-  // Handle final confirmation of cash collection with new Unified Modal
-  const handleConfirmCashCollection = async (totalAmount, extraItems, otp) => {
-    try {
-      setCashSubmitting(true);
-      const res = await vendorWalletService.confirmCashCollection(
-        booking.id || booking._id,
-        totalAmount,
-        otp,
-        extraItems
-      );
-
-      if (res.success) {
-        toast.success('Cash collection recorded successfully!');
-        window.dispatchEvent(new Event('vendorJobsUpdated'));
-        // Reload or update state
-        window.location.reload();
-      } else {
-        throw new Error(res.message || 'Failed to confirm');
-      }
-    } catch (error) {
-      console.error('Confirm cash error:', error);
-      throw error;
-    } finally {
-      setCashSubmitting(false);
-    }
-  };
 
   // Handle cash collection button click
   const handleCollectCashClick = () => {
-    setIsCashModalOpen(true);
+    // Navigate to the full page billing flow
+    navigate(`/vendor/booking/${booking.id || id}/billing`);
   };
 
   const canCollectCash = (booking) => {
@@ -547,16 +496,7 @@ export default function BookingDetails() {
     navigate(`/vendor/booking/${booking.id || id}/map`);
   };
 
-  const handleOtpChange = (index, value) => {
-    if (value.length > 1) return;
-    const newOtp = [...otpInput];
-    newOtp[index] = value;
-    setOtpInput(newOtp);
-    if (value && index < 3) {
-      const nextInput = document.getElementById(`otp-input-${index + 1}`);
-      if (nextInput) nextInput.focus();
-    }
-  };
+
 
 
 
@@ -1234,20 +1174,16 @@ export default function BookingDetails() {
                 </div>
               )}
 
-              <button
-                onClick={handleCollectCashClick}
-                disabled={loading}
-                className="w-full py-4 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50 hover:brightness-105"
-                style={{
-                  background: booking.paymentMethod === 'plan_benefit'
-                    ? 'linear-gradient(135deg, #10B981, #059669)'
-                    : 'linear-gradient(135deg, #10B981, #059669)',
-                  boxShadow: '0 8px 16px -4px rgba(16, 185, 129, 0.4)',
-                }}
-              >
-                <FiDollarSign className="w-5 h-5" />
-                {booking.paymentMethod === 'plan_benefit' ? 'Generate Bill' : 'Prepare Final Payment'}
-              </button>
+              <div className="flex flex-col gap-3 w-full">
+                <button
+                  onClick={handleCollectCashClick}
+                  disabled={loading}
+                  className="w-full py-4 rounded-xl font-bold bg-gray-900 text-white flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg"
+                >
+                  <FiDollarSign className="w-5 h-5" />
+                  {booking.paymentMethod === 'plan_benefit' ? 'Prepare/Edit Final Bill' : 'Prepare Bill & Collect Cash'}
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -1449,15 +1385,7 @@ export default function BookingDetails() {
         </div>
       </main>
 
-      {/* Unified Cash Collection Modal */}
-      <CashCollectionModal
-        isOpen={isCashModalOpen}
-        onClose={() => setIsCashModalOpen(false)}
-        booking={booking}
-        onInitiateOTP={handleInitiateCashCollection}
-        onConfirm={handleConfirmCashCollection}
-        loading={cashSubmitting}
-      />
+
 
       {/* Pay Worker Modal */}
       <WorkerPaymentModal
@@ -1507,6 +1435,8 @@ export default function BookingDetails() {
         message={confirmDialog.message}
         type={confirmDialog.type}
       />
+
+
 
       <BottomNav />
     </div>

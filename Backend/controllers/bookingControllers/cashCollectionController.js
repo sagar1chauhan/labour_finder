@@ -34,18 +34,18 @@ exports.initiateCashCollection = async (req, res) => {
       booking.workDoneDetails = {
         ...booking.workDoneDetails,
         items: extraItems.map(item => ({
-          title: item.title,
-          qty: Number(item.qty) || 1,
+          title: item.name || item.title,
+          qty: Number(item.qty) || Number(item.quantity) || 1,
           price: Number(item.price) || 0
         }))
       };
 
       // 2. Update extraCharges (Backend calculation)
       booking.extraCharges = extraItems.map(item => ({
-        name: item.title,
-        quantity: Number(item.qty) || 1,
+        name: item.name || item.title,
+        quantity: Number(item.qty) || Number(item.quantity) || 1,
         price: Number(item.price) || 0,
-        total: (Number(item.qty) || 1) * (Number(item.price) || 0)
+        total: (Number(item.qty) || Number(item.quantity) || 1) * (Number(item.price) || 0)
       }));
 
       // 3. Update extraChargesTotal
@@ -100,6 +100,7 @@ exports.initiateCashCollection = async (req, res) => {
       totalAmount: booking.finalAmount
     });
   } catch (error) {
+    console.error('Initiate cash collection error:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -142,18 +143,18 @@ exports.confirmCashCollection = async (req, res) => {
       booking.workDoneDetails = {
         ...booking.workDoneDetails,
         items: extraItems.map(item => ({
-          title: item.title,
-          qty: item.qty || 1,
-          price: item.price
+          title: item.name || item.title,
+          qty: Number(item.qty) || Number(item.quantity) || 1,
+          price: Number(item.price) || 0
         }))
       };
 
       // Store in new extraCharges field with proper structure
       booking.extraCharges = extraItems.map(item => ({
-        name: item.title,
-        quantity: Number(item.qty) || 1,
+        name: item.name || item.title,
+        quantity: Number(item.qty) || Number(item.quantity) || 1,
         price: Number(item.price) || 0,
-        total: (Number(item.qty) || 1) * (Number(item.price) || 0)
+        total: (Number(item.qty) || Number(item.quantity) || 1) * (Number(item.price) || 0)
       }));
 
       // Calculate total from items

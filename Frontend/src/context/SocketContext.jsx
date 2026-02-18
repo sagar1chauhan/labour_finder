@@ -264,7 +264,7 @@ export const SocketProvider = ({ children }) => {
             date: new Date(data.scheduledDate).toLocaleDateString(),
             time: data.scheduledTime
           },
-          status: 'REQUESTED',
+          status: 'requested',
           createdAt: new Date().toISOString()
         };
 

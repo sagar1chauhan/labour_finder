@@ -59,21 +59,36 @@ const BookingAlerts = () => {
 
         if (response.success && response.data) {
           let bookings = [];
-          const rawData = Array.isArray(response.data) ? response.data : (response.data.bookings || []);
+          const vendorData = JSON.parse(localStorage.getItem('vendorData') || '{}');
+          const currentVendorId = String(vendorData._id || vendorData.id || '');
 
-          bookings = rawData.filter(b =>
-            (b.status === 'searching' || b.status === 'requested') &&
-            (!b.vendorId || b.vendorId === localStorage.getItem('vendorId'))
-          );
+          bookings = rawData.filter(b => {
+            const status = b.status?.toLowerCase();
+            const isRelevantStatus = status === 'searching' || status === 'requested';
+            const bVendorId = b.vendorId?._id || b.vendorId;
+            const isAssignedToMe = !bVendorId || String(bVendorId) === currentVendorId;
+            return isRelevantStatus && isAssignedToMe;
+          });
 
           const apiIds = new Set(bookings.map(b => String(b._id || b.id)));
 
           const localPending = JSON.parse(localStorage.getItem('vendorPendingJobs') || '[]');
-          const validLocalPending = localPending.filter(localB => {
+
+          // Merge logic: Keep if in API OR if added recently (last 2 mins)
+          const mergedPending = [...bookings.map(b => ({ ...b, id: b._id || b.id }))];
+
+          localPending.forEach(localB => {
             const id = String(localB.id || localB._id);
-            return apiIds.has(id);
+            if (!apiIds.has(id)) {
+              const createdAt = localB.createdAt ? new Date(localB.createdAt).getTime() : Date.now();
+              const age = Date.now() - createdAt;
+              if (age < 120000 && (localB.status === 'requested' || localB.status === 'searching')) {
+                mergedPending.push(localB);
+              }
+            }
           });
-          localStorage.setItem('vendorPendingJobs', JSON.stringify(validLocalPending));
+
+          localStorage.setItem('vendorPendingJobs', JSON.stringify(mergedPending));
 
           setAlerts(bookings);
         }

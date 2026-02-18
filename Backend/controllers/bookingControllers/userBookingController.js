@@ -669,9 +669,19 @@ const getBookingById = async (req, res) => {
       });
     }
 
+    // Fetch Vendor Bill if exists
+    const VendorBill = require('../../models/VendorBill');
+    const bill = await VendorBill.findOne({ bookingId: booking._id });
+
+    // Convert to object to attach bill
+    const bookingData = booking.toObject();
+    if (bill) {
+      bookingData.bill = bill;
+    }
+
     res.status(200).json({
       success: true,
-      data: booking
+      data: bookingData
     });
   } catch (error) {
     console.error('Get booking error:', error);
