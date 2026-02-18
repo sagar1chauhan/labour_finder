@@ -34,12 +34,36 @@ const SearchOverlay = ({ isOpen, onClose, categories = [], onCategoryClick }) =>
     const fetchTrending = async () => {
       try {
         const res = await publicCatalogService.getHomeContent();
-        if (res.success && res.homeContent?.booked) {
-          // Take top 5 most booked services
-          setTrendingServices(res.homeContent.booked.slice(0, 5));
+        if (res.success && res.homeContent?.booked && res.homeContent.booked.length > 0) {
+          // Take top 5 most booked services, EXCLUDING 'Fan Installation', 'Top Load', etc.
+          const filtered = res.homeContent.booked.filter(s =>
+            !s.title.toLowerCase().includes('fan install') &&
+            !s.title.toLowerCase().includes('fan repair') &&
+            !s.title.toLowerCase().includes('top load') &&
+            !s.title.toLowerCase().includes('automatic')
+          );
+          setTrendingServices(filtered.slice(0, 5));
+        } else {
+          // Fallback to project-specific trending services if API returns empty
+          console.log('Using fallback trending services');
+          setTrendingServices([
+            { id: 'trend-1', title: 'AC Repair & Service', category: 'AC & Appliance', imageUrl: '/assets/icons/services/ac.png' },
+            { id: 'trend-2', title: 'Washing Machine Repair', category: 'AC & Appliance', imageUrl: '/assets/icons/services/washing-machine.png' },
+            { id: 'trend-3', title: 'Microwave Repair', category: 'AC & Appliance', imageUrl: '/assets/icons/services/microwave.png' },
+            { id: 'trend-4', title: 'Refrigerator Repair', category: 'AC & Appliance', imageUrl: '/assets/icons/services/refrigerator.png' },
+            { id: 'trend-5', title: 'RO Water Purifier Service', category: 'AC & Appliance', imageUrl: '/assets/icons/services/ro.png' }
+          ]);
         }
       } catch (error) {
         console.error("Failed to load trending services", error);
+        // Fallback on error too
+        setTrendingServices([
+          { id: 'trend-1', title: 'AC Repair & Service', category: 'AC & Appliance' },
+          { id: 'trend-2', title: 'Washing Machine Repair', category: 'AC & Appliance' },
+          { id: 'trend-3', title: 'Microwave Repair', category: 'AC & Appliance' },
+          { id: 'trend-4', title: 'Refrigerator Repair', category: 'AC & Appliance' },
+          { id: 'trend-5', title: 'RO Water Purifier Service', category: 'AC & Appliance' }
+        ]);
       }
     };
     fetchTrending();
@@ -63,11 +87,24 @@ const SearchOverlay = ({ isOpen, onClose, categories = [], onCategoryClick }) =>
       if (query.trim().length >= 2) {
         setLoading(true);
         try {
-          // Fetch services matching the query
+          const lowerQ = query.toLowerCase();
+
+          // 1. Search Categories (Local)
+          const categoryMatches = categories.filter(c =>
+            c.title.toLowerCase().includes(lowerQ)
+          ).map(c => ({ ...c, isCategory: true }));
+
+          // 2. Search Services (API)
           const response = await publicCatalogService.getServices({ search: query });
+          let serviceMatches = [];
+
           if (response.success) {
-            setResults(response.services);
+            serviceMatches = response.services;
           }
+
+          // Combine: Categories first, then Services
+          setResults([...categoryMatches, ...serviceMatches]);
+
         } catch (error) {
           console.error("Search failed", error);
         } finally {
@@ -79,24 +116,31 @@ const SearchOverlay = ({ isOpen, onClose, categories = [], onCategoryClick }) =>
     }, 400); // 400ms debounce
 
     return () => clearTimeout(timer);
-  }, [query]);
+  }, [query, categories]);
 
-  const handleResultClick = (service) => {
+  const handleResultClick = (item) => {
     // Add to recent searches
-    const newRecent = [service.title, ...recentSearches.filter(s => s !== service.title)].slice(0, 5);
+    const newRecent = [item.title, ...recentSearches.filter(s => s !== item.title)].slice(0, 5);
     setRecentSearches(newRecent);
     localStorage.setItem('recent_searches', JSON.stringify(newRecent));
 
-    // Navigate to category
     onClose();
-    if (service.categoryId || service.targetCategoryId) {
-      const catId = service.categoryId || service.targetCategoryId;
+
+    // 1. Handle Category Click
+    if (item.isCategory) {
+      onCategoryClick(item);
+      return;
+    }
+
+    // 2. Handle Service Click
+    if (item.categoryId || item.targetCategoryId) {
+      const catId = item.categoryId || item.targetCategoryId;
       const cat = categories.find(c => (c.id === catId || c._id === catId));
       if (cat) {
         onCategoryClick(cat);
       }
-    } else if (service.category) {
-      const cat = categories.find(c => c.title === service.category);
+    } else if (item.category) {
+      const cat = categories.find(c => c.title === item.category);
       if (cat) {
         onCategoryClick(cat);
       }
@@ -183,7 +227,9 @@ const SearchOverlay = ({ isOpen, onClose, categories = [], onCategoryClick }) =>
                             {service.title}
                             <FiChevronRight className="w-4 h-4 ml-auto text-gray-300" />
                           </h4>
-                          <p className="text-xs text-gray-500">Service</p>
+                          <p className="text-xs text-gray-500">
+                            {service.isCategory ? 'Category' : 'Service'}
+                          </p>
                         </div>
                       </div>
                     ))}

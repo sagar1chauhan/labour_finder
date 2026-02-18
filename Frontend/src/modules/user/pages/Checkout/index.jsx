@@ -59,7 +59,7 @@ const Checkout = () => {
   const [selectedTime, setSelectedTime] = useState(null);
   const [visitedFee, setVisitedFee] = useState(29);
   const [gstPercentage, setGstPercentage] = useState(18);
-  const [bookingType, setBookingType] = useState('scheduled'); // 'instant' | 'scheduled'
+  const [bookingType, setBookingType] = useState('instant'); // 'instant' | 'scheduled'
 
   // Check if Razorpay is loaded (defer to avoid blocking initial render)
   useEffect(() => {

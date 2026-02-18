@@ -38,13 +38,7 @@ const ServiceCategories = React.memo(({ categories, onCategoryClick, onSeeAllCli
           </h2>
           <p className="text-[11px] text-gray-400 font-bold uppercase tracking-[0.15em] -mt-0.5">Premium Home Services</p>
         </div>
-        <button
-          onClick={onSeeAllClick}
-          className="group flex items-center gap-1.5 text-[11px] font-black text-primary-600 px-4 py-2 bg-primary-50 hover:bg-primary-100/80 rounded-2xl transition-all active:scale-95 uppercase tracking-widest border border-primary-100/50"
-        >
-          View All
-          <div className="w-1.5 h-1.5 bg-primary-600 rounded-full group-hover:scale-125 transition-transform"></div>
-        </button>
+
       </div>
 
       {/* Professional Grid Layout */}
