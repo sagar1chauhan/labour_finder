@@ -362,11 +362,23 @@ const ServicesPage = ({ catalog, setCatalog, selectedCity }) => {
                       <div className={`font-bold text-sm truncate ${activeBrandId === brand.id ? 'text-blue-700' : 'text-gray-800'}`}>
                         {brand.title}
                       </div>
-                      <div className="text-xs text-gray-400 truncate">
+                      <div className="text-xs text-gray-400 truncate" title={
+                        selectedCategoryFilter !== "all"
+                          ? categories.find(c => String(c.id) === String(selectedCategoryFilter))?.title
+                          : (brand.categoryIds && brand.categoryIds.length > 0
+                            ? brand.categoryIds.map(cid => {
+                              const cIdStr = cid?._id || cid; // Handle populated ID if any
+                              return categories.find(c => String(c.id) === String(cIdStr))?.title;
+                            }).filter(Boolean).join(', ')
+                            : 'Uncategorized')
+                      }>
                         {selectedCategoryFilter !== "all"
                           ? categories.find(c => String(c.id) === String(selectedCategoryFilter))?.title
-                          : (brand.categoryTitles && brand.categoryTitles.length > 0
-                            ? brand.categoryTitles[0]
+                          : (brand.categoryIds && brand.categoryIds.length > 0
+                            ? brand.categoryIds.map(cid => {
+                              const cIdStr = cid?._id || cid;
+                              return categories.find(c => String(c.id) === String(cIdStr))?.title;
+                            }).filter(Boolean).join(', ')
                             : ((categories.find(c => String(c.id) === String(brand.categoryId))?.title) || 'Uncategorized')
                           )
                         }

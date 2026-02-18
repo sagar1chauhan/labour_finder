@@ -224,7 +224,10 @@ const BookingAlerts = () => {
             >
               {/* Header with Timer */}
               <div className="px-4 py-3 bg-gray-50 border-b border-gray-100 flex justify-between items-center">
-                <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">New Request</span>
+                <span className={`text-xs font-bold uppercase tracking-wide flex items-center gap-1 ${alert.bookingType === 'instant' ? 'text-red-500 animate-pulse' : 'text-gray-500'}`}>
+                  {alert.bookingType === 'instant' && <span className="text-sm">⚡</span>}
+                  {alert.bookingType === 'instant' ? 'INSTANT Request' : 'New Request'}
+                </span>
                 {/* Fake timer for demo - purely visual urgency as requested "with timer" */}
                 {/* In real app, calculate actual remaining time from createdAt */}
                 <CountdownTimer durationSeconds={300} onExpire={() => { }} />

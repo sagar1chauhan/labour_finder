@@ -323,7 +323,7 @@ const Cart = () => {
                           e.target.style.boxShadow = `0 2px 6px ${themeColors.brand.teal}4D`;
                         }}
                       >
-                        Checkout
+                        Book
                       </button>
                     </div>
                   </div>

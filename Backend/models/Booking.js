@@ -251,6 +251,12 @@ const bookingSchema = new mongoose.Schema({
   // ==========================================
   // 7. STATUS & TRACKING
   // ==========================================
+  bookingType: {
+    type: String,
+    enum: ['instant', 'scheduled'],
+    default: 'scheduled',
+    index: true
+  },
   status: {
     type: String,
     enum: Object.values(BOOKING_STATUS),

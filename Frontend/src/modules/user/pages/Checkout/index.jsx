@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { io } from 'socket.io-client';
-import { FiArrowLeft, FiShoppingCart, FiTrash2, FiMinus, FiPlus, FiPhone, FiHome, FiClock, FiEdit2, FiCheckCircle } from 'react-icons/fi';
+import { FiArrowLeft, FiShoppingCart, FiTrash2, FiMinus, FiPlus, FiPhone, FiHome, FiClock, FiEdit2, FiCheckCircle, FiInfo } from 'react-icons/fi';
 import { MdStar } from 'react-icons/md';
 import { toast } from 'react-hot-toast';
 import { themeColors } from '../../../../theme';
@@ -59,6 +59,7 @@ const Checkout = () => {
   const [selectedTime, setSelectedTime] = useState(null);
   const [visitedFee, setVisitedFee] = useState(29);
   const [gstPercentage, setGstPercentage] = useState(18);
+  const [bookingType, setBookingType] = useState('scheduled'); // 'instant' | 'scheduled'
 
   // Check if Razorpay is loaded (defer to avoid blocking initial render)
   useEffect(() => {
@@ -245,10 +246,18 @@ const Checkout = () => {
   };
 
   const handleProceed = async () => {
-    if (!addressDetails || !selectedDate || !selectedTime || !houseNumber) {
-      if (!addressDetails || !houseNumber) setShowAddressModal(true);
-      else if (!selectedDate || !selectedTime) setShowTimeSlotModal(true);
-      return;
+    // Validation
+    if (bookingType === 'instant') {
+      if (!addressDetails || !houseNumber) {
+        setShowAddressModal(true);
+        return;
+      }
+    } else {
+      if (!addressDetails || !selectedDate || !selectedTime || !houseNumber) {
+        if (!addressDetails || !houseNumber) setShowAddressModal(true);
+        else if (!selectedDate || !selectedTime) setShowTimeSlotModal(true);
+        return;
+      }
     }
 
     try {
@@ -284,7 +293,23 @@ const Checkout = () => {
         quantity: item.serviceCount || 1
       }));
 
+      // Calculate Scheduled Data for Instant
+      let finalDate = selectedDate;
+      let finalTime = selectedTime;
+      let finalTimeSlot = {
+        start: selectedTime,
+        end: getTimeSlots().find(slot => slot.value === selectedTime)?.end || selectedTime
+      };
+
+      if (bookingType === 'instant') {
+        const now = new Date();
+        finalDate = now;
+        finalTime = "ASAP";
+        finalTimeSlot = { start: "Now", end: "45 mins" };
+      }
+
       const response = await bookingService.create({
+        bookingType, // 'instant' or 'scheduled'
         serviceId,
         address: {
           type: addressDetails?.type || 'home',
@@ -296,12 +321,9 @@ const Checkout = () => {
           lat: addressDetails?.lat,
           lng: addressDetails?.lng
         },
-        scheduledDate: selectedDate,
-        scheduledTime: getTimeSlots().find(slot => slot.value === selectedTime)?.display || selectedTime,
-        timeSlot: {
-          start: selectedTime,
-          end: getTimeSlots().find(slot => slot.value === selectedTime)?.end || selectedTime
-        },
+        scheduledDate: finalDate, // Date object
+        scheduledTime: bookingType === 'instant' ? "ASAP" : (getTimeSlots().find(slot => slot.value === finalTime)?.display || finalTime),
+        timeSlot: finalTimeSlot,
         amount: amountToPay,
 
         // Pass Full Breakdown to Backend
@@ -407,9 +429,17 @@ const Checkout = () => {
   const handleSearchVendors = async () => {
     try {
       // Validate required fields
-      if (!selectedDate || !selectedTime || !houseNumber) {
-        toast.error('Please select address and time slot');
-        return;
+      if (bookingType === 'scheduled') {
+        if (!selectedDate || !selectedTime || !houseNumber) {
+          toast.error('Please select address and time slot');
+          return;
+        }
+      } else {
+        // Instant
+        if (!houseNumber) {
+          toast.error('Please select address');
+          return;
+        }
       }
 
       if (cartItems.length === 0 && !bookingRequest) {
@@ -447,10 +477,20 @@ const Checkout = () => {
       };
 
       // Prepare time slot
-      const timeSlotObj = {
+      let finalDate = selectedDate;
+      let finalTimeDisplay = selectedTime;
+      let timeSlotObj = {
         start: selectedTime,
         end: getTimeSlots().find(slot => slot.value === selectedTime)?.end || selectedTime
       };
+
+      if (bookingType === 'instant') {
+        finalDate = new Date();
+        finalTimeDisplay = "ASAP";
+        timeSlotObj = { start: "Now", end: "45 mins" };
+      } else {
+        finalTimeDisplay = getTimeSlots().find(slot => slot.value === selectedTime)?.display || selectedTime;
+      }
 
       // Create booking request
       toast.loading('Searching for nearby vendors...');
@@ -481,10 +521,11 @@ const Checkout = () => {
 
 
       const bookingResponse = await bookingService.create({
+        bookingType, // 'instant' or 'scheduled'
         serviceId: serviceId,
         address: addressObj,
-        scheduledDate: selectedDate.toISOString(),
-        scheduledTime: getTimeSlots().find(slot => slot.value === selectedTime)?.display || selectedTime,
+        scheduledDate: finalDate.toISOString(),
+        scheduledTime: finalTimeDisplay,
         timeSlot: timeSlotObj,
         // userNotes: null, // Removed per request
         paymentMethod: amountToPay === 0 ? 'plan_benefit' : 'pay_at_home',
@@ -1051,75 +1092,101 @@ const Checkout = () => {
 
         {/* Cart Items */}
         <div className="space-y-4 mb-4">
-          {cartItems.map((item) => (
-            <div key={item._id} className="bg-white border border-gray-200 rounded-lg p-4">
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex-1">
-                  <h3 className="text-base font-bold text-black mb-1">{item.title}</h3>
-                  {item.description && (
-                    <p className="text-sm text-gray-600">{item.description}</p>
-                  )}
-                </div>
-                {!item.isPlan && (
-                  <div className="flex items-center gap-2 border rounded-lg" style={{ borderColor: themeColors.button }}>
-                    <button
-                      onClick={() => handleQuantityChange(item._id, -1)}
-                      className="p-2 transition-colors"
-                      onMouseEnter={(e) => e.target.style.backgroundColor = `${themeColors.brand.teal}1A`}
-                      onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
-                    >
-                      <FiMinus className="w-4 h-4" style={{ color: themeColors.button }} />
-                    </button>
-                    <span className="px-3 py-1 text-sm font-medium text-black">{item.serviceCount || 1}</span>
-                    <button
-                      onClick={() => handleQuantityChange(item._id, 1)}
-                      className="p-2 transition-colors"
-                      onMouseEnter={(e) => e.target.style.backgroundColor = `${themeColors.brand.teal}1A`}
-                      onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
-                    >
-                      <FiPlus className="w-4 h-4" style={{ color: themeColors.button }} />
-                    </button>
+          {cartItems.map((item) => {
+            const brandName = item.brand || item.sectionTitle;
+            const categoryName = item.categoryTitle || item.category;
+
+            return (
+              <div key={item._id} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm relative overflow-hidden">
+                {/* Brand Header */}
+                {(brandName || categoryName) && (
+                  <div className="flex items-center gap-2 mb-3 pb-3 border-b border-gray-50">
+                    {item.sectionIcon ? (
+                      <img src={toAssetUrl(item.sectionIcon)} className="w-5 h-5 rounded-md object-cover border border-gray-100" alt="" />
+                    ) : (
+                      <div className="w-5 h-5 rounded-md bg-gray-100 flex items-center justify-center text-[10px] font-bold text-gray-500">
+                        {(brandName || "B").charAt(0)}
+                      </div>
+                    )}
+                    <div className="flex flex-col leading-none">
+                      {brandName && <span className="text-xs font-bold text-gray-900">{brandName}</span>}
+                      {categoryName && <span className="text-[10px] font-medium text-gray-500 uppercase tracking-wide mt-0.5">{categoryName}</span>}
+                    </div>
                   </div>
                 )}
-                {!item.isPlan && (
-                  <button
-                    onClick={() => handleRemoveItem(item._id)}
-                    className="p-2 text-gray-400 hover:text-red-500 transition-colors"
-                  >
-                    <FiTrash2 className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-base font-bold text-black">
-                  {calculateItemPrice(item) === 0 ? (
-                    <span className="text-green-600">Free</span>
-                  ) : (
-                    `₹${(item.price || 0).toLocaleString('en-IN')}`
+
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1 pr-4">
+                    <h3 className="text-base font-bold text-gray-900 mb-1 leading-snug">{item.title}</h3>
+                    {item.description && (
+                      <p className="text-sm text-gray-600 line-clamp-2">{item.description}</p>
+                    )}
+                    {item.duration && (
+                      <div className="flex items-center gap-1 mt-2 text-xs text-gray-500">
+                        <FiClock className="w-3 h-3" />
+                        {item.duration}
+                      </div>
+                    )}
+                  </div>
+                  {!item.isPlan && (
+                    <div className="flex flex-col items-end gap-2">
+                      <div className="flex items-center gap-1 bg-gray-50 border border-gray-200 rounded-lg p-0.5">
+                        <button
+                          onClick={() => handleQuantityChange(item._id, -1)}
+                          className="p-1.5 hover:bg-white rounded-md transition-all shadow-sm"
+                        >
+                          <FiMinus className="w-3.5 h-3.5 text-gray-600" />
+                        </button>
+                        <span className="w-6 text-center text-sm font-bold text-gray-900">{item.serviceCount || 1}</span>
+                        <button
+                          onClick={() => handleQuantityChange(item._id, 1)}
+                          className="p-1.5 hover:bg-white rounded-md transition-all shadow-sm"
+                        >
+                          <FiPlus className="w-3.5 h-3.5 text-gray-900" />
+                        </button>
+                      </div>
+                    </div>
                   )}
-                </span>
-                {calculateItemPrice(item) === 0 && (
-                  <span className="text-[10px] font-bold bg-green-100 text-green-700 px-2 py-0.5 rounded-full border border-green-200">
-                    WITH PLAN
+                  {!item.isPlan && (
+                    <button
+                      onClick={() => handleRemoveItem(item._id)}
+                      className="absolute top-3 right-3 p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"
+                    >
+                      <FiTrash2 className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-base font-bold text-black">
+                    {calculateItemPrice(item) === 0 ? (
+                      <span className="text-green-600">Free</span>
+                    ) : (
+                      `₹${(item.price || 0).toLocaleString('en-IN')}`
+                    )}
                   </span>
-                )}
-                {calculateItemPrice(item) > 0 && (() => {
-                  const unitPrice = item.unitPrice || (item.price / (item.serviceCount || 1));
-                  const unitOriginalPrice = item.originalPrice || unitPrice;
-                  const currentTotal = item.price;
-                  const originalTotal = unitOriginalPrice * (item.serviceCount || 1);
-                  if (originalTotal > currentTotal) {
-                    return (
-                      <span className="text-sm text-gray-400 line-through">
-                        ₹{originalTotal.toLocaleString('en-IN')}
-                      </span>
-                    );
-                  }
-                  return null;
-                })()}
+                  {calculateItemPrice(item) === 0 && (
+                    <span className="text-[10px] font-bold bg-green-100 text-green-700 px-2 py-0.5 rounded-full border border-green-200">
+                      WITH PLAN
+                    </span>
+                  )}
+                  {calculateItemPrice(item) > 0 && (() => {
+                    const unitPrice = item.unitPrice || (item.price / (item.serviceCount || 1));
+                    const unitOriginalPrice = item.originalPrice || unitPrice;
+                    const currentTotal = item.price;
+                    const originalTotal = unitOriginalPrice * (item.serviceCount || 1);
+                    if (originalTotal > currentTotal) {
+                      return (
+                        <span className="text-sm text-gray-400 line-through">
+                          ₹{originalTotal.toLocaleString('en-IN')}
+                        </span>
+                      );
+                    }
+                    return null;
+                  })()}
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
 
         {/* ... */}
@@ -1218,6 +1285,19 @@ const Checkout = () => {
           </div>
         </div>
 
+        {/* Important Note regarding Base Price */}
+        <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-6 flex items-start gap-4 shadow-sm">
+          <div className="bg-blue-100 p-2 rounded-full shrink-0 mt-0.5">
+            <FiInfo className="w-5 h-5 text-blue-600" />
+          </div>
+          <div>
+            <h4 className="text-sm font-bold text-blue-900 mb-1">Note</h4>
+            <p className="text-sm text-blue-800 leading-relaxed font-medium">
+              This is a base booking cost. Additional service cost is decided by the vendor after service bill preparation.
+            </p>
+          </div>
+        </div>
+
         {/* Free Plan Benefit Card */}
         {totalAmount === 0 && (
           <div className="bg-gradient-to-br from-green-50 to-emerald-100/50 border border-green-200 rounded-2xl p-5 mb-6 relative overflow-hidden">
@@ -1256,9 +1336,33 @@ const Checkout = () => {
 
       {/* Bottom Action Button */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40">
+
+        {/* Booking Type Toggle */}
+        <div className="px-4 pt-3 pb-0">
+          <div className="flex bg-gray-100 p-1 rounded-xl mb-1">
+            <button
+              onClick={() => setBookingType('instant')}
+              className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-2 ${bookingType === 'instant' ? 'bg-white shadow-sm text-black' : 'text-gray-500'}`}
+            >
+              <span className="text-yellow-500">⚡</span> Instant
+            </button>
+            <button
+              onClick={() => setBookingType('scheduled')}
+              className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-2 ${bookingType === 'scheduled' ? 'bg-white shadow-sm text-black' : 'text-gray-500'}`}
+            >
+              <span>📅</span> Scheduled
+            </button>
+          </div>
+          {bookingType === 'instant' && (
+            <p className="text-xs text-center text-green-600 font-medium mt-1 mb-1">
+              <span className="font-bold">⚡ Priority Service:</span> Vendor arrives in ~45 mins
+            </p>
+          )}
+        </div>
+
         {/* Selected Address and Slot Display */}
         {(houseNumber || addressDetails) && (
-          <div className="px-4 pt-3 pb-2 border-b border-gray-100">
+          <div className="px-4 pt-2 pb-2 border-b border-gray-100">
             <div className="space-y-2.5">
               {/* Address */}
               <div className="flex items-start gap-2.5">
@@ -1267,7 +1371,7 @@ const Checkout = () => {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs text-gray-600 mb-0.5">Address</p>
-                  <p className="text-sm font-medium text-black">
+                  <p className="text-sm font-medium text-black truncate">
                     {houseNumber ? `${houseNumber}, ` : ''}{address}
                   </p>
                 </div>
@@ -1278,32 +1382,35 @@ const Checkout = () => {
                   <FiEdit2 className="w-4 h-4 text-gray-600" />
                 </button>
               </div>
-              {/* Time Slot */}
-              <div className="flex items-start gap-2.5">
-                <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5" style={{ backgroundColor: 'rgba(0, 166, 166, 0.1)' }}>
-                  <FiClock className="w-4 h-4" style={{ color: themeColors.button }} />
+
+              {/* Time Slot (Only for Scheduled) */}
+              {bookingType === 'scheduled' && (
+                <div className="flex items-start gap-2.5">
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5" style={{ backgroundColor: 'rgba(0, 166, 166, 0.1)' }}>
+                    <FiClock className="w-4 h-4" style={{ color: themeColors.button }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-gray-600 mb-0.5">Time Slot</p>
+                    <p className="text-sm font-medium text-black">
+                      {selectedDate ? (() => {
+                        const { day, date: dateNum } = formatDate(selectedDate);
+                        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                        const month = monthNames[selectedDate.getMonth()];
+                        const timeStr = selectedTime && getTimeSlots().find(slot => slot.value === selectedTime)?.display ? ` • ${getTimeSlots().find(slot => slot.value === selectedTime).display}` : '';
+                        return `${day}, ${dateNum} ${month}${timeStr}`;
+                      })() : (
+                        <span className="text-gray-400">Select Date & Time</span>
+                      )}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setShowTimeSlotModal(true)}
+                    className="p-1.5 hover:bg-gray-100 rounded-full transition-colors shrink-0 mt-0.5"
+                  >
+                    <FiEdit2 className="w-4 h-4 text-gray-600" />
+                  </button>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs text-gray-600 mb-0.5">Time Slot</p>
-                  <p className="text-sm font-medium text-black">
-                    {selectedDate ? (() => {
-                      const { day, date: dateNum } = formatDate(selectedDate);
-                      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                      const month = monthNames[selectedDate.getMonth()];
-                      const timeStr = selectedTime && getTimeSlots().find(slot => slot.value === selectedTime)?.display ? ` • ${getTimeSlots().find(slot => slot.value === selectedTime).display}` : '';
-                      return `${day}, ${dateNum} ${month}${timeStr}`;
-                    })() : (
-                      <span className="text-gray-400">Select Date & Time</span>
-                    )}
-                  </p>
-                </div>
-                <button
-                  onClick={() => setShowTimeSlotModal(true)}
-                  className="p-1.5 hover:bg-gray-100 rounded-full transition-colors shrink-0 mt-0.5"
-                >
-                  <FiEdit2 className="w-4 h-4 text-gray-600" />
-                </button>
-              </div>
+              )}
             </div>
           </div>
         )}
@@ -1311,25 +1418,22 @@ const Checkout = () => {
         <div className="p-4">
           <button
             onClick={plan ? handlePlanPayment :
-              selectedDate && selectedTime && houseNumber ?
+              (houseNumber || addressDetails) ?
                 (currentStep === 'payment' ? handlePayment : handleSearchVendors) :
                 handleProceed}
             disabled={searchingVendors}
-            className="w-full text-white py-3 rounded-lg text-base font-semibold transition-colors disabled:opacity-50"
+            className="w-full text-white py-3 rounded-lg text-base font-semibold transition-colors disabled:opacity-50 shadow-lg shadow-teal-500/30"
             style={{ backgroundColor: themeColors.button }}
-            onMouseEnter={(e) => e.target.style.backgroundColor = themeColors.button}
-            onMouseLeave={(e) => e.target.style.backgroundColor = themeColors.button}
           >
             {searchingVendors ? 'Searching for vendors...' :
               currentStep === 'payment' ? (totalAmount === 0 ? 'Confirm Booking (Free)' : (paymentMethod === 'online' ? 'Proceed to Pay' : 'Confirm Booking')) :
                 plan ? 'Proceed to Payment' :
-                  selectedDate && selectedTime && houseNumber ?
-                    'Find nearby vendors' :
-                    (houseNumber || addressDetails) ? 'Select Time Slot' : 'Add address and slot'}
+                  bookingType === 'instant' ? 'Find nearby vendors now' :
+                    (selectedDate && selectedTime && houseNumber ?
+                      'Find nearby vendors' :
+                      (houseNumber || addressDetails) ? 'Select Time Slot' : 'Add address to proceed')}
           </button>
         </div>
-
-
       </div>
 
       {/* Live Booking Status Card (Visible when minimized) */}

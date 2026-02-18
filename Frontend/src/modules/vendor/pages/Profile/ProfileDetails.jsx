@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useLayoutEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiUser, FiEdit2, FiMapPin, FiPhone, FiMail, FiBriefcase, FiTag } from 'react-icons/fi';
+import { FiUser, FiEdit2, FiMapPin, FiPhone, FiMail, FiBriefcase } from 'react-icons/fi';
 import { vendorAuthService } from '../../../../services/authService';
 import { vendorTheme as themeColors } from '../../../../theme';
 import Header from '../../components/layout/Header';
@@ -24,7 +24,6 @@ const ProfileDetails = () => {
     email: '',
     address: '',
     serviceCategory: '',
-    skills: [],
     profilePhoto: '',
   });
 
@@ -74,7 +73,6 @@ const ProfileDetails = () => {
             email: storedData.email || '',
             address: addressString || 'Not set',
             serviceCategory: storedData.serviceCategory || storedData.service || '',
-            skills: storedData.skills || [],
             profilePhoto: storedData.profilePhoto || ''
           }));
         }
@@ -100,26 +98,14 @@ const ProfileDetails = () => {
             phone: apiData.phone,
             email: apiData.email,
             address: formattedAddress,
-            serviceCategory: apiData.service,
-            skills: [], // TODO: If API returns skills, map them here. Currently relying on local match or default
+            serviceCategory: Array.isArray(apiData.service) ? apiData.service.join(', ') : (apiData.service || ''),
             profilePhoto: apiData.profilePhoto
           };
 
-          // Merge with existing state to keep skills if API doesn't return them yet
-          setProfile(prev => ({
-            ...prev,
-            ...newProfile,
-            // Keep local skills if API skills are empty/undefined (since backend schema might not have skills array yet)
-            skills: (apiData.skills && apiData.skills.length > 0) ? apiData.skills : prev.skills
-          }));
+          setProfile(prev => ({ ...prev, ...newProfile }));
 
           // Update local storage
-          const finalData = { ...apiData };
-          if (!finalData.skills || finalData.skills.length === 0) {
-            finalData.skills = storedData.skills || [];
-          }
-          localStorage.setItem('vendorData', JSON.stringify(finalData));
-          // Also update vendorProfile to keep sync (though we are moving towards vendorData)
+          localStorage.setItem('vendorData', JSON.stringify(apiData));
           localStorage.setItem('vendorProfile', JSON.stringify({ ...storedData, ...apiData }));
         }
 
@@ -249,46 +235,23 @@ const ProfileDetails = () => {
           {/* Professional Info Group */}
           <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
             <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-4">Professional Profile</h4>
-            <div className="space-y-5">
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: `${themeColors.button}15` }}>
-                  <FiBriefcase className="w-5 h-5" style={{ color: themeColors.button }} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs text-gray-500 font-medium mb-0.5">Service Category</p>
-                  <div className="inline-flex items-center px-2.5 py-1 rounded-lg bg-teal-50 text-teal-700 text-xs font-bold border border-teal-100">
-                    {profile.serviceCategory || 'Not set'}
-                  </div>
-                </div>
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: `${themeColors.button}15` }}>
+                <FiBriefcase className="w-5 h-5" style={{ color: themeColors.button }} />
               </div>
-
-              <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0" style={{ background: `${themeColors.button}15` }}>
-                    <FiTag className="w-3.5 h-3.5" style={{ color: themeColors.button }} />
-                  </div>
-                  <p className="text-xs text-gray-500 font-medium">Expertise & Skills</p>
-                </div>
-
-                {profile.skills && profile.skills.length > 0 ? (
-                  <div className="flex flex-wrap gap-2">
-                    {profile.skills.map((skill, index) => (
-                      <span
-                        key={index}
-                        className="px-3 py-1.5 rounded-lg text-xs font-semibold tracking-wide"
-                        style={{
-                          background: `linear-gradient(135deg, ${themeColors.button}08 0%, ${themeColors.button}12 100%)`,
-                          color: themeColors.button,
-                          border: `1px solid ${themeColors.button}25`,
-                        }}
-                      >
-                        {skill}
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-gray-500 font-medium mb-1.5">Service Categories</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {profile.serviceCategory && (Array.isArray(profile.serviceCategory) ? profile.serviceCategory : profile.serviceCategory.split(', ')).filter(Boolean).length > 0 ? (
+                    (Array.isArray(profile.serviceCategory) ? profile.serviceCategory : profile.serviceCategory.split(', ')).filter(Boolean).map((cat, i) => (
+                      <span key={i} className="inline-flex items-center px-2.5 py-1 rounded-lg bg-teal-50 text-teal-700 text-xs font-bold border border-teal-100">
+                        {cat}
                       </span>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-gray-400 text-sm italic pl-1">No skills added yet.</p>
-                )}
+                    ))
+                  ) : (
+                    <span className="text-gray-400 text-sm italic">Not set</span>
+                  )}
+                </div>
               </div>
             </div>
           </div>

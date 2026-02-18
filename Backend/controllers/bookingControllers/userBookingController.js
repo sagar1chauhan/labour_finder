@@ -48,7 +48,8 @@ const createBooking = async (req, res) => {
       serviceCategory: reqServiceCategory,
       categoryIcon: reqCategoryIcon,
       brandName: reqBrandName,
-      brandIcon: reqBrandIcon
+      brandIcon: reqBrandIcon,
+      bookingType // Extract bookingType
     } = req.body;
 
     let visitingCharges = reqVisitingCharges !== undefined ? reqVisitingCharges : (reqVisitationFee || 0);
@@ -353,6 +354,7 @@ const createBooking = async (req, res) => {
       categoryIcon: reqCategoryIcon || categoryIcon,
       brandName: reqBrandName || brandName,
       brandIcon: reqBrandIcon || brandIcon,
+      bookingType: bookingType || 'scheduled',
 
       description: service.description,
       serviceImages: service.images || [],

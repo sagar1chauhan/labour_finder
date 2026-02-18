@@ -84,9 +84,11 @@ const findNearbyVendors = async (centerLocation, radiusKm = 10, filters = {}) =>
 
     // Extract custom options from filters
     const checkCashLimit = filters.checkCashLimit;
+    const serviceCategory = filters.service; // Category title to match against vendor's categories array
     // Clone filters to avoid modifying original or polluting query
     const queryFilters = { ...filters };
     delete queryFilters.checkCashLimit;
+    delete queryFilters.service; // Remove raw service filter — we handle it manually below
 
     // Build base query
     const baseQuery = {
@@ -94,6 +96,12 @@ const findNearbyVendors = async (centerLocation, radiusKm = 10, filters = {}) =>
       isActive: true,
       ...queryFilters
     };
+
+    // Filter by vendor's selected categories (what they set in their profile)
+    if (serviceCategory) {
+      baseQuery.categories = { $in: [serviceCategory] };
+      console.log(`[LocationService] Filtering vendors by category: "${serviceCategory}"`);
+    }
 
     // Apply Cash Limit Check if requested
     if (checkCashLimit) {

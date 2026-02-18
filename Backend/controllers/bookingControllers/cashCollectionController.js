@@ -233,21 +233,27 @@ exports.confirmCashCollection = async (req, res) => {
 
     // Update Vendor Wallet (Even if worker collected, it goes to vendor's ledger)
     const vendorId = booking.vendorId;
-    const vendor = await Vendor.findById(vendorId);
+    // Use findByIdAndUpdate to avoid triggering full Mongoose validation
+    // (which would fail for vendors missing optional fields like aadhar.backDocument)
+    const vendor = await Vendor.findById(vendorId).lean();
 
     if (vendor) {
-      // Increase dues (amount vendor owes to admin)
-      vendor.wallet.dues = (vendor.wallet.dues || 0) + collectionAmount;
-      vendor.wallet.totalCashCollected = (vendor.wallet.totalCashCollected || 0) + collectionAmount;
+      const newDues = (vendor.wallet?.dues || 0) + collectionAmount;
+      const newTotalCashCollected = (vendor.wallet?.totalCashCollected || 0) + collectionAmount;
+      const cashLimit = vendor.wallet?.cashLimit || 10000;
+      const isOverLimit = newDues > cashLimit;
 
-      // Check cash limit
-      if (vendor.wallet.dues > (vendor.wallet.cashLimit || 10000)) {
-        vendor.wallet.isBlocked = true;
-        vendor.wallet.blockedAt = new Date();
-        vendor.wallet.blockReason = 'Cash collection limit exceeded. Please settle dues with admin.';
-      }
+      const walletUpdate = {
+        'wallet.dues': newDues,
+        'wallet.totalCashCollected': newTotalCashCollected,
+        ...(isOverLimit && {
+          'wallet.isBlocked': true,
+          'wallet.blockedAt': new Date(),
+          'wallet.blockReason': 'Cash collection limit exceeded. Please settle dues with admin.'
+        })
+      };
 
-      await vendor.save();
+      await Vendor.findByIdAndUpdate(vendorId, { $set: walletUpdate }, { new: true, runValidators: false });
 
       // Record Transaction
       await Transaction.create({
@@ -290,7 +296,7 @@ exports.confirmCashCollection = async (req, res) => {
       data: {
         bookingId: booking._id,
         amount: collectionAmount,
-        walletDues: vendor?.wallet?.dues
+        walletDues: vendor ? newDues : null
       }
     });
   } catch (error) {

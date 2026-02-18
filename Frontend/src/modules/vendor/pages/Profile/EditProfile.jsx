@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useLayoutEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiSave, FiUser, FiBriefcase, FiPhone, FiMail, FiMapPin, FiTag, FiChevronDown, FiX, FiCamera, FiUpload } from 'react-icons/fi';
+import { FiSave, FiUser, FiBriefcase, FiPhone, FiMail, FiMapPin, FiChevronDown, FiCamera, FiUpload } from 'react-icons/fi';
 import { vendorTheme as themeColors } from '../../../../theme';
 import Header from '../../components/layout/Header';
 import BottomNav from '../../components/layout/BottomNav';
@@ -21,7 +21,6 @@ const vendorProfileSchema = z.object({
       (typeof val === 'object' && val !== null && (val.fullAddress || val.addressLine1));
   }, "Address is required"),
   serviceCategories: z.array(z.string()).min(1, "Select at least one category"),
-  skills: z.array(z.string()).min(1, "Select at least one skill"),
 });
 
 const EditProfile = () => {
@@ -42,7 +41,6 @@ const EditProfile = () => {
     email: '',
     address: '',
     serviceCategories: [], // Array for multiple selection
-    skills: [],
     profilePhoto: '', // URL
     aadharDocument: '', // URL
   });
@@ -56,7 +54,6 @@ const EditProfile = () => {
   // Load service categories from admin config (dynamic)
   const [categories, setCategories] = useState([]);
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
-  const [isServicesOpen, setIsServicesOpen] = useState(false);
 
   useEffect(() => {
     const loadServiceCategories = async () => {
@@ -115,7 +112,6 @@ const EditProfile = () => {
             email: v.email || '',
             address: addressData,
             serviceCategories: Array.isArray(v.service) ? v.service : (v.service ? [v.service] : []),
-            skills: v.skills || [],
             profilePhoto: v.profilePhoto || '',
             aadharDocument: v.aadharDocument || (v.aadhar && v.aadhar.document) || '',
           });
@@ -145,7 +141,6 @@ const EditProfile = () => {
               email: storedData.email || '',
               address: addressData,
               serviceCategory: storedData.service || storedData.serviceCategory || '',
-              skills: storedData.skills || [],
               profilePhoto: storedData.profilePhoto || '',
               aadharDocument: storedData.aadharDocument || (storedData.aadhar && storedData.aadhar.document) || '',
             });
@@ -273,15 +268,6 @@ const EditProfile = () => {
     });
   };
 
-  const toggleSkill = (skill) => {
-    setFormData(prev => {
-      const skills = prev.skills.includes(skill)
-        ? prev.skills.filter(s => s !== skill)
-        : [...prev.skills, skill];
-      return { ...prev, skills };
-    });
-  };
-
   const handleSubmit = async () => {
     // Zod Validation
     const validationResult = vendorProfileSchema.safeParse({
@@ -291,24 +277,12 @@ const EditProfile = () => {
       email: formData.email,
       address: formData.address,
       serviceCategories: formData.serviceCategories,
-      skills: formData.skills
     });
 
     if (!validationResult.success) {
       toast.error(validationResult.error.errors[0].message);
       return;
     }
-
-    // Manual Check for Aadhar (if strictly required)
-    // if (!formData.aadharDocument && !aadharFile) { toast.error("Aadhar document is required"); return; }
-
-    if (!validationResult.success) {
-      toast.error(validationResult.error.errors[0].message);
-      return;
-    }
-
-    // Manual Check for Aadhar (if strictly required)
-    // if (!formData.aadharDocument && !aadharFile) { toast.error("Aadhar document is required"); return; }
 
     try {
       setUploading(true);
@@ -346,7 +320,6 @@ const EditProfile = () => {
         businessName: formData.businessName,
         address: formData.address,
         serviceCategory: formData.serviceCategories,
-        skills: formData.skills,
         profilePhoto: photoUrl,
         aadharDocument: aadharUrl
       };
@@ -381,14 +354,6 @@ const EditProfile = () => {
       setUploading(false);
     }
   };
-
-  // Get aggregated sub-services (skills) from ALL selected categories
-  const availableSkills = categories
-    .filter(c => formData.serviceCategories.includes(c.title))
-    .flatMap(c => c.subServices || []);
-
-  // Remove duplicates
-  const uniqueAvailableSkills = [...new Set(availableSkills.map(s => typeof s === 'string' ? s : (s.name || s.title)))];
 
   return (
     <div className="min-h-screen pb-20" style={{ background: themeColors.backgroundGradient }}>
@@ -580,7 +545,7 @@ const EditProfile = () => {
                   background: `linear-gradient(135deg, ${themeColors.icon}25 0%, ${themeColors.icon}15 100%)`,
                 }}
               >
-                <FiTag className="w-4 h-4" style={{ color: themeColors.icon }} />
+                <FiBriefcase className="w-4 h-4" style={{ color: themeColors.icon }} />
               </div>
               <span>Service Categories <span className="text-red-500">*</span></span>
             </label>
@@ -626,7 +591,6 @@ const EditProfile = () => {
                           >
                             {cat.title}
                             <div className={`w-5 h-5 rounded border flex items-center justify-center ${isSelected ? 'bg-blue-500 border-blue-500' : 'border-gray-300'}`}>
-                              {isSelected && <FiX className="w-3 h-3 text-white transform rotate-45" style={{ transform: 'none' /* Just a checkmark really */ }} />}
                               {isSelected && <span className="text-white text-xs">✓</span>}
                             </div>
                           </button>
@@ -641,90 +605,6 @@ const EditProfile = () => {
             </div>
             {errors.serviceCategories && <p className="text-red-500 text-sm mt-1">{errors.serviceCategories}</p>}
           </div>
-
-          {/* Skills Dropdown */}
-          {formData.serviceCategories.length > 0 && (
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                <div
-                  className="p-2 rounded-lg"
-                  style={{
-                    background: `linear-gradient(135deg, ${themeColors.button}25 0%, ${themeColors.button}15 100%)`,
-                  }}
-                >
-                  <FiTag className="w-4 h-4" style={{ color: themeColors.button }} />
-                </div>
-                <span>Skills <span className="text-red-500">*</span></span>
-              </label>
-
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => setIsServicesOpen(!isServicesOpen)}
-                  className="w-full px-4 py-3 bg-white rounded-xl border border-gray-200 flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-blue-100"
-                >
-                  <span className={`font-medium truncate ${formData.skills.length > 0 ? 'text-gray-900' : 'text-gray-400'}`}>
-                    {formData.skills.length > 0 ? `${formData.skills.length} Selected` : 'Select Services'}
-                  </span>
-                  <FiChevronDown className={`w-5 h-5 text-gray-500 transition-transform ${isServicesOpen ? 'rotate-180' : ''}`} />
-                </button>
-
-                {isServicesOpen && (
-                  <>
-                    <div
-                      className="fixed inset-0 z-10 bg-transparent"
-                      onClick={() => setIsServicesOpen(false)}
-                    />
-                    <div className="absolute z-20 w-full mt-2 bg-white rounded-xl shadow-xl border border-gray-100 max-h-60 overflow-y-auto">
-                      {uniqueAvailableSkills.length > 0 ? (
-                        uniqueAvailableSkills.map((skillName, idx) => {
-                          const isSelected = formData.skills.includes(skillName);
-                          return (
-                            <button
-                              key={skillName || idx}
-                              type="button"
-                              onClick={() => toggleSkill(skillName)}
-                              className="w-full text-left px-4 py-3 hover:bg-gray-50 font-medium text-gray-700 border-b border-gray-50 last:border-0 flex items-center justify-between"
-                            >
-                              {skillName}
-                              {isSelected && (
-                                <div className="w-2 h-2 rounded-full" style={{ background: themeColors.button }} />
-                              )}
-                            </button>
-                          );
-                        })
-                      ) : (
-                        <div className="px-4 py-3 text-gray-400 text-sm">No services available</div>
-                      )}
-                    </div>
-                  </>
-                )}
-              </div>
-
-              {/* Selected Services Tags */}
-              {formData.skills.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-3">
-                  {formData.skills.map((skill, idx) => (
-                    <span
-                      key={skill || idx}
-                      className="inline-flex items-center px-3 py-1 bg-gray-100 rounded-full text-xs font-medium text-gray-700"
-                      style={{ border: '1px solid #e5e7eb' }}
-                    >
-                      {skill}
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); toggleSkill(skill); }}
-                        className="ml-2 text-gray-400 hover:text-red-500 focus:outline-none transition-colors"
-                      >
-                        <FiX className="w-3 h-3" />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
-              {errors.skills && <p className="text-red-500 text-sm mt-1">{errors.skills}</p>}
-            </div>
-          )}
 
           {/* Aadhar Document Upload */}
           <div>
