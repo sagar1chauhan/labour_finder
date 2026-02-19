@@ -37,6 +37,12 @@ const vendorPartsCatalogSchema = new mongoose.Schema({
     default: SERVICE_STATUS.ACTIVE,
     index: true
   },
+  categoryId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Category',
+    required: [true, 'Please select a category'],
+    index: true
+  },
   description: {
     type: String,
     trim: true

@@ -24,7 +24,9 @@ router.get('/services', authenticate, isVendor, async (req, res) => {
  */
 router.get('/parts', authenticate, isVendor, async (req, res) => {
   try {
-    const parts = await VendorPartsCatalog.find({ status: 'active' }).sort({ name: 1 });
+    const parts = await VendorPartsCatalog.find({ status: 'active' })
+      .populate('categoryId', 'title')
+      .sort({ name: 1 });
     res.status(200).json({ success: true, parts });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Failed to fetch parts catalog' });

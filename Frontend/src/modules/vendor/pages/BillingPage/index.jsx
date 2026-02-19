@@ -42,6 +42,8 @@ const BillingPage = () => {
   const [partsCatalog, setPartsCatalog] = useState([]);
   const [serviceCategories, setServiceCategories] = useState(['All']);
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [partCategories, setPartCategories] = useState(['All']);
+  const [selectedPartCategory, setSelectedPartCategory] = useState('All');
 
   // New Data Structure
   const [selectedServices, setSelectedServices] = useState([]);
@@ -97,6 +99,9 @@ const BillingPage = () => {
       // Extract unique categories
       const cats = ['All', ...new Set(services.map(s => s.categoryId?.title || 'Uncategorized'))];
       setServiceCategories(cats.filter(Boolean));
+
+      const pCats = ['All', ...new Set(parts.map(p => p.categoryId?.title || 'Uncategorized'))];
+      setPartCategories(pCats.filter(Boolean));
 
       // Load existing bill if any
       let usedBillSettings = false;
@@ -168,10 +173,12 @@ const BillingPage = () => {
   }, [servicesCatalog, serviceSearch, selectedCategory]);
 
   const filteredParts = useMemo(() => {
-    return partsCatalog.filter(item =>
-      item.name.toLowerCase().includes(partSearch.toLowerCase())
-    );
-  }, [partsCatalog, partSearch]);
+    return partsCatalog.filter(item => {
+      const matchesSearch = item.name.toLowerCase().includes(partSearch.toLowerCase());
+      const matchesCategory = selectedPartCategory === 'All' || (item.categoryId?.title || 'Uncategorized') === selectedPartCategory;
+      return matchesSearch && matchesCategory;
+    });
+  }, [partsCatalog, partSearch, selectedPartCategory]);
 
 
   // --- HANDLERS (SELECTION) ---
@@ -547,6 +554,12 @@ const BillingPage = () => {
               </div>
             </div>
           </div>
+          <div className="px-4 py-2 flex gap-2 overflow-x-auto scrollbar-hide">
+            {partCategories.map(cat => (
+              <button key={cat} onClick={() => setSelectedPartCategory(cat)}
+                className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors ${selectedPartCategory === cat ? 'bg-orange-600 text-white' : 'bg-gray-100 text-gray-600'}`}>{cat}</button>
+            ))}
+          </div>
         </div>
         <div className="p-4 space-y-3 pb-48">
           {filteredParts.map(item => {
@@ -559,6 +572,7 @@ const BillingPage = () => {
                   <h4 className={`font-bold text-base mb-1 ${selected ? 'text-orange-900' : 'text-gray-900'}`}>{item.name}</h4>
                   <div className="flex items-center gap-2">
                     <span className={`text-sm font-bold ${selected ? 'text-orange-700' : 'text-gray-900'}`}>₹{item.price}</span>
+                    {item.categoryId?.title && <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 font-medium">{item.categoryId.title}</span>}
                   </div>
                 </div>
                 <button

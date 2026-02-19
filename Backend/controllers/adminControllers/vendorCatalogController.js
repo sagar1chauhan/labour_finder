@@ -81,7 +81,9 @@ const deleteVendorService = async (req, res) => {
  */
 const getAllVendorParts = async (req, res) => {
   try {
-    const parts = await VendorPartsCatalog.find().sort({ createdAt: -1 });
+    const parts = await VendorPartsCatalog.find()
+      .populate('categoryId', 'title')
+      .sort({ createdAt: -1 });
     res.status(200).json({ success: true, count: parts.length, parts });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Failed to fetch vendor parts' });
@@ -94,7 +96,7 @@ const getAllVendorParts = async (req, res) => {
  */
 const createVendorPart = async (req, res) => {
   try {
-    const { name, price, basePrice, hsnCode, gstApplicable, gstPercentage, status, description } = req.body;
+    const { name, price, basePrice, hsnCode, gstApplicable, gstPercentage, status, description, categoryId } = req.body;
     const finalPrice = price || basePrice;
     const part = await VendorPartsCatalog.create({
       name,
@@ -103,7 +105,8 @@ const createVendorPart = async (req, res) => {
       gstApplicable,
       gstPercentage,
       status,
-      description
+      description,
+      categoryId
     });
     res.status(201).json({ success: true, part });
   } catch (error) {
@@ -118,10 +121,13 @@ const createVendorPart = async (req, res) => {
  */
 const updateVendorPart = async (req, res) => {
   try {
-    const { basePrice, price, ...rest } = req.body;
+    const { basePrice, price, categoryId, ...rest } = req.body;
     const updateData = { ...rest };
     if (basePrice !== undefined || price !== undefined) {
       updateData.price = price || basePrice;
+    }
+    if (categoryId) {
+      updateData.categoryId = categoryId;
     }
 
     const part = await VendorPartsCatalog.findByIdAndUpdate(req.params.id, updateData, { new: true });
