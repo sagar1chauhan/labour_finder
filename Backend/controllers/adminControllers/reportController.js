@@ -4,6 +4,7 @@ const Settlement = require('../../models/Settlement');
 const Vendor = require('../../models/Vendor');
 const User = require('../../models/User');
 const Settings = require('../../models/Settings');
+const PlatformEarning = require('../../models/PlatformEarning');
 const { BOOKING_STATUS, PAYMENT_STATUS } = require('../../utils/constants');
 
 /**
@@ -14,51 +15,51 @@ const getFinanceOverview = async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
 
-    // Build date filter
+    // Build date filter string for PlatformEarning Model (YYYY-MM-DD)
     const dateFilter = {};
     if (startDate && endDate) {
-      dateFilter.createdAt = {
-        $gte: new Date(startDate),
-        $lte: new Date(new Date(endDate).setHours(23, 59, 59, 999))
-      };
+      // Create strings like '2026-03-01' from the ISO formats
+      const startStr = new Date(startDate).toISOString().split('T')[0];
+      const endStr = new Date(endDate).toISOString().split('T')[0];
+      dateFilter.date = { $gte: startStr, $lte: endStr };
     }
 
-    const revenueDocs = await Booking.aggregate([
-      {
-        $match: {
-          ...dateFilter,
-          status: BOOKING_STATUS.COMPLETED,
-          paymentStatus: { $in: [PAYMENT_STATUS.SUCCESS, PAYMENT_STATUS.COLLECTED_BY_VENDOR, 'success', 'collected_by_vendor', 'collected_by_worker', 'paid'] }
-        }
-      },
-      {
-        $lookup: {
-          from: 'vendorbills',
-          localField: 'vendorBillId',
-          foreignField: '_id',
-          as: 'bill'
-        }
-      },
-      { $unwind: { path: '$bill', preserveNullAndEmptyArrays: true } },
+    // 1. Fetch Aggregated Revenue Data INSTANTLY from the new Model
+    const revenueDocs = await PlatformEarning.aggregate([
+      { $match: dateFilter },
       {
         $group: {
           _id: null,
-          totalTransactionValue: { $sum: { $ifNull: ['$bill.grandTotal', '$finalAmount'] } },
-          totalPlatformRevenue: { $sum: { $ifNull: ['$bill.companyRevenue', { $multiply: ['$finalAmount', 0.2] }] } },
-          totalVendorEarnings: { $sum: { $ifNull: ['$bill.vendorTotalEarning', { $multiply: ['$finalAmount', 0.8] }] } },
-          totalTaxCollected: { $sum: { $ifNull: ['$bill.totalGST', 0] } },
-          count: { $sum: 1 }
+          totalTransactionValue: { $sum: '$totalRevenue' },
+          totalPlatformRevenue: { $sum: '$platformCommission' },
+          totalVendorEarnings: { $sum: '$vendorEarnings' },
+          totalTaxCollected: { $sum: '$totalGST' },
+          totalTDSCollected: { $sum: '$totalTDS' },
+          count: { $sum: '$totalBookings' },
+          totalSettlementReceived: { $sum: '$totalSettlementReceived' },
+          totalAmountPaidToVendors: { $sum: '$totalAmountPaidToVendors' }
         }
       }
     ]);
 
-    const revenueStats = revenueDocs[0] || {
+    let revenueStats = revenueDocs[0] || {
       totalTransactionValue: 0,
       totalPlatformRevenue: 0,
       totalVendorEarnings: 0,
       totalTaxCollected: 0,
-      count: 0
+      totalTDSCollected: 0,
+      count: 0,
+      totalSettlementReceived: 0,
+      totalAmountPaidToVendors: 0
     };
+
+    // Grab the live "Pending" snapshot from the latest today record to avoid manual calc
+    const todayStr = new Date().toISOString().split('T')[0];
+    const latestSnapshot = await PlatformEarning.findOne({ date: todayStr });
+
+    // Mount the extra stats securely
+    revenueStats.totalPendingSettlement = latestSnapshot?.totalPendingSettlement || 0;
+    revenueStats.totalPendingPayout = latestSnapshot?.totalPendingAmountToVendors || 0;
 
     // 2. Pending Settlements (What we owe vendors)
     const pendingSettlements = await Settlement.aggregate([
@@ -76,11 +77,10 @@ const getFinanceOverview = async (req, res) => {
       }
     ]);
 
-    // 3. Payment Method Breakdown
+    // 3. Payment Method Breakdown (Keep this based on Booking model)
     const paymentMethods = await Booking.aggregate([
       {
         $match: {
-          ...dateFilter,
           status: BOOKING_STATUS.COMPLETED
         }
       },
@@ -93,36 +93,21 @@ const getFinanceOverview = async (req, res) => {
       }
     ]);
 
-    // 4. Daily Revenue Trend (last 30 days) - Using Completed At date
+    // 4. Daily Revenue Trend (last 30 days) from optimized model
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const thirtyDaysStr = thirtyDaysAgo.toISOString().split('T')[0];
 
-    const dailyRevenue = await Booking.aggregate([
-      {
-        $match: {
-          completedAt: { $gte: thirtyDaysAgo },
-          status: BOOKING_STATUS.COMPLETED,
-          paymentStatus: { $in: [PAYMENT_STATUS.SUCCESS, PAYMENT_STATUS.COLLECTED_BY_VENDOR, 'success', 'collected_by_vendor', 'collected_by_worker', 'paid'] }
-        }
-      },
-      {
-        $lookup: {
-          from: 'vendorbills',
-          localField: 'vendorBillId',
-          foreignField: '_id',
-          as: 'bill'
-        }
-      },
-      { $unwind: { path: '$bill', preserveNullAndEmptyArrays: true } },
-      {
-        $group: {
-          _id: { $dateToString: { format: '%Y-%m-%d', date: '$completedAt' } },
-          revenue: { $sum: { $ifNull: ['$bill.grandTotal', '$finalAmount'] } },
-          commission: { $sum: { $ifNull: ['$bill.companyRevenue', { $multiply: ['$finalAmount', 0.2] }] } }
-        }
-      },
-      { $sort: { _id: 1 } }
-    ]);
+    const dailyRevenue = await PlatformEarning.find({ date: { $gte: thirtyDaysStr } })
+      .select('date totalRevenue platformCommission')
+      .sort({ date: 1 })
+      .lean();
+
+    const formattedDaily = dailyRevenue.map(d => ({
+      _id: d.date,
+      revenue: d.totalRevenue,
+      commission: d.platformCommission
+    }));
 
     res.status(200).json({
       success: true,
@@ -130,7 +115,7 @@ const getFinanceOverview = async (req, res) => {
         revenue: revenueStats,
         pendingSettlements: pendingSettlements[0] || { totalPendingAmount: 0, count: 0 },
         paymentMethods,
-        dailyRevenue
+        dailyRevenue: formattedDaily
       }
     });
 

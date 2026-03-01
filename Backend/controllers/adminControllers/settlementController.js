@@ -3,6 +3,7 @@ const Transaction = require('../../models/Transaction');
 const Settlement = require('../../models/Settlement');
 const Withdrawal = require('../../models/Withdrawal');
 const mongoose = require('mongoose');
+const { recordSettlement, recordWithdrawal } = require('../../services/earningTrackerService');
 
 /**
  * Get all vendors with their wallet balances
@@ -245,6 +246,9 @@ const approveSettlement = async (req, res) => {
     sendDuesPaymentApprovedEmail(vendor, settlement.amount, vendor.wallet.dues).catch(e => console.error(e));
 
     await settlement.save();
+
+    // Record this settlement in the earning tracker
+    recordSettlement(new Date(), settlement.amount);
 
     res.status(200).json({
       success: true,
@@ -605,6 +609,10 @@ module.exports = {
       withdrawal.platformFeeAmount = platformFeeAmount;
       withdrawal.netAmount = netAmount;
       await withdrawal.save();
+
+      // Record withdrawal payout in earning tracker
+      // We pass the amount that legitimately left platform bounds to Vendor (including TDS tracking separately later if needed)
+      recordWithdrawal(new Date(), grossAmount);
 
       // Send Withdrawal Approved Email
       const { sendWithdrawalApprovedEmail } = require('../../services/emailService');

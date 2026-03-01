@@ -2,6 +2,7 @@ const Booking = require('../../models/Booking');
 const Vendor = require('../../models/Vendor');
 const Transaction = require('../../models/Transaction');
 const { PAYMENT_STATUS } = require('../../utils/constants');
+const { recordBookingEarning } = require('../../services/earningTrackerService');
 
 /**
  * Initiate Cash Collection
@@ -277,6 +278,16 @@ exports.confirmCashCollection = async (req, res) => {
         });
       }
     }
+
+    // Record stats in the Daily Earning Tracker
+    recordBookingEarning({
+      date: new Date(),
+      totalRevenue: bill ? bill.grandTotal : collectionAmount,
+      platformCommission: bill ? bill.companyRevenue : (collectionAmount * 0.2),
+      vendorEarnings: vendorEarning > 0 ? vendorEarning : (collectionAmount * 0.8),
+      totalGST: bill ? bill.totalGST : 0,
+      totalTDS: 0 // Captured separately during withdrawal
+    });
 
     // Emit socket event
     const io = req.app.get('io');

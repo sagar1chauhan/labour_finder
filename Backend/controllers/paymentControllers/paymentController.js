@@ -6,6 +6,7 @@ const { validationResult } = require('express-validator');
 const { PAYMENT_STATUS, BOOKING_STATUS } = require('../../utils/constants');
 const { createOrder, verifyPayment, refundPayment } = require('../../services/razorpayService');
 const { createNotification } = require('../notificationControllers/notificationController');
+const { recordBookingEarning } = require('../../services/earningTrackerService');
 
 /**
  * Create Razorpay order for booking payment
@@ -193,6 +194,16 @@ const verifyPaymentWebhook = async (req, res) => {
       console.log(`[Payment] Credited ₹${vendorEarning} to vendor ${booking.vendorId}`);
     }
 
+    // Record stats in the Daily Earning Tracker
+    recordBookingEarning({
+      date: new Date(),
+      totalRevenue: bill ? bill.grandTotal : booking.finalAmount,
+      platformCommission: bill ? bill.companyRevenue : (booking.finalAmount * 0.2),
+      vendorEarnings: bill ? bill.vendorTotalEarning : (booking.finalAmount * 0.8),
+      totalGST: bill ? bill.totalGST : 0,
+      totalTDS: 0 // Tracked in withdrawals
+    });
+
     // Send notification to user
     await createNotification({
       userId: booking.userId,
@@ -372,6 +383,16 @@ const processWalletPayment = async (req, res) => {
 
       console.log(`[Wallet Payment] Credited ₹${vendorEarning} to vendor ${booking.vendorId}`);
     }
+
+    // Record stats in the Daily Earning Tracker
+    recordBookingEarning({
+      date: new Date(),
+      totalRevenue: bill ? bill.grandTotal : booking.finalAmount,
+      platformCommission: bill ? bill.companyRevenue : (booking.finalAmount * 0.2),
+      vendorEarnings: bill ? bill.vendorTotalEarning : (booking.finalAmount * 0.8),
+      totalGST: bill ? bill.totalGST : 0,
+      totalTDS: 0 // Tracked in withdrawals
+    });
 
     // Send notification to user
     await createNotification({

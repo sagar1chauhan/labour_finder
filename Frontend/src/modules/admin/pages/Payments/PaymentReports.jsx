@@ -101,13 +101,16 @@ const StatsCard = ({ title, value, subtitle, icon: Icon, color, trend }) => {
     green: 'from-green-500 to-green-600',
     purple: 'from-purple-500 to-purple-600',
     orange: 'from-orange-500 to-orange-600',
-    red: 'from-red-500 to-red-600'
+    red: 'from-red-500 to-red-600',
+    teal: 'from-teal-500 to-teal-600',
+    indigo: 'from-indigo-500 to-indigo-600',
+    emerald: 'from-emerald-500 to-emerald-600'
   };
 
   return (
     <div className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
       <div className="flex items-center justify-between mb-3">
-        <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${colorMap[color]} flex items-center justify-center`}>
+        <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${colorMap[color] || 'from-gray-500 to-gray-600'} flex items-center justify-center`}>
           <Icon className="w-5 h-5 text-white" />
         </div>
         {trend && (
@@ -412,7 +415,8 @@ const PaymentReports = () => {
       animate={{ opacity: 1, y: 0 }}
       className="space-y-6"
     >
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-5 gap-4">
+        {/* Row 1: Revenue Core */}
         <StatsCard
           title="Total Revenue"
           value={`₹${(overview?.revenue?.totalTransactionValue || 0).toLocaleString('en-IN')}`}
@@ -435,11 +439,48 @@ const PaymentReports = () => {
           color="purple"
         />
         <StatsCard
-          title="Pending Settlements"
-          value={`₹${(overview?.pendingSettlements?.totalPendingAmount || 0).toLocaleString('en-IN')}`}
-          subtitle={`${overview?.pendingSettlements?.count || 0} Vendors Pending`}
+          title="TDS Deducted"
+          value={`₹${(overview?.revenue?.totalTDSCollected || 0).toLocaleString('en-IN')}`}
+          subtitle="From Payouts"
+          icon={FiPercent}
+          color="indigo"
+        />
+        <StatsCard
+          title="Vendor Earnings"
+          value={`₹${(overview?.revenue?.totalVendorEarnings || 0).toLocaleString('en-IN')}`}
+          subtitle="Total Vendors Gross"
+          icon={FiDollarSign}
+          color="teal"
+        />
+
+        {/* Row 2: Settlements & Payouts */}
+        <StatsCard
+          title="Settlements Received"
+          value={`₹${(overview?.revenue?.totalSettlementReceived || 0).toLocaleString('en-IN')}`}
+          subtitle="Vendors paid Platform"
+          icon={FiTrendingUp}
+          color="emerald"
+        />
+        <StatsCard
+          title="Pending Settlements (Owed)"
+          value={`₹${(overview?.revenue?.totalPendingSettlement || 0).toLocaleString('en-IN')}`}
+          subtitle="Vendors negative balance"
           icon={FiAlertTriangle}
           color="orange"
+        />
+        <StatsCard
+          title="Payouts Completed"
+          value={`₹${(overview?.revenue?.totalAmountPaidToVendors || 0).toLocaleString('en-IN')}`}
+          subtitle="Platform paid Vendors"
+          icon={FiCheck}
+          color="blue"
+        />
+        <StatsCard
+          title="Pending Payouts"
+          value={`₹${(overview?.revenue?.totalPendingPayout || 0).toLocaleString('en-IN')}`}
+          subtitle="Vendors awaiting withdrawal"
+          icon={FiAlertTriangle}
+          color="red"
         />
       </div>
 
