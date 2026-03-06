@@ -57,10 +57,14 @@ class FlutterBridge {
       const result = await this.callHandler("openCamera");
 
       if (result && result.success) {
-        const response = await fetch(
-          `data:${result.mimeType};base64,${result.base64}`
-        );
-        const blob = await response.blob();
+        // Convert base64 to blob without using fetch to avoid any CSP connect-src issues
+        const byteString = atob(result.base64);
+        const ab = new ArrayBuffer(byteString.length);
+        const ia = new Uint8Array(ab);
+        for (let i = 0; i < byteString.length; i++) {
+            ia[i] = byteString.charCodeAt(i);
+        }
+        const blob = new Blob([ab], { type: result.mimeType || 'image/jpeg' });
 
         return new File([blob], result.fileName || `cam_${Date.now()}.jpg`, {
           type: result.mimeType || 'image/jpeg',
