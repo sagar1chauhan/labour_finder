@@ -10,4 +10,4 @@ export { default as ConfirmDialog } from './ConfirmDialog';
 export { default as CashCollectionModal } from './CashCollectionModal';
 export { default as WorkerPaymentModal } from './WorkerPaymentModal';
 export { default as OtpVerificationModal } from './OtpVerificationModal';
-
+export { default as ScanAndPayModal } from './ScanAndPayModal';

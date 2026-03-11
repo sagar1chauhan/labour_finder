@@ -8,7 +8,7 @@ import vendorBillService from '../../../../services/vendorBillService';
 import vendorWalletService from '../../../../services/vendorWalletService';
 import { getBookingById } from '../../services/bookingService';
 import { publicCatalogService } from '../../../../services/catalogService';
-import { OtpVerificationModal } from '../../components/common';
+import { OtpVerificationModal, ScanAndPayModal } from '../../components/common';
 
 const BillingPage = () => {
   const { id } = useParams();
@@ -1197,59 +1197,18 @@ const BillingPage = () => {
         loading={otpLoading}
       />
 
-      {/* QR Code Modal for Online Payment */}
-      {showQrModal && onlinePaymentData && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-          <div className="bg-white w-full max-w-sm rounded-[2.5rem] overflow-hidden shadow-2xl relative animate-in zoom-in-95 duration-200">
-            <div className="p-8 text-center">
-              <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                <MdQrCode className="w-8 h-8" />
-              </div>
-              <h2 className="text-2xl font-black text-gray-900 mb-2">Scan & Pay</h2>
-              <p className="text-sm text-gray-500 mb-6">Ask customer to scan to pay <span className="font-bold text-gray-900">₹{calculations.finalBillAmount.toFixed(2)}</span></p>
-
-              <div
-                className="bg-gray-50 p-4 rounded-3xl inline-block mb-8 border border-gray-100 shadow-inner transition-colors relative group"
-              >
-                <img
-                  src={onlinePaymentData.qrImageUrl}
-                  alt="Payment QR"
-                  className="w-48 h-48 mx-auto mix-blend-multiply"
-                />
-              </div>
-
-              <div className="space-y-3">
-                {onlinePaymentData.isManualUpi ? (
-                  <button
-                    onClick={() => {
-                      setIsManualVerification(true);
-                      setShowOtpModal(true);
-                    }}
-                    className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-bold shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2"
-                  >
-                    <FiCheckCircle className="w-5 h-5" />
-                    Verify Manually (Enter OTP)
-                  </button>
-                ) : (
-                  <button
-                    onClick={checkPaymentStatus}
-                    className="w-full py-4 bg-gray-900 text-white rounded-2xl font-bold shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2"
-                  >
-                    <FiCheckCircle className="w-5 h-5" />
-                    Paid? Check Status
-                  </button>
-                )}
-                <button
-                  onClick={() => setShowQrModal(false)}
-                  className="w-full py-3 text-gray-500 font-bold hover:text-gray-700 transition-colors"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <ScanAndPayModal
+        isOpen={showQrModal}
+        onClose={() => setShowQrModal(false)}
+        qrImageUrl={onlinePaymentData?.qrImageUrl}
+        amount={calculations.finalBillAmount}
+        isManualUpi={onlinePaymentData?.isManualUpi}
+        onVerifyManual={() => {
+          setIsManualVerification(true);
+          setShowOtpModal(true);
+        }}
+        onCheckStatus={checkPaymentStatus}
+      />
     </div>
   );
 };
