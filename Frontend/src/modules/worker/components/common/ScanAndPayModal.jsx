@@ -7,8 +7,6 @@ const ScanAndPayModal = ({
   onClose, 
   qrImageUrl, 
   amount, 
-  isManualUpi, 
-  onVerifyManual, 
   onCheckStatus 
 }) => {
   const [isZoomed, setIsZoomed] = useState(false);
@@ -43,23 +41,14 @@ const ScanAndPayModal = ({
             </div>
 
             <div className="space-y-3">
-              {isManualUpi ? (
-                <button
-                  onClick={onVerifyManual}
-                  className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-bold shadow-lg shadow-emerald-100 active:scale-95 transition-all flex items-center justify-center gap-2"
-                >
-                  <FiCheckCircle className="w-5 h-5" />
-                  Verify Manually (OTP)
-                </button>
-              ) : (
-                <button
-                  onClick={onCheckStatus}
-                  className="w-full py-4 bg-gray-900 text-white rounded-2xl font-bold shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2"
-                >
-                  <FiCheckCircle className="w-5 h-5" />
-                  Paid? Check Status
-                </button>
-              )}
+              <button
+                onClick={onCheckStatus}
+                className="w-full py-4 bg-gray-900 text-white rounded-2xl font-bold shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2"
+              >
+                <FiCheckCircle className="w-5 h-5" />
+                Paid? Check Status
+              </button>
+              
               <button
                 onClick={onClose}
                 className="w-full py-3 text-gray-500 font-bold hover:text-gray-700 transition-colors text-sm"
@@ -78,11 +67,11 @@ const ScanAndPayModal = ({
           onClick={() => setIsZoomed(false)}
         >
           <div className="relative w-full max-w-xl flex flex-col items-center animate-in zoom-in-95 duration-300">
-            <div className="bg-white p-4 rounded-[2rem] shadow-2xl w-full mb-6">
+            <div className="bg-white p-4 rounded-[2rem] shadow-2xl w-full mb-6 text-center">
                <img 
                 src={qrImageUrl} 
                 alt="Zoomed QR" 
-                className="w-full h-auto max-h-[80vh] object-contain rounded-xl"
+                className="w-full h-auto max-h-[80vh] object-contain rounded-xl block mx-auto"
               />
             </div>
             

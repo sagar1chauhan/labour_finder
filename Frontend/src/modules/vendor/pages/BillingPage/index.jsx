@@ -67,7 +67,7 @@ const BillingPage = () => {
   const [onlinePaymentData, setOnlinePaymentData] = useState(null);
   const [showQrModal, setShowQrModal] = useState(false);
   const [qrLoading, setQrLoading] = useState(false);
-  const [isManualVerification, setIsManualVerification] = useState(false);
+  const [paymentMode, setPaymentMode] = useState(null); // 'cash' | 'online'
 
   // Fetch Data
   useEffect(() => {
@@ -480,6 +480,7 @@ const BillingPage = () => {
       if (res.success) {
         setIsOtpSent(true);
         setShowOtpModal(true);
+        setPaymentMode('cash');
         toast.success('OTP sent to customer!');
       } else {
         toast.error(res.message || 'Failed to send OTP');
@@ -496,21 +497,16 @@ const BillingPage = () => {
     try {
       setOtpLoading(true);
 
-      let res;
-      if (isManualVerification) {
-        res = await vendorWalletService.confirmManualOnlineCollection(id, code);
-      } else {
-        res = await vendorWalletService.confirmCashCollection(
-          id,
-          calculations.finalBillAmount,
-          code,
-          [...selectedParts, ...customItems]
-        );
-      }
+      const res = await vendorWalletService.confirmCashCollection(
+        id,
+        calculations.finalBillAmount,
+        code,
+        [...selectedParts, ...customItems]
+      );
 
       if (res.success) {
         setShowOtpModal(false);
-        toast.success(isManualVerification ? 'Online payment verified manually!' : 'Cash payment verified successfully!');
+        toast.success('Cash payment verified successfully!');
         localStorage.removeItem(`billing_step_${id}`);
         localStorage.removeItem(`billing_max_step_${id}`);
         localStorage.removeItem(`billing_data_${id}`);
@@ -529,7 +525,6 @@ const BillingPage = () => {
   const handleOnlinePayment = async () => {
     try {
       setQrLoading(true);
-      setIsManualVerification(false);
       // First save the bill to ensure backend has latest amounts
       await vendorBillService.createOrUpdateBill(id, {
         services: selectedServices,
@@ -544,7 +539,7 @@ const BillingPage = () => {
       if (res.success) {
         setOnlinePaymentData(res.data);
         setShowQrModal(true);
-        setIsOtpSent(true); // Allow entering OTP if QR is slow/fails
+        setPaymentMode('online');
         toast.success('QR Code generated!');
       } else {
         toast.error(res.message || 'Failed to initiate online payment');
@@ -1077,6 +1072,23 @@ const BillingPage = () => {
                     </div>
                   </div>
                 )}
+
+                {paymentMode && (
+                  <div>
+                    <h4 className="font-bold text-gray-900 flex items-center gap-2 mb-2 pb-2 border-b border-gray-100">
+                      <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${paymentMode === 'cash' ? 'bg-emerald-50 text-emerald-600' : 'bg-blue-50 text-blue-600'}`}>
+                        {paymentMode === 'cash' ? <FiDollarSign /> : <MdQrCode />}
+                      </span>
+                      Payment Method
+                    </h4>
+                    <div className="flex justify-between text-sm pl-2 font-black text-gray-900 uppercase tracking-tight">
+                      <span>Status</span>
+                      <span className={paymentMode === 'cash' ? 'text-emerald-600' : 'text-blue-600'}>
+                        {paymentMode === 'cash' ? 'Pay in Cash (OTP Pending)' : 'Online (QR Scanned)'}
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
               {/* Earnings Footer - ONLY SHOW WHEN COMPLETED */}
               {booking.status === 'completed' ? (
@@ -1202,11 +1214,6 @@ const BillingPage = () => {
         onClose={() => setShowQrModal(false)}
         qrImageUrl={onlinePaymentData?.qrImageUrl}
         amount={calculations.finalBillAmount}
-        isManualUpi={onlinePaymentData?.isManualUpi}
-        onVerifyManual={() => {
-          setIsManualVerification(true);
-          setShowOtpModal(true);
-        }}
         onCheckStatus={checkPaymentStatus}
       />
     </div>

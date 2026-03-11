@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import useAppNotifications from '../../../../hooks/useAppNotifications';
 import { themeColors } from '../../../../theme';
+import { MdQrCode } from 'react-icons/md';
 import {
   FiArrowLeft,
   FiMapPin,
@@ -1260,6 +1261,23 @@ const BookingDetails = () => {
                             <FiPackage className="w-3.5 h-3.5 text-blue-400" /> Transport Charges
                           </span>
                           <span className="font-mono">₹{(bill.transportCharges).toFixed(2)}</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {(booking.paymentMethod || booking.paymentStatus === 'success') && (
+                      <div className="mt-2 pt-2 border-t border-gray-100">
+                        <div className="flex justify-between text-xs font-bold text-gray-600">
+                          <span className="flex items-center gap-2 uppercase tracking-wide">
+                            {booking.paymentMethod === 'cash' ? <FiDollarSign className="text-emerald-500" /> : <MdQrCode className="text-blue-500" />}
+                            Payment Method
+                          </span>
+                          <span className={`${booking.paymentMethod === 'cash' ? 'text-emerald-600' : 'text-blue-600'} uppercase`}>
+                            {booking.paymentMethod === 'cash' ? 'Cash Collected' : 
+                             booking.paymentMethod === 'online' ? 'Online Payment' : 
+                             booking.paymentMethod === 'plan_benefit' ? 'Plan Benefit' : 
+                             booking.paymentMethod || 'Online'}
+                          </span>
                         </div>
                       </div>
                     )}

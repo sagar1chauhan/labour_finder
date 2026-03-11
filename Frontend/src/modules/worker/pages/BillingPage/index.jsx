@@ -67,7 +67,7 @@ const BillingPage = () => {
   const [onlinePaymentData, setOnlinePaymentData] = useState(null);
   const [showQrModal, setShowQrModal] = useState(false);
   const [qrLoading, setQrLoading] = useState(false);
-  const [isManualVerification, setIsManualVerification] = useState(false);
+  const [paymentMode, setPaymentMode] = useState(null); // 'cash' | 'online'
 
   const socket = useAppNotifications('worker');
 
@@ -400,6 +400,7 @@ const BillingPage = () => {
       if (res.success) {
         setIsOtpSent(true);
         setShowOtpModal(true);
+        setPaymentMode('cash');
         toast.success('OTP sent to customer!');
       } else {
         toast.error(res.message || 'Failed to send OTP');
@@ -437,7 +438,6 @@ const BillingPage = () => {
   const handleOnlinePayment = async () => {
     try {
       setQrLoading(true);
-      setIsManualVerification(false);
       await workerBillService.createOrUpdateBill(id, {
         services: selectedServices,
         parts: selectedParts,
@@ -450,7 +450,7 @@ const BillingPage = () => {
       if (res.success) {
         setOnlinePaymentData(res.data);
         setShowQrModal(true);
-        setIsOtpSent(true); // Allow entering OTP if QR is slow/fails
+        setPaymentMode('online');
         toast.success('QR Code generated!');
       } else {
         toast.error(res.message || 'Failed to initiate online payment');
@@ -945,12 +945,51 @@ const BillingPage = () => {
                     </div>
                   </div>
                 )}
+                {paymentMode && (
+                  <div>
+                    <h4 className="font-bold text-gray-900 flex items-center gap-2 mb-2 pb-2 border-b border-gray-100">
+                      <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${paymentMode === 'cash' ? 'bg-emerald-50 text-emerald-600' : 'bg-blue-50 text-blue-600'}`}>
+                        {paymentMode === 'cash' ? <FiDollarSign /> : <MdQrCode />}
+                      </span>
+                      Payment Method
+                    </h4>
+                    <div className="flex justify-between text-sm pl-2 font-black text-gray-900 uppercase tracking-tight">
+                      <span>Status</span>
+                      <span className={paymentMode === 'cash' ? 'text-emerald-600' : 'text-blue-600'}>
+                        {paymentMode === 'cash' ? 'Pay in Cash (OTP Pending)' : 'Online (QR Scanned)'}
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
-              <div className="bg-gray-50 px-6 py-4 border-t border-gray-100/50 text-center">
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex items-center justify-center gap-2">
-                  <FiClock className="w-3 h-3" /> Net Earnings will be revealed after completion
-                </p>
-              </div>
+
+              {/* Earnings Footer - ONLY SHOW WHEN COMPLETED */}
+              {job.status === 'completed' ? (
+                <div className="bg-emerald-50 px-6 py-4 border-t border-emerald-100">
+                  <div className="space-y-2 mb-3">
+                    <div className="flex justify-between items-center text-emerald-700 text-sm">
+                      <span>Service Earnings ({calculations.servicePayoutPct}%)</span>
+                      <span className="font-bold">₹{calculations.workerServiceEarnings.toFixed(2)}</span>
+                    </div>
+                    {(calculations.workerPartsEarnings > 0) && (
+                      <div className="flex justify-between items-center text-emerald-700 text-sm">
+                        <span>Parts Earnings ({calculations.partsPayoutPct}%)</span>
+                        <span className="font-bold">₹{calculations.workerPartsEarnings.toFixed(2)}</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex justify-between items-center pt-2 border-t border-emerald-200/50">
+                    <span className="text-emerald-800 font-bold text-xs uppercase tracking-wider">Total Net Earnings</span>
+                    <span className="text-emerald-700 font-black text-xl">₹{calculations.totalWorkerEarnings.toFixed(2)}</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-gray-50 px-6 py-4 border-t border-gray-100/50 text-center">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex items-center justify-center gap-2">
+                    <FiClock className="w-3 h-3" /> Net Earnings will be revealed after completion
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -1008,11 +1047,6 @@ const BillingPage = () => {
         onClose={() => setShowQrModal(false)}
         qrImageUrl={onlinePaymentData?.qrImageUrl}
         amount={calculations.finalBillAmount}
-        isManualUpi={onlinePaymentData?.isManualUpi}
-        onVerifyManual={() => {
-          setIsManualVerification(true);
-          setShowOtpModal(true);
-        }}
         onCheckStatus={checkPaymentStatus}
       />
     </div>
