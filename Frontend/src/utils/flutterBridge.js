@@ -133,6 +133,13 @@ class FlutterBridge {
   async hapticFeedback(type = "medium") {
     return this.callHandler("haptic", { type });
   }
+
+  /**
+   * Opens App/System Settings (Native)
+   */
+  async openAppSettings() {
+    return this.callHandler("openSettings");
+  }
 }
 
 const bridgeInstance = new FlutterBridge();

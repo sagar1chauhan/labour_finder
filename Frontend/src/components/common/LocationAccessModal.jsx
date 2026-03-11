@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiMapPin, FiNavigation, FiX, FiCheckCircle, FiShield } from 'react-icons/fi';
+import { FiMapPin, FiNavigation, FiX, FiCheckCircle, FiShield, FiSettings } from 'react-icons/fi';
 import { themeColors } from '../../theme';
 import { toast } from 'react-hot-toast';
 import flutterBridge from '../../utils/flutterBridge';
@@ -10,9 +10,11 @@ const LocationAccessModal = ({
   onClose,
   onSuccess,
   onManualSearch,
+  initialLocationDisabled = false,
   userType = 'user' // 'user' | 'vendor' | 'worker'
 }) => {
   const [requesting, setRequesting] = useState(false);
+  const [locationDisabled, setLocationDisabled] = useState(initialLocationDisabled);
 
   const getTheme = () => {
     switch (userType) {
@@ -26,8 +28,17 @@ const LocationAccessModal = ({
   const themeColor = currentTheme.button || '#00A6A6';
 
   const getContent = () => {
+    if (locationDisabled) {
+      return {
+        title: "LOCATION IS OFF",
+        subtitle: "Please turn on your GPS to continue using Homestr features.",
+        icon: FiSettings
+      };
+    }
     return {
-      title: "ALLOW GPS LOCATION"
+      title: "ALLOW GPS LOCATION",
+      subtitle: "Homestr needs your location to show available services and vendors near you.",
+      icon: FiNavigation
     };
   };
 
@@ -35,6 +46,7 @@ const LocationAccessModal = ({
 
   const handleRequestLocation = async () => {
     setRequesting(true);
+    setLocationDisabled(false);
     try {
       const location = await flutterBridge.getCurrentLocation();
       setRequesting(false);
@@ -44,14 +56,30 @@ const LocationAccessModal = ({
     } catch (error) {
       setRequesting(false);
       let errorMsg = "Failed to get location";
+
+      // HTML5 Geolocation API error codes
+      // 1: PERMISSION_DENIED
+      // 2: POSITION_UNAVAILABLE (often means GPS is off)
+      // 3: TIMEOUT
       if (error.code === 1) {
-        errorMsg = "Location permission denied. Please enable it in browser/app settings.";
+        errorMsg = "Location permission denied. Please allow it.";
+        setLocationDisabled(true);
       } else if (error.code === 2) {
-        errorMsg = "Location information is unavailable. Check GPS.";
+        errorMsg = "Location information is unavailable. Is your GPS on?";
+        setLocationDisabled(true);
       } else if (error.code === 3) {
         errorMsg = "Request timed out. Please try again.";
       }
       toast.error(errorMsg);
+    }
+  };
+
+  const handleOpenSettings = () => {
+    if (flutterBridge.isFlutter) {
+      flutterBridge.openAppSettings();
+      onClose();
+    } else {
+      toast.info("Please open your browser settings to allow location access.");
     }
   };
 
@@ -88,41 +116,53 @@ const LocationAccessModal = ({
             </div>
 
             <motion.div
-              animate={{ y: [0, -5, 0] }}
+              animate={locationDisabled ? { rotate: [0, 10, -10, 0] } : { y: [0, -5, 0] }}
               transition={{ duration: 3, repeat: Infinity }}
-              className="w-16 h-16 bg-white rounded-2xl shadow-xl flex items-center justify-center relative z-10"
-              style={{ color: themeColor }}
+              className={`w-16 h-16 bg-white rounded-2xl shadow-xl flex items-center justify-center relative z-10 ${locationDisabled ? 'text-orange-500' : ''}`}
+              style={{ color: locationDisabled ? '#f97316' : themeColor }}
             >
-              <FiNavigation className="w-8 h-8" />
+              <content.icon className="w-8 h-8" />
             </motion.div>
           </div>
 
           <div className="p-8 pt-6 text-center">
-            <h3 className="text-2xl font-black text-gray-900 mb-8">{content.title}</h3>
+            <h3 className="text-2xl font-black text-gray-900 mb-2">{content.title}</h3>
+            <p className="text-sm text-gray-500 mb-8 font-medium">{content.subtitle}</p>
 
             {/* Actions */}
             <div className="space-y-3">
-              <button
-                onClick={handleRequestLocation}
-                disabled={requesting}
-                className="w-full py-4 rounded-2xl text-white font-black text-lg shadow-xl active:scale-95 transition-all flex items-center justify-center gap-3 relative overflow-hidden group"
-                style={{
-                  backgroundColor: themeColor,
-                  boxShadow: `0 10px 25px -5px ${themeColor}55`
-                }}
-              >
-                {requesting ? (
-                  <div className="w-6 h-6 border-3 border-white/30 border-t-white rounded-full animate-spin" />
-                ) : (
-                  <>
-                    ALLOW LOCATION ACCESS
-                    <FiNavigation className="w-5 h-5 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
-                  </>
-                )}
+              {locationDisabled ? (
+                <button
+                  onClick={handleOpenSettings}
+                  className="w-full py-4 rounded-2xl bg-orange-500 text-white font-black text-lg shadow-xl active:scale-95 transition-all flex items-center justify-center gap-3 relative overflow-hidden group mb-4"
+                  style={{ boxShadow: '0 10px 25px -5px rgba(249, 115, 22, 0.4)' }}
+                >
+                  OPEN SYSTEM SETTINGS
+                  <FiSettings className="w-5 h-5 group-hover:rotate-90 transition-transform duration-500" />
+                </button>
+              ) : (
+                <button
+                  onClick={handleRequestLocation}
+                  disabled={requesting}
+                  className="w-full py-4 rounded-2xl text-white font-black text-lg shadow-xl active:scale-95 transition-all flex items-center justify-center gap-3 relative overflow-hidden group"
+                  style={{
+                    backgroundColor: themeColor,
+                    boxShadow: `0 10px 25px -5px ${themeColor}55`
+                  }}
+                >
+                  {requesting ? (
+                    <div className="w-6 h-6 border-3 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      ALLOW LOCATION ACCESS
+                      <FiNavigation className="w-5 h-5 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                    </>
+                  )}
 
-                {/* Shine effect */}
-                <div className="absolute inset-x-0 top-0 h-1/2 bg-white/10 skew-y-[-10deg] -translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
-              </button>
+                  {/* Shine effect */}
+                  <div className="absolute inset-x-0 top-0 h-1/2 bg-white/10 skew-y-[-10deg] -translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
+                </button>
+              )}
 
               {onManualSearch && (
                 <button

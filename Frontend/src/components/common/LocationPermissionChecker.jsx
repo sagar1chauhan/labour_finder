@@ -5,6 +5,7 @@ import flutterBridge from '../../utils/flutterBridge';
 
 export const LocationPermissionChecker = () => {
     const [showModal, setShowModal] = useState(false);
+    const [isLocationDisabled, setIsLocationDisabled] = useState(false);
     const [userType, setUserType] = useState('user');
 
     useEffect(() => {
@@ -36,9 +37,12 @@ export const LocationPermissionChecker = () => {
                 localStorage.setItem('location_granted', 'true');
                 setShowModal(false);
             } catch (err) {
-                console.log('Bridge check failed or permission needed:', err.message);
                 // If we don't have permission, or it's turned off, show modal
-                if (!hasGrantedPreviously || err.code === 1) { // 1 = PERMISSION_DENIED
+                if (err.code === 1 || err.code === 2) {
+                    setIsLocationDisabled(true);
+                }
+                
+                if (!hasGrantedPreviously || err.code === 1 || err.code === 2) {
                     setShowModal(true);
                 }
             }
@@ -104,6 +108,7 @@ export const LocationPermissionChecker = () => {
             isOpen={showModal}
             onClose={handleClose}
             onSuccess={handleSuccess}
+            initialLocationDisabled={isLocationDisabled}
             userType={userType}
         />
     );
