@@ -7,11 +7,14 @@ import VendorRoutes from '../modules/vendor/routes';
 import WorkerRoutes from '../modules/worker/routes';
 import AdminRoutes from '../modules/admin/routes';
 
+import LandingPage from '../modules/landing/pages/LandingPage';
+
 const AppRoutes = () => {
   return (
     <Routes>
-      {/* Default route - redirect to user */}
-      <Route path="/" element={<Navigate to="/user" replace />} />
+      {/* Default route - Landing Page */}
+      <Route path="/Home" element={<LandingPage />} />
+      <Route path="/" element={<Navigate to="/Home" replace />} />
 
       {/* User Routes */}
       <Route path="/user/*" element={<UserRoutes />} />

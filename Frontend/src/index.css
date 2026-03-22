@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+@theme {
+  --color-brand: #347989;
+  --color-brand-light: #f0fbfc;
+  --color-brand-dark: #2d6977;
+}
+
 /* Slide up animation for modal */
 @keyframes slide-up {
   from {
@@ -164,9 +170,7 @@
 
 /* Mobile-first styles */
 * {
-  /* margin: 0; */
-  /* padding: 0; */
-  /* box-sizing: border-box; */
+  box-sizing: border-box;
 }
 
 html,
