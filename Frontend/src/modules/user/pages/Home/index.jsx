@@ -234,6 +234,7 @@ const Home = () => {
   }, []);
 
   const [categories, setCategories] = useState([]);
+  const [productBrands, setProductBrands] = useState([]); // New state for direct product listing
   const [homeContent, setHomeContent] = useState(null);
   const [offerBanners, setOfferBanners] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -266,7 +267,8 @@ const Home = () => {
               slug: cat.slug,
               icon: toAssetUrl(cat.icon),
               hasSaleBadge: cat.hasSaleBadge,
-              badge: cat.badge
+              badge: cat.badge,
+              categoryType: cat.categoryType || 'service'
             }));
             setCategories(mappedCategories);
           }
@@ -274,6 +276,13 @@ const Home = () => {
           if (response.homeContent) {
             setHomeContent(response.homeContent);
           }
+        }
+
+        // Fetch all product brands directly to show on home
+        const brandsRes = await publicCatalogService.getBrands({ cityId });
+        if (brandsRes.success) {
+          const products = brandsRes.brands.filter(b => b.type === 'product');
+          setProductBrands(products);
         }
 
         setLoading(false);
@@ -541,20 +550,36 @@ const Home = () => {
 
               {/* Categories Section */}
               {homeContent?.isCategoriesVisible !== false && (
-                <motion.section variants={itemVariants} className="relative overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-b from-blue-50/30 to-transparent pointer-events-none -z-10" />
-                  <ServiceCategories
-                    categories={categories}
-                    onCategoryClick={handleCategoryClick}
-                    onSeeAllClick={() => { }}
-                  />
-                </motion.section>
-              )}
+                <>
+                  {/* Service Categories */}
+                  <motion.section variants={itemVariants} className="relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-b from-blue-50/30 to-transparent pointer-events-none -z-10" />
+                    <ServiceCategories
+                      categories={categories.filter(c => c.categoryType === 'service')}
+                      onCategoryClick={handleCategoryClick}
+                      title="Service Categories"
+                      subtitle="Premium Home Services"
+                    />
+                  </motion.section>
 
-              {/* Scrap Promotion Section */}
-              <motion.section variants={itemVariants}>
-                <ScrapPromotionCard onClick={() => navigate('/user/shop')} />
-              </motion.section>
+                  {/* Products & Materials Section */}
+                  {categories.some(c => c.categoryType === 'product') && (
+                    <motion.section variants={itemVariants} className="relative overflow-hidden">
+                      <ServiceCategories
+                        categories={categories.filter(c => c.categoryType === 'product')}
+                        onCategoryClick={handleCategoryClick}
+                        title="Products & Materials"
+                        subtitle="Quality building materials"
+                      />
+                    </motion.section>
+                  )}
+
+                  {/* Scrap Promotion Section */}
+                  <motion.section variants={itemVariants}>
+                    <ScrapPromotionCard onClick={() => navigate('/user/shop')} />
+                  </motion.section>
+                </>
+              )}
 
 
               {/* Curated Services */}

@@ -83,9 +83,10 @@ const _buildVendorQuery = (filters = {}) => {
   }
 
   if (serviceCategory) {
+    const categoryRegex = new RegExp(`^${serviceCategory}$`, 'i');
     baseQuery.$or = [
-      { categories: { $in: [serviceCategory] } },
-      { service: { $in: [serviceCategory] } }
+      { categories: { $in: [categoryRegex] } },
+      { service: { $in: [categoryRegex] } }
     ];
   }
 

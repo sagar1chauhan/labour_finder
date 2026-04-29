@@ -165,11 +165,8 @@ const WithdrawalRequest = () => {
   const commissionRate = vendorStats.commissionRate;
   const platformFeeRate = vendorStats.platformFeeRate;
 
-  const grossAmount = parseInt(amount) || 0;
-  const commissionAmount = Math.round(grossAmount * (commissionRate / 100));
-  const platformFeeAmount = Math.round(grossAmount * (platformFeeRate / 100));
   const tdsAmount = Math.round(grossAmount * (tdsRate / 100));
-  const netAmount = grossAmount - commissionAmount - platformFeeAmount - tdsAmount;
+  const netAmount = grossAmount - tdsAmount;
 
   return (
     <div className="min-h-screen pb-24" style={{ background: themeColors.backgroundGradient }}>
@@ -238,15 +235,6 @@ const WithdrawalRequest = () => {
                 <span>₹{grossAmount.toLocaleString()}</span>
               </div>
               
-              <div className="flex justify-between text-xs font-bold text-orange-600/80">
-                <span>Commission ({commissionRate}%)</span>
-                <span>- ₹{commissionAmount.toLocaleString()}</span>
-              </div>
-
-              <div className="flex justify-between text-xs font-bold text-blue-600/80">
-                <span>Platform Charge ({platformFeeRate}%)</span>
-                <span>- ₹{platformFeeAmount.toLocaleString()}</span>
-              </div>
 
               <div className="flex justify-between text-xs font-bold text-red-500/70">
                 <span>TDS Deduction ({tdsRate}%)</span>

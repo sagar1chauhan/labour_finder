@@ -2,10 +2,10 @@ import React, { memo } from 'react';
 import { AiFillStar } from 'react-icons/ai';
 import { themeColors } from '../../../../theme';
 
-const ServiceWithRatingCard = memo(({ image, title, rating, reviews, price, originalPrice, discount, onClick, onAddClick }) => {
+const ServiceWithRatingCard = memo(({ image, title, rating, reviews, price, originalPrice, discount, onClick, onAddClick, compact = false }) => {
   return (
     <div
-      className="min-w-[180px] w-[180px] bg-white rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1 active:scale-95 group"
+      className={`${compact ? 'min-w-[140px] w-[140px]' : 'min-w-[180px] w-[180px]'} bg-white rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1 active:scale-95 group`}
       style={{
         boxShadow: themeColors.cardShadow,
         border: themeColors.cardBorder
@@ -15,7 +15,7 @@ const ServiceWithRatingCard = memo(({ image, title, rating, reviews, price, orig
       <div className="relative">
         {discount && (
           <div
-            className="absolute top-3 left-3 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md z-10"
+            className="absolute top-2 left-2 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-md z-10"
             style={{ backgroundColor: themeColors.button }}
           >
             {discount} OFF
@@ -25,12 +25,12 @@ const ServiceWithRatingCard = memo(({ image, title, rating, reviews, price, orig
           <img
             src={image}
             alt={title}
-            className="w-full h-36 object-cover transition-transform duration-500 group-hover:scale-105"
+            className={`w-full ${compact ? 'h-[100px]' : 'h-36'} object-cover transition-transform duration-500 group-hover:scale-105`}
             loading="lazy"
             decoding="async"
           />
         ) : (
-          <div className="w-full h-36 flex items-center justify-center bg-gray-50 border-b border-gray-100">
+          <div className={`w-full ${compact ? 'h-[100px]' : 'h-36'} flex items-center justify-center bg-gray-50 border-b border-gray-100`}>
             <img
               src="/Homestr-logo.png"
               alt="Placeholder"

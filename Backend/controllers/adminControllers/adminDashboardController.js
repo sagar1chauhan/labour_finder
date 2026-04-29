@@ -75,7 +75,7 @@ const getDashboardStats = async (req, res) => {
     ]);
 
     const revenue = revenueResult[0] || { totalRevenue: 0, totalBookings: 0 };
-    const platformCommission = revenue.totalRevenue * 0.2; // 20% commission
+    const platformCommission = 0; // DISABLED: Commission removed
 
     // Vendor approval stats
     const pendingVendors = await Vendor.countDocuments({ approvalStatus: VENDOR_STATUS.PENDING, ...dateFilter });
@@ -181,7 +181,7 @@ const getRevenueAnalytics = async (req, res) => {
           },
           revenue: { $sum: '$finalAmount' },
           bookings: { $sum: 1 },
-          platformCommission: { $sum: { $multiply: ['$finalAmount', 0.2] } }
+          platformCommission: { $sum: 0 }
         }
       },
       { $sort: { _id: 1 } }

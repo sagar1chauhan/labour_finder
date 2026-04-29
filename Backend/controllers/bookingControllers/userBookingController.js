@@ -220,20 +220,24 @@ const createBooking = async (req, res) => {
           visitingCharges = (reqVisitingCharges !== undefined) ? reqVisitingCharges : (visitingCharges || 49);
           finalAmount = (basePrice - discount + tax + visitingCharges) + pendingPenalty;
         } else {
-          // Backward compatibility: Reverse calculate
+          // Accurate calculation without aggressive rounding to prevent 1-rupee gap
           if (!visitingCharges) visitingCharges = 49;
-          basePrice = Math.round((amount - visitingCharges) / 1.18);
-          tax = amount - basePrice - visitingCharges;
+          const totalAfterCharges = amount - visitingCharges;
+          basePrice = parseFloat((totalAfterCharges / 1.18).toFixed(2));
+          tax = parseFloat((totalAfterCharges - basePrice).toFixed(2));
           discount = 0;
           finalAmount = amount + pendingPenalty;
         }
       } else {
         // Fallback to service pricing (if no amount sent)
         if (!visitingCharges) visitingCharges = 49;
-        basePrice = service.basePrice || 500;
-        discount = service.discountPrice ? (basePrice - service.discountPrice) : 0;
-        tax = Math.round(basePrice * 0.18);
-        finalAmount = (basePrice - discount + tax + visitingCharges) + pendingPenalty;
+        const serviceBase = service.basePrice || 500;
+        const serviceDiscount = service.discountPrice ? (serviceBase - service.discountPrice) : 0;
+        const netBase = serviceBase - serviceDiscount;
+        basePrice = netBase;
+        discount = serviceDiscount;
+        tax = parseFloat((netBase * 0.18).toFixed(2));
+        finalAmount = parseFloat((netBase + tax + visitingCharges).toFixed(2)) + pendingPenalty;
       }
     }
 
@@ -432,8 +436,8 @@ const createBooking = async (req, res) => {
           }
         } else {
           console.warn(`[CreateBooking] NO VENDORS FOUND nearby! Push notifications will not be sent.`);
-          // Update booking status if no vendors found
-          bookingForBackground.status = BOOKING_STATUS.NO_VENDORS;
+          // Update booking status if no vendors found - fallback to SEARCHING to allow scheduler to retry
+          bookingForBackground.status = BOOKING_STATUS.SEARCHING;
           await bookingForBackground.save();
         }
 

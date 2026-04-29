@@ -252,7 +252,7 @@ export const publicCatalogService = {
     const query = cityId ? `?cityId=${cityId}` : '';
     const response = await api.get(`/public/categories${query}`);
     if (response.data.success) {
-      apiCache.set(cacheKey, response.data, 300); // 5 minutes
+      apiCache.set(cacheKey, response.data, 30); // Reduced to 30 seconds for better responsiveness
     }
     return response.data;
   },
@@ -271,7 +271,7 @@ export const publicCatalogService = {
 
     const response = await api.get(`/public/brands${queryParams.toString() ? `?${queryParams.toString()}` : ''}`);
     if (response.data.success) {
-      apiCache.set(cacheKey, response.data, 120); // 2 minutes
+      apiCache.set(cacheKey, response.data, 30); // Reduced to 30 seconds
     }
     return response.data;
   },
@@ -332,7 +332,7 @@ export const publicCatalogService = {
     const query = cityId ? `?cityId=${cityId}` : '';
     const response = await api.get(`/public/home-data${query}`);
     if (response.data.success) {
-      apiCache.set(cacheKey, response.data, 120); // 2 minutes
+      apiCache.set(cacheKey, response.data, 30); // Reduced to 30 seconds
     }
     return response.data;
   },

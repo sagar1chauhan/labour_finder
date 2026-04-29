@@ -23,8 +23,8 @@ const Payments = lazy(() => import('../pages/Payments'));
 const Reports = lazy(() => import('../pages/Reports'));
 const Notifications = lazy(() => import('../pages/Notifications'));
 const AdminSupport = lazy(() => import('../pages/Support/index'));
-const CommissionSettings = lazy(() => import('../pages/Commission'));
 const OfferBanners = lazy(() => import('../pages/OfferBanners'));
+const StockManagement = lazy(() => import('../pages/Stock'));
 
 const Plans = lazy(() => import('../pages/Plans/Plans'));
 const Scrap = lazy(() => import('../pages/Scrap'));
@@ -73,7 +73,7 @@ const AdminRoutes = () => {
           <Route path="plans" element={<Plans />} />
           <Route path="reviews" element={<Reviews />} />
           <Route path="settlements/*" element={<Settlements />} />
-          <Route path="commission" element={<CommissionSettings />} />
+          <Route path="stock" element={<StockManagement />} />
           <Route path="settings/*" element={<Settings />} />
           <Route path="support/*" element={<AdminSupport />} />
           <Route path="offer-banners" element={<OfferBanners />} />

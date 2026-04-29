@@ -86,10 +86,8 @@ const Wallet = () => {
         return <FiDollarSign className="w-5 h-5 text-purple-500" />;
       case 'tds_deduction':
         return <FiAlertCircle className="w-5 h-5 text-amber-500" />;
-      case 'commission':
-        return <FiDollarSign className="w-5 h-5 text-orange-500" />;
-      case 'platform_fee':
-        return <FiAlertCircle className="w-5 h-5 text-rose-500" />;
+      case 'tds_deduction':
+        return <FiAlertCircle className="w-5 h-5 text-amber-500" />;
       default:
         return <FiDollarSign className="w-5 h-5 text-gray-500" />;
     }
@@ -107,10 +105,8 @@ const Wallet = () => {
         return 'Withdrawal Payout';
       case 'tds_deduction':
         return 'TDS Deduction';
-      case 'commission':
-        return 'Commission';
-      case 'platform_fee':
-        return 'Platform Charge';
+      case 'tds_deduction':
+        return 'TDS Deduction';
       default:
         return type;
     }
@@ -267,7 +263,6 @@ const Wallet = () => {
             { id: 'settlement', label: 'Settlements' },
             { id: 'withdrawal', label: 'Withdrawals' },
             { id: 'tds_deduction', label: 'TDS' },
-            { id: 'platform_fee', label: 'Platform Fees' },
           ].map((filterOption) => (
             <button
               key={filterOption.id}

@@ -87,7 +87,7 @@ const Dashboard = memo(() => {
     // Separate requested/searching bookings from other bookings
     const requestedBookings = (recentBookings || []).filter(booking => {
       const status = booking.status?.toLowerCase();
-      return status === 'requested' || status === 'searching';
+      return status === 'requested' || status === 'searching' || status === 'bidding';
     });
     const otherBookings = (recentBookings || []).filter(booking => {
       const status = booking.status?.toLowerCase();
@@ -158,7 +158,7 @@ const Dashboard = memo(() => {
 
         const lowerStatus = String(localJob.status || '').toLowerCase();
 
-        if (!isExpired && (lowerStatus === 'requested' || lowerStatus === 'searching')) {
+        if (!isExpired && (lowerStatus === 'requested' || lowerStatus === 'searching' || lowerStatus === 'bidding')) {
           mergedPending.push({
             ...localJob,
             id,
@@ -593,56 +593,6 @@ const Dashboard = memo(() => {
           </div>
         </div>
 
-        {/* Vendor Level & Performance Score */}
-        <div className="px-4 pt-4">
-          <div className="bg-white rounded-[24px] p-5 shadow-xl border border-gray-100 relative overflow-hidden">
-            {/* Background Accent */}
-            <div className="absolute top-0 right-0 w-32 h-32 bg-teal-50 rounded-full -mr-16 -mt-16 opacity-50" />
-            
-            <div className="flex items-center justify-between relative z-10">
-              <div className="flex items-center gap-3">
-                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg ${
-                  stats.level === 1 ? 'bg-amber-100' : stats.level === 2 ? 'bg-slate-100' : 'bg-orange-50'
-                }`}>
-                  <span className="text-2xl">
-                    {stats.level === 1 ? '🏆' : stats.level === 2 ? '🥈' : '🥉'}
-                  </span>
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-lg font-black text-gray-900">Level {stats.level}</h3>
-                    <span className="px-2 py-0.5 rounded-md bg-teal-50 text-[10px] font-bold text-teal-600 uppercase tracking-tighter">
-                      {stats.commissionRate}% Commission
-                    </span>
-                  </div>
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Vendor Standing</p>
-                </div>
-              </div>
-              
-              <div className="text-right">
-                <p className="text-2xl font-black text-teal-600">{stats.performanceScore}%</p>
-                <p className="text-[10px] font-bold text-gray-400 uppercase">Perf. Score</p>
-              </div>
-            </div>
-
-            {/* Progress Bar */}
-            <div className="mt-4 relative h-2 bg-gray-100 rounded-full overflow-hidden">
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${stats.performanceScore}%` }}
-                transition={{ duration: 1, ease: "easeOut" }}
-                className="absolute inset-y-0 left-0 bg-gradient-to-r from-teal-500 to-emerald-400 rounded-full shadow-[0_0_8px_rgba(20,184,166,0.5)]"
-              />
-            </div>
-            
-            <div className="mt-3 flex justify-between items-center">
-              <p className="text-[10px] font-medium text-gray-500 italic">
-                {stats.level === 1 ? 'You are a Top Professional!' : stats.level === 2 ? 'Almost at the top! Keep it up.' : 'Complete more jobs to level up.'}
-              </p>
-              <span className="text-[10px] font-black text-teal-600 uppercase">Next Level: {stats.performanceScore < 50 ? '50%' : stats.performanceScore < 80 ? '80%' : '100%'}</span>
-            </div>
-          </div>
-        </div>
 
         {/* Incomplete Profile Prompt */}
         {(!vendorProfile.service || vendorProfile.service.length === 0) && (

@@ -175,11 +175,11 @@ const getDashboardStats = async (req, res) => {
           workersOnline,
           rating: parseFloat(rating.toFixed(1)),
           isOnline: vendorProfile?.isOnline ?? req.user.isOnline,
-          performanceScore: vendorProfile?.performanceScore || 0,
-          level: vendorProfile?.level || 3,
-          commissionRate: vendorProfile?.commissionRate || 15,
-          commissionRates: globalSettings?.commissionRates || { level1: 10, level2: 15, level3: 20 },
-          platformFeeRates: globalSettings?.platformFeeRates || { level1: 0.5, level2: 1.0, level3: 2.0 }
+          performanceScore: 100,
+          level: 1,
+          commissionRate: 0,
+          commissionRates: { level1: 0, level2: 0, level3: 0 },
+          platformFeeRates: { level1: 0, level2: 0, level3: 0 }
         },
         recentBookings
       }

@@ -15,7 +15,13 @@ const toAssetUrl = (url) => {
   return `${base}${clean.startsWith('/') ? '' : '/'}${clean}`;
 };
 
-const ServiceCategories = React.memo(({ categories, onCategoryClick, onSeeAllClick }) => {
+const ServiceCategories = React.memo(({ 
+  categories, 
+  onCategoryClick, 
+  onSeeAllClick,
+  title = "Service Categories",
+  subtitle = "Premium Home Services"
+}) => {
 
 
   if (!Array.isArray(categories) || categories.length === 0) {
@@ -33,10 +39,10 @@ const ServiceCategories = React.memo(({ categories, onCategoryClick, onSeeAllCli
       <div className="flex items-center justify-between mb-6">
         <div className="flex flex-col">
           <h2 className="text-[20px] font-black text-gray-900 tracking-tight flex items-center gap-2">
-            Service Categories
+            {title}
             <div className="w-2 h-2 bg-primary-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(40,116,240,0.5)]"></div>
           </h2>
-          <p className="text-[11px] text-gray-400 font-bold uppercase tracking-[0.15em] -mt-0.5">Premium Home Services</p>
+          <p className="text-[11px] text-gray-400 font-bold uppercase tracking-[0.15em] -mt-0.5">{subtitle}</p>
         </div>
 
       </div>
@@ -44,12 +50,12 @@ const ServiceCategories = React.memo(({ categories, onCategoryClick, onSeeAllCli
       {/* Professional Grid Layout */}
       <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-y-7 gap-x-3">
         {serviceCategories.map((category, index) => {
-          const iconSrc = toAssetUrl(category.icon || category.image);
+          const iconSrc = category.icon;
           return (
             <div key={category.id || index} className="flex justify-center h-full">
               <CategoryCard
                 title={category.title}
-                icon={
+                icon={iconSrc ? (
                   <img
                     src={iconSrc}
                     alt={category.title}
@@ -57,7 +63,7 @@ const ServiceCategories = React.memo(({ categories, onCategoryClick, onSeeAllCli
                     loading="lazy"
                     decoding="async"
                   />
-                }
+                ) : null}
                 onClick={() => onCategoryClick?.(category)}
                 hasSaleBadge={category.hasSaleBadge}
                 index={index}

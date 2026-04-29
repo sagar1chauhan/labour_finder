@@ -27,7 +27,7 @@ const getPublicCategories = async (req, res) => {
     }
 
     const categories = await Category.find(query)
-      .select('title slug homeIconUrl homeBadge hasSaleBadge homeOrder showOnHome')
+      .select('title slug homeIconUrl homeBadge hasSaleBadge homeOrder showOnHome categoryType')
       .sort({ homeOrder: 1, createdAt: -1 })
       .lean();
 
@@ -39,7 +39,8 @@ const getPublicCategories = async (req, res) => {
       icon: cat.homeIconUrl || '',
       badge: cat.homeBadge || '',
       hasSaleBadge: cat.hasSaleBadge || false,
-      showOnHome: cat.showOnHome || false
+      showOnHome: cat.showOnHome || false,
+      categoryType: cat.categoryType || 'service'
     }));
 
     res.status(200).json({
@@ -403,7 +404,7 @@ const getPublicHomeData = async (req, res) => {
           { cityIds: { $size: 0 } }
         ] : [{ status: 'active' }]
       })
-        .select('title slug homeIconUrl homeBadge hasSaleBadge')
+        .select('title slug homeIconUrl homeBadge hasSaleBadge categoryType')
         .sort({ homeOrder: 1 })
         .lean(),
       HomeContent.getHomeContent(cityId)
@@ -415,8 +416,20 @@ const getPublicHomeData = async (req, res) => {
       slug: cat.slug,
       icon: cat.homeIconUrl || '',
       badge: cat.homeBadge || '',
-      hasSaleBadge: cat.hasSaleBadge || false
+      hasSaleBadge: cat.hasSaleBadge || false,
+      categoryType: cat.categoryType || 'service'
     }));
+
+    // Deduplicate by title to prevent duplicate icons on home page
+    const uniqueCategories = [];
+    const seenTitles = new Set();
+    formattedCategories.forEach(cat => {
+      const lowerTitle = cat.title.toLowerCase();
+      if (!seenTitles.has(lowerTitle)) {
+        seenTitles.add(lowerTitle);
+        uniqueCategories.push(cat);
+      }
+    });
 
     let formattedContent = null;
     if (homeContent) {
@@ -478,7 +491,7 @@ const getPublicHomeData = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      categories: formattedCategories,
+      categories: uniqueCategories,
       homeContent: formattedContent
     });
   } catch (error) {

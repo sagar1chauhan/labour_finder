@@ -5,18 +5,41 @@ import { vendorTheme } from '../../../../theme';
 import Header from '../../components/layout/Header';
 import { vendorCategoryService } from '../../services/vendorCategoryService';
 import LogoLoader from '../../../../components/common/LogoLoader';
+import { uploadToCloudinary } from '../../../../utils/cloudinaryUpload';
+import { FiImage, FiX } from 'react-icons/fi';
 
 const Categories = () => {
   const [categories, setCategories] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [activeTab, setActiveTab] = useState('service'); // 'service' or 'product'
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState('');
 
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     categoryType: 'service'
   });
+
+  useEffect(() => {
+    if (isModalOpen) {
+      setFormData(prev => ({ ...prev, categoryType: activeTab }));
+    } else {
+      // Reset images on close
+      setImageFile(null);
+      setImagePreview('');
+    }
+  }, [isModalOpen, activeTab]);
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
 
   const fetchCategories = async () => {
     try {
@@ -60,11 +83,21 @@ const Categories = () => {
 
     try {
       setIsSubmitting(true);
-      const res = await vendorCategoryService.createCategory(formData);
+      
+      let imageUrl = null;
+      if (imageFile) {
+        toast.loading('Uploading icon...', { id: 'upload-cat' });
+        imageUrl = await uploadToCloudinary(imageFile, 'categories');
+        toast.dismiss('upload-cat');
+      }
+
+      const res = await vendorCategoryService.createCategory({ ...formData, imageUrl });
       if (res.success) {
         toast.success('Category created successfully');
         setIsModalOpen(false);
         setFormData({ title: '', description: '', categoryType: 'service' });
+        setImageFile(null);
+        setImagePreview('');
         fetchCategories(); // Refresh list
       }
     } catch (error) {
@@ -80,8 +113,8 @@ const Categories = () => {
       <Header title="Categories" />
 
       <main className="p-4">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-bold text-gray-800">Available Categories</h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold text-gray-800">Your Categories</h2>
           <button
             onClick={() => setIsModalOpen(true)}
             className="flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-xl font-semibold shadow-md active:scale-95 transition-transform"
@@ -91,24 +124,46 @@ const Categories = () => {
           </button>
         </div>
 
+        {/* Tab Switcher */}
+        <div className="flex bg-white p-1 rounded-2xl shadow-sm border border-gray-100 mb-6">
+          <button
+            onClick={() => setActiveTab('service')}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold transition-all ${activeTab === 'service' ? 'bg-teal-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}
+          >
+            <FiGrid className={activeTab === 'service' ? 'text-white' : 'text-teal-600'} />
+            Services
+          </button>
+          <button
+            onClick={() => setActiveTab('product')}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold transition-all ${activeTab === 'product' ? 'bg-indigo-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}
+          >
+            <FiBox className={activeTab === 'product' ? 'text-white' : 'text-indigo-600'} />
+            Products
+          </button>
+        </div>
+
         {isLoading ? (
           <div className="flex justify-center py-10">
             <LogoLoader />
           </div>
-        ) : categories.length === 0 ? (
+        ) : categories.filter(c => c.categoryType === activeTab).length === 0 ? (
           <div className="text-center py-10 bg-white rounded-2xl shadow-sm border border-gray-100">
-            <FiGrid className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-500 font-medium">No categories available</p>
+            {activeTab === 'service' ? <FiGrid className="w-12 h-12 text-gray-300 mx-auto mb-3" /> : <FiBox className="w-12 h-12 text-gray-300 mx-auto mb-3" />}
+            <p className="text-gray-500 font-medium">No {activeTab} categories available</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {categories.map((cat) => (
+            {categories.filter(c => c.categoryType === activeTab).map((cat) => (
               <div 
                 key={cat.id} 
                 className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex items-start gap-4"
               >
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${cat.categoryType === 'product' ? 'bg-indigo-50 text-indigo-600' : 'bg-teal-50 text-teal-600'}`}>
-                  {cat.categoryType === 'product' ? <FiBox className="w-6 h-6" /> : <FiGrid className="w-6 h-6" />}
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 overflow-hidden ${cat.categoryType === 'product' ? 'bg-indigo-50 text-indigo-600' : 'bg-teal-50 text-teal-600'}`}>
+                  {cat.imageUrl ? (
+                    <img src={cat.imageUrl} alt={cat.title} className="w-full h-full object-cover" />
+                  ) : (
+                    cat.categoryType === 'product' ? <FiBox className="w-6 h-6" /> : <FiGrid className="w-6 h-6" />
+                  )}
                 </div>
                 
                 <div className="flex-1 min-w-0">
@@ -189,6 +244,32 @@ const Categories = () => {
                     <FiBox className="w-6 h-6" />
                     <span className="text-sm font-bold">Product</span>
                   </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2 text-center uppercase tracking-widest text-[10px]">Category Icon</label>
+                <div className="border-2 border-dashed border-gray-200 rounded-2xl p-4 flex flex-col items-center justify-center relative bg-gray-50 overflow-hidden group hover:border-teal-500/50 transition-all">
+                  {imagePreview ? (
+                    <div className="relative w-full h-32">
+                       <img src={imagePreview} alt="Preview" className="h-full w-full object-contain rounded-xl" />
+                       <button 
+                        type="button" 
+                        onClick={() => { setImageFile(null); setImagePreview(''); }}
+                        className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full shadow-md"
+                       >
+                         <FiX size={12} />
+                       </button>
+                    </div>
+                  ) : (
+                    <div className="text-center py-2">
+                      <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center mx-auto mb-2">
+                        <FiImage className="h-5 w-5 text-teal-500" />
+                      </div>
+                      <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Upload Icon</span>
+                    </div>
+                  )}
+                  <input type="file" accept="image/*" onChange={handleImageChange} className="absolute inset-0 opacity-0 cursor-pointer" />
                 </div>
               </div>
 

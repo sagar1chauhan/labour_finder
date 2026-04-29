@@ -21,6 +21,7 @@ import {
   FiPlayCircle,
   FiShield,
   FiPercent,
+  FiBox,
 } from "react-icons/fi";
 import adminMenu from "../../config/adminMenu.json";
 import dashboardService from "../../services/dashboardService";
@@ -48,6 +49,7 @@ const iconMap = {
   Training: FiPlayCircle,
   "Police Verification": FiShield,
   "Offer Banners": FiShoppingBag,
+  "Stock Management": FiBox,
 };
 
 // Helper function to convert child name to route path

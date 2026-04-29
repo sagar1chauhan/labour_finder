@@ -130,6 +130,15 @@
     "children": []
   },
   {
+    "title": "Stock Management",
+    "route": "/admin/stock",
+    "allowedRoles": [
+      "super_admin",
+      "admin"
+    ],
+    "children": []
+  },
+  {
     "title": "Reports",
     "route": "/admin/reports",
     "allowedRoles": [
@@ -152,14 +161,6 @@
   {
     "title": "Plans",
     "route": "/admin/plans",
-    "allowedRoles": [
-      "super_admin"
-    ],
-    "children": []
-  },
-  {
-    "title": "Commission",
-    "route": "/admin/commission",
     "allowedRoles": [
       "super_admin"
     ],

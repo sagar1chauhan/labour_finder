@@ -29,6 +29,7 @@ const Profile = () => {
     { id: 7, label: 'Manage Address', icon: FiMapPin, path: '/vendor/address-management' },
     { id: 8, label: 'Settings', icon: FiSettings, path: '/vendor/settings' },
     { id: 9, label: 'About Civil connect', icon: null, customIcon: 'S', path: '/vendor/about-cleaning-expert' },
+    { id: 13, label: 'Stock Management', icon: FiBox, path: '/vendor/stock' },
   ];
 
   const [profile, setProfile] = useState(null);

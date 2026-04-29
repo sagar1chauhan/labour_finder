@@ -95,7 +95,18 @@ const CategoryModal = React.memo(({ isOpen, onClose, category, location, cartCou
         cityId: cityId
       });
       if (response.success) {
-        setBrands(response.brands || []);
+        // Group by title to prevent duplicates from different vendors
+        const uniqueBrands = [];
+        const seenTitles = new Set();
+        
+        (response.brands || []).forEach(brand => {
+          if (!seenTitles.has(brand.title.toLowerCase())) {
+            seenTitles.add(brand.title.toLowerCase());
+            uniqueBrands.push(brand);
+          }
+        });
+        
+        setBrands(uniqueBrands);
       }
     } catch (error) {
       console.error("Failed to load brands:", error);

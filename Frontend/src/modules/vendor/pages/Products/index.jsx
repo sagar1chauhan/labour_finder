@@ -5,6 +5,7 @@ import api from '../../../../services/api';
 import { vendorTheme as themeColors } from '../../../../theme';
 import Header from '../../components/layout/Header';
 import BottomNav from '../../components/layout/BottomNav';
+import { uploadToCloudinary } from '../../../../utils/cloudinaryUpload';
 
 const ServicesPage = () => {
   const [products, setProducts] = useState([]);
@@ -72,23 +73,6 @@ const ServicesPage = () => {
     }
   };
 
-  const uploadImageToCloudinary = async (file) => {
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('upload_preset', 'homster_assets');
-    formData.append('cloud_name', 'deorxby43');
-    try {
-      const res = await fetch(`https://api.cloudinary.com/v1_1/deorxby43/image/upload`, {
-        method: 'POST',
-        body: formData,
-      });
-      const data = await res.json();
-      return data.secure_url;
-    } catch (error) {
-      console.error('Cloudinary upload error:', error);
-      throw error;
-    }
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -107,7 +91,7 @@ const ServicesPage = () => {
       let iconUrl = '';
       if (imageFile) {
         toast.loading('Uploading image...', { id: 'upload' });
-        iconUrl = await uploadImageToCloudinary(imageFile);
+        iconUrl = await uploadToCloudinary(imageFile, 'products');
         toast.dismiss('upload');
       }
 
@@ -206,14 +190,18 @@ const ServicesPage = () => {
                 <div className="flex bg-gray-100 p-1 rounded-xl">
                   <button 
                     type="button" 
-                    onClick={() => setForm({...form, type: 'service'})}
+                    onClick={() => {
+                      setForm({...form, type: 'service', categoryId: ''});
+                    }}
                     className={`flex-1 py-2 text-xs font-black uppercase tracking-widest rounded-lg transition-all ${form.type === 'service' ? 'bg-white text-teal-600 shadow-sm' : 'text-gray-400'}`}
                   >
                     Service
                   </button>
                   <button 
                     type="button" 
-                    onClick={() => setForm({...form, type: 'product'})}
+                    onClick={() => {
+                      setForm({...form, type: 'product', categoryId: ''});
+                    }}
                     className={`flex-1 py-2 text-xs font-black uppercase tracking-widest rounded-lg transition-all ${form.type === 'product' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-400'}`}
                   >
                     Product / Material
@@ -227,9 +215,19 @@ const ServicesPage = () => {
 
                 <div>
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 block">Main Category *</label>
-                  <select required value={form.categoryId} onChange={e => setForm({...form, categoryId: e.target.value})} className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-inner appearance-none">
+                  <select 
+                    required 
+                    value={form.categoryId} 
+                    onChange={e => setForm({...form, categoryId: e.target.value})} 
+                    className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-inner appearance-none"
+                  >
                     <option value="">Select Category</option>
-                    {categories.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
+                    {categories
+                      .filter(c => c.categoryType === form.type)
+                      .map(c => (
+                        <option key={c.id} value={c.id}>{c.title}</option>
+                      ))
+                    }
                   </select>
                 </div>
 

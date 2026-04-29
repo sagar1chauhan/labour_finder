@@ -10,11 +10,14 @@ const getVendorCategories = async (req, res) => {
   try {
     const { status, categoryType } = req.query;
     
-    // Build query - vendors can see their own categories + active global categories
+    // Build query - vendors can see their own categories + global categories (vendorId null/not exists)
+    // AND we must exclude deleted categories
     const query = {
+      status: { $ne: 'deleted' },
       $or: [
         { vendorId: req.user.id },
-        { status: SERVICE_STATUS.ACTIVE }
+        { vendorId: { $exists: false } },
+        { vendorId: null }
       ]
     };
     
@@ -72,15 +75,12 @@ const createVendorCategory = async (req, res) => {
       categoryType
     } = req.body;
 
-    const slug = title.trim().toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-');
-
+    let slug = title.trim().toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-');
+    
+    // Check if slug exists, if so append a short random string to make it unique for this vendor
     const existingCategory = await Category.findOne({ slug });
-
     if (existingCategory) {
-      return res.status(400).json({
-        success: false,
-        message: 'Category with this title already exists'
-      });
+      slug = `${slug}-${Math.random().toString(36).substring(2, 7)}`;
     }
 
     // Default status for vendor created category can be PENDING or ACTIVE. We'll set ACTIVE for now to not block the flow
