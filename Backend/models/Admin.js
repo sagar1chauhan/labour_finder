@@ -43,6 +43,10 @@ const adminSchema = new mongoose.Schema({
   },
   lastLogin: {
     type: Date
+  },
+  wallet: {
+    type: Number,
+    default: 0
   }
 }, {
   timestamps: true

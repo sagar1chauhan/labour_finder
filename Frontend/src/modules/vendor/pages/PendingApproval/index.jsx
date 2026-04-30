@@ -30,9 +30,11 @@ const PendingApproval = () => {
             navigate('/vendor/police-verification/selection', { state: { vendorId } });
           } else if (method === 'self' && status === 'pending') {
             navigate('/vendor/police-verification/upload', { state: { vendorId } });
-          } else if (status === 'approved' || method === 'admin') {
+          } else if (response.approvalStatus?.toLowerCase() === 'approved') {
             if (!response.isSubscriptionActive) {
               navigate('/vendor/subscription', { state: { vendorId } });
+            } else {
+              navigate('/vendor/dashboard');
             }
           }
           // Otherwise, stay on this page (it's either admin method or already submitted)

@@ -167,8 +167,8 @@ const VendorLogin = () => {
               navigate('/vendor/police-verification/selection', { state: { vendorId } });
             } else if (method === 'self' && status === 'pending') {
               navigate('/vendor/police-verification/upload', { state: { vendorId } });
-            } else if (status === 'approved' || method === 'admin') {
-              // Police verification is handled, now check subscription
+            } else if (response.vendor?.approvalStatus?.toLowerCase() === 'approved') {
+              // Account is approved, now check subscription
               if (!response.vendor?.isSubscriptionActive) {
                 navigate('/vendor/subscription', { state: { vendorId } });
               } else {

@@ -217,11 +217,11 @@ const createBooking = async (req, res) => {
           basePrice = reqBasePrice;
           discount = reqDiscount || 0;
           tax = reqTax;
-          visitingCharges = (reqVisitingCharges !== undefined) ? reqVisitingCharges : (visitingCharges || 49);
+          visitingCharges = (reqVisitingCharges !== undefined) ? reqVisitingCharges : (visitingCharges || 0);
           finalAmount = (basePrice - discount + tax + visitingCharges) + pendingPenalty;
         } else {
           // Accurate calculation without aggressive rounding to prevent 1-rupee gap
-          if (!visitingCharges) visitingCharges = 49;
+          if (!visitingCharges) visitingCharges = 0;
           const totalAfterCharges = amount - visitingCharges;
           basePrice = parseFloat((totalAfterCharges / 1.18).toFixed(2));
           tax = parseFloat((totalAfterCharges - basePrice).toFixed(2));
@@ -230,7 +230,7 @@ const createBooking = async (req, res) => {
         }
       } else {
         // Fallback to service pricing (if no amount sent)
-        if (!visitingCharges) visitingCharges = 49;
+        if (!visitingCharges) visitingCharges = 0;
         const serviceBase = service.basePrice || 500;
         const serviceDiscount = service.discountPrice ? (serviceBase - service.discountPrice) : 0;
         const netBase = serviceBase - serviceDiscount;
@@ -476,6 +476,30 @@ const createBooking = async (req, res) => {
               message: `New booking request within ${vendor.distance?.toFixed(1) || '?'}km!`
             });
           });
+
+          // BROADCAST to all vendors (Optional: for 'Broadcart' flow)
+          io.to('all_vendors').emit('new_booking_request', {
+            bookingId: bookingForBackground._id,
+            serviceName: serviceForBackground.title,
+            customerName: userForBackground.name,
+            customerPhone: userForBackground.phone,
+            scheduledDate: scheduledDate,
+            scheduledTime: scheduledTime,
+            price: finalAmount,
+            address: address,
+            serviceCategory: bookingForBackground.serviceCategory,
+            brandName: bookingForBackground.brandName,
+            brandIcon: bookingForBackground.brandIcon,
+            categoryIcon: bookingForBackground.categoryIcon,
+            createdAt: bookingForBackground.createdAt || new Date(),
+            expiresAt: new Date(new Date(bookingForBackground.createdAt || Date.now()).getTime() + (60 * 1000)).toISOString(),
+            status: bookingForBackground.status,
+            serviceType: bookingForBackground.serviceType || 'service',
+            playSound: true,
+            isBroadcast: true,
+            message: `New booking request broadcast!`
+          });
+          console.log(`[CreateBooking] Broadcasted new_booking_request to all_vendors room`);
         }
 
         // 2. Send Firebase/FCM notifications (External service - call AFTER socket)

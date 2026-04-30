@@ -23,6 +23,42 @@ const isVendor = (req, res, next) => {
   next();
 };
 
+const checkSubscription = async (req, res, next) => {
+  try {
+    if (req.userRole !== USER_ROLES.VENDOR) return next();
+
+    const Vendor = require('../models/Vendor');
+    const vendor = await Vendor.findById(req.userId);
+
+    if (!vendor) {
+      return res.status(404).json({ success: false, message: 'Vendor not found' });
+    }
+
+    const now = new Date();
+    const expiryDate = vendor.subscription?.endDate;
+
+    if (!vendor.isSubscriptionActive || (expiryDate && new Date(expiryDate) < now)) {
+      // Auto-update status if expired
+      if (vendor.isSubscriptionActive) {
+        vendor.isSubscriptionActive = false;
+        if (vendor.subscription) vendor.subscription.status = 'expired';
+        await vendor.save();
+      }
+
+      return res.status(403).json({
+        success: false,
+        code: 'SUBSCRIPTION_REQUIRED',
+        message: 'Active subscription required to access this resource.'
+      });
+    }
+
+    next();
+  } catch (error) {
+    console.error('Subscription check error:', error);
+    next(); // Fallback to allowing if check fails to avoid blocking legitimate users
+  }
+};
+
 const isWorker = (req, res, next) => {
   if (req.userRole !== USER_ROLES.WORKER) {
     return res.status(403).json({
@@ -86,6 +122,7 @@ const isSuperAdmin = async (req, res, next) => {
 module.exports = {
   isUser,
   isVendor,
+  checkSubscription,
   isWorker,
   isAdmin,
   isAdminOrVendor,

@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { FiCheck, FiStar, FiShield, FiZap, FiArrowRight } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
 import Logo from '../../../../components/common/Logo';
+import authService from '../../services/authService';
 import subscriptionService from '../../services/subscriptionService';
 
 const SubscriptionSelection = () => {
@@ -29,6 +30,25 @@ const SubscriptionSelection = () => {
 
     fetchPlans();
 
+    // Redirect if already active
+    const checkActive = async () => {
+      if (!vendorId) return;
+      
+      try {
+        const statusRes = await authService.getRegistrationStatus(vendorId);
+        if (statusRes.success && statusRes.vendor?.isSubscriptionActive) {
+          // Update local storage to keep it in sync
+          const currentData = JSON.parse(localStorage.getItem('vendorData') || '{}');
+          localStorage.setItem('vendorData', JSON.stringify({ ...currentData, ...statusRes.vendor }));
+          
+          navigate('/vendor/dashboard');
+        }
+      } catch (err) {
+        console.error('Error checking active status:', err);
+      }
+    };
+    checkActive();
+
     // Load Razorpay Script
     const script = document.createElement('script');
     script.src = 'https://checkout.razorpay.com/v1/checkout.js';
@@ -36,9 +56,11 @@ const SubscriptionSelection = () => {
     document.body.appendChild(script);
 
     return () => {
-      document.body.removeChild(script);
+      if (document.body.contains(script)) {
+        document.body.removeChild(script);
+      }
     };
-  }, []);
+  }, [navigate, vendorId]);
 
   const handleSubscribe = async (plan) => {
     if (!vendorId) {
@@ -67,8 +89,15 @@ const SubscriptionSelection = () => {
               });
               if (verifyRes.success) {
                 toast.success('Subscription active! Welcome to Civil Connect.');
-                // Update local storage if needed, or just redirect to login/dashboard
-                // Since they are now fully setup, redirection to dashboard is best
+                
+                // Update local storage vendor data
+                const vendorData = JSON.parse(localStorage.getItem('vendorData') || '{}');
+                vendorData.isSubscriptionActive = true;
+                if (verifyRes.subscription) {
+                   vendorData.subscription = verifyRes.subscription;
+                }
+                localStorage.setItem('vendorData', JSON.stringify(vendorData));
+                
                 navigate('/vendor/dashboard');
               }
             } catch (err) {

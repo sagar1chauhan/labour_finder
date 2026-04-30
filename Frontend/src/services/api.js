@@ -148,8 +148,17 @@ api.interceptors.response.use(
 
     // Handle 403 Forbidden - Role mismatch or Invalid Token
     if (error.response?.status === 403) {
-      console.error('Access Denied (403):', error.response.data.message);
-      // Removed automatic logout to prevent login loops during debugging
+      const { code } = error.response.data;
+      
+      if (code === 'SUBSCRIPTION_REQUIRED') {
+        console.warn('Subscription expired or inactive. Redirecting...');
+        // Only redirect if not already on the subscription page
+        if (!window.location.pathname.includes('/vendor/subscription')) {
+          window.location.href = '/vendor/subscription';
+        }
+      } else {
+        console.error('Access Denied (403):', error.response.data.message);
+      }
     }
 
     return Promise.reject(error);

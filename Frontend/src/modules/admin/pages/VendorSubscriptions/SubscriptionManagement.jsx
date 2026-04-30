@@ -5,7 +5,11 @@ import vendorSubscriptionService from '../../services/vendorSubscriptionService'
 import { themeColors } from '../../../../theme';
 
 const VendorSubscriptionManagement = () => {
+  const [activeTab, setActiveTab] = useState('plans'); // 'plans' or 'transactions'
   const [plans, setPlans] = useState([]);
+  const [transactions, setTransactions] = useState([]);
+  const [stats, setStats] = useState({ totalRevenue: 0, transactionCount: 0 });
+  const [dateRange, setDateRange] = useState({ startDate: '', endDate: '' });
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentPlan, setCurrentPlan] = useState(null);
@@ -21,10 +25,15 @@ const VendorSubscriptionManagement = () => {
   const brandColor = themeColors.brand?.teal || '#347989';
 
   useEffect(() => {
-    fetchPlans();
-  }, []);
+    if (activeTab === 'plans') {
+      fetchPlans();
+    } else {
+      fetchTransactions();
+    }
+  }, [activeTab, dateRange]);
 
   const fetchPlans = async () => {
+    setLoading(true);
     try {
       const response = await vendorSubscriptionService.getAllPlans();
       if (response.success) {
@@ -32,6 +41,27 @@ const VendorSubscriptionManagement = () => {
       }
     } catch (error) {
       toast.error('Failed to fetch plans');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchTransactions = async () => {
+    setLoading(true);
+    try {
+      const params = {};
+      if (dateRange.startDate) params.startDate = dateRange.startDate;
+      if (dateRange.endDate) params.endDate = dateRange.endDate;
+
+      const response = await vendorSubscriptionService.getAllTransactions(params);
+      if (response.success) {
+        setTransactions(response.data);
+        if (response.stats) {
+          setStats(response.stats);
+        }
+      }
+    } catch (error) {
+      toast.error('Failed to fetch transactions');
     } finally {
       setLoading(false);
     }
@@ -96,71 +126,177 @@ const VendorSubscriptionManagement = () => {
     }
   };
 
-  if (loading) return <div className="p-8 text-center">Loading plans...</div>;
-
   return (
     <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
       <div className="max-w-6xl mx-auto">
+        {/* Header Section */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Vendor Subscription Plans</h1>
-            <p className="text-gray-500">Manage dynamic pricing and features for vendors</p>
+            <h1 className="text-2xl font-bold text-gray-900">Vendor Subscriptions</h1>
+            <p className="text-gray-500">Manage plans and view revenue transactions</p>
           </div>
-          <button
-            onClick={() => handleOpenModal()}
-            className="flex items-center gap-2 px-6 py-3 rounded-xl text-white font-semibold shadow-lg transition-all hover:opacity-90"
-            style={{ backgroundColor: brandColor }}
-          >
-            <FiPlus /> Create New Plan
-          </button>
+          <div className="flex gap-2 bg-white p-1 rounded-xl border border-gray-200">
+            <button
+              onClick={() => setActiveTab('plans')}
+              className={`px-6 py-2 rounded-lg font-semibold transition-all ${activeTab === 'plans' ? 'bg-[#347989] text-white shadow-md' : 'text-gray-600 hover:bg-gray-50'}`}
+            >
+              Plans
+            </button>
+            <button
+              onClick={() => setActiveTab('transactions')}
+              className={`px-6 py-2 rounded-lg font-semibold transition-all ${activeTab === 'transactions' ? 'bg-[#347989] text-white shadow-md' : 'text-gray-600 hover:bg-gray-50'}`}
+            >
+              Transactions
+            </button>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {plans.map((plan) => (
-            <div key={plan._id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
-              <div className="p-6 border-b border-gray-50 bg-gray-50/50">
-                <div className="flex justify-between items-start mb-2">
-                  <h3 className="text-lg font-bold text-gray-900">{plan.name}</h3>
-                  <span className={`px-2 py-1 rounded-md text-xs font-bold ${plan.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                    {plan.isActive ? 'ACTIVE' : 'INACTIVE'}
-                  </span>
-                </div>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-3xl font-extrabold text-gray-900">₹{plan.price}</span>
-                  <span className="text-gray-500 text-sm">/ {plan.duration} days</span>
-                </div>
-              </div>
-              
-              <div className="p-6 flex-grow">
-                <p className="text-sm text-gray-600 mb-4">{plan.description}</p>
-                <div className="space-y-2">
-                  {plan.features.map((feature, i) => (
-                    <div key={i} className="flex items-center gap-2 text-sm text-gray-700">
-                      <FiCheck className="text-green-500 flex-shrink-0" />
-                      <span>{feature}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="p-4 bg-gray-50 border-t border-gray-100 flex gap-2">
-                <button
-                  onClick={() => handleOpenModal(plan)}
-                  className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-100 transition-colors"
-                >
-                  <FiEdit2 size={14} /> Edit
-                </button>
-                <button
-                  onClick={() => handleDelete(plan._id)}
-                  className="px-3 py-2 rounded-lg border border-red-100 bg-white text-red-600 hover:bg-red-50 transition-colors"
-                >
-                  <FiTrash2 size={14} />
-                </button>
+        {/* Stats Section - Show only on Transactions Tab */}
+        {activeTab === 'transactions' && !loading && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-center">
+              <div className="text-xs font-bold text-gray-400 mb-1 uppercase tracking-wider">Total Revenue</div>
+              <div className="text-3xl font-black text-[#347989]">₹{(stats?.totalRevenue || 0).toLocaleString('en-IN')}</div>
+            </div>
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-center">
+              <div className="text-xs font-bold text-gray-400 mb-1 uppercase tracking-wider">Total Transactions</div>
+              <div className="text-3xl font-black text-gray-900">{stats?.transactionCount || 0}</div>
+            </div>
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 md:col-span-2 lg:col-span-1">
+              <div className="text-xs font-bold text-gray-400 mb-2 uppercase tracking-wider">Date Filter</div>
+              <div className="flex gap-2">
+                <input
+                  type="date"
+                  value={dateRange.startDate}
+                  onChange={(e) => setDateRange({...dateRange, startDate: e.target.value})}
+                  className="flex-1 px-3 py-2 text-xs rounded-lg border border-gray-100 bg-gray-50 outline-none focus:ring-1 focus:ring-[#347989]"
+                />
+                <input
+                  type="date"
+                  value={dateRange.endDate}
+                  onChange={(e) => setDateRange({...dateRange, endDate: e.target.value})}
+                  className="flex-1 px-3 py-2 text-xs rounded-lg border border-gray-100 bg-gray-50 outline-none focus:ring-1 focus:ring-[#347989]"
+                />
               </div>
             </div>
-          ))}
-        </div>
+          </div>
+        )}
 
+        {activeTab === 'plans' ? (
+          <div className="flex justify-end mb-6">
+            <button
+              onClick={() => handleOpenModal()}
+              className="flex items-center gap-2 px-6 py-3 rounded-xl text-white font-semibold shadow-lg transition-all hover:opacity-90"
+              style={{ backgroundColor: brandColor }}
+            >
+              <FiPlus /> Create New Plan
+            </button>
+          </div>
+        ) : null}
+
+        {loading ? (
+          <div className="p-8 text-center bg-white rounded-3xl border border-gray-100 animate-pulse">
+            Loading data...
+          </div>
+        ) : activeTab === 'plans' ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {plans.map((plan) => (
+              <div key={plan._id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
+                <div className="p-6 border-b border-gray-50 bg-gray-50/50">
+                  <div className="flex justify-between items-start mb-2">
+                    <h3 className="text-lg font-bold text-gray-900">{plan.name}</h3>
+                    <span className={`px-2 py-1 rounded-md text-xs font-bold ${plan.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                      {plan.isActive ? 'ACTIVE' : 'INACTIVE'}
+                    </span>
+                  </div>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-3xl font-extrabold text-gray-900">₹{plan.price}</span>
+                    <span className="text-gray-500 text-sm">/ {plan.duration} days</span>
+                  </div>
+                </div>
+                
+                <div className="p-6 flex-grow">
+                  <p className="text-sm text-gray-600 mb-4">{plan.description}</p>
+                  <div className="space-y-2">
+                    {plan.features.map((feature, i) => (
+                      <div key={i} className="flex items-center gap-2 text-sm text-gray-700">
+                        <FiCheck className="text-green-500 flex-shrink-0" />
+                        <span>{feature}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="p-4 bg-gray-50 border-t border-gray-100 flex gap-2">
+                  <button
+                    onClick={() => handleOpenModal(plan)}
+                    className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-100 transition-colors"
+                  >
+                    <FiEdit2 size={14} /> Edit
+                  </button>
+                  <button
+                    onClick={() => handleDelete(plan._id)}
+                    className="px-3 py-2 rounded-lg border border-red-100 bg-white text-red-600 hover:bg-red-50 transition-colors"
+                  >
+                    <FiTrash2 size={14} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-100">
+                    <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Vendor</th>
+                    <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Plan</th>
+                    <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Amount</th>
+                    <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Date</th>
+                    <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Payment ID</th>
+                    <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {transactions.map((tx) => (
+                    <tr key={tx._id} className="hover:bg-gray-50/50 transition-colors">
+                      <td className="p-4">
+                        <div className="font-bold text-gray-900">{tx.vendorId?.businessName || tx.vendorId?.name || 'Unknown'}</div>
+                        <div className="text-xs text-gray-500">{tx.vendorId?.phone}</div>
+                      </td>
+                      <td className="p-4">
+                        <div className="text-sm font-medium text-gray-700">{tx.planId?.name}</div>
+                        <div className="text-xs text-gray-500">{tx.planId?.duration} days</div>
+                      </td>
+                      <td className="p-4 font-bold text-gray-900">₹{tx.amount}</td>
+                      <td className="p-4 text-sm text-gray-600">
+                        {new Date(tx.createdAt).toLocaleDateString('en-IN', {
+                          day: '2-digit',
+                          month: 'short',
+                          year: 'numeric'
+                        })}
+                      </td>
+                      <td className="p-4 font-mono text-xs text-gray-400">{tx.razorpay_payment_id}</td>
+                      <td className="p-4">
+                        <span className="px-2 py-1 rounded-full text-[10px] font-bold bg-green-100 text-green-700">
+                          {tx.status?.toUpperCase() || 'CAPTURED'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                  {transactions.length === 0 && (
+                    <tr>
+                      <td colSpan="6" className="p-12 text-center text-gray-500">
+                        No transactions recorded yet.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
         {plans.length === 0 && (
           <div className="text-center py-20 bg-white rounded-3xl border-2 border-dashed border-gray-200">
             <FiInfo className="mx-auto text-gray-300 w-12 h-12 mb-4" />

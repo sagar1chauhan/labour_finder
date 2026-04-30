@@ -46,6 +46,8 @@ const initializeSocket = (server) => {
       socket.join(`user_${socket.userId.toString()}`);
     } else if (socket.userRole === 'VENDOR') {
       socket.join(`vendor_${socket.userId.toString()}`);
+      socket.join('all_vendors'); // Join global vendor room for broadcasts
+      console.log(`[Socket] Vendor ${socket.userId} joined private room and all_vendors room`);
       // Update vendor online status
       updateVendorOnlineStatus(socket.userId, true, socket.id);
     } else if (socket.userRole === 'WORKER') {

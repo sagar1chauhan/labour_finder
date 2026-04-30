@@ -66,6 +66,9 @@ const createOrder = async (req, res) => {
   }
 };
 
+const SubscriptionTransaction = require('../../models/SubscriptionTransaction');
+const Admin = require('../../models/Admin');
+
 /**
  * Verify Razorpay payment and activate subscription
  */
@@ -101,8 +104,9 @@ const verifyPayment = async (req, res) => {
 
     const startDate = new Date();
     const endDate = new Date();
-    endDate.setDate(startDate.getDate() + plan.duration);
+    endDate.setDate(startDate.getDate() + parseInt(plan.duration));
 
+    // Update Vendor
     await Vendor.findByIdAndUpdate(vendorId, {
       subscription: {
         planId: plan._id,
@@ -112,6 +116,27 @@ const verifyPayment = async (req, res) => {
       },
       isSubscriptionActive: true
     });
+
+    // Record Transaction
+    const transaction = new SubscriptionTransaction({
+      vendorId,
+      planId,
+      amount: plan.price,
+      razorpay_order_id,
+      razorpay_payment_id,
+      startDate,
+      endDate
+    });
+    await transaction.save();
+
+    // Update Admin Wallet (Assuming the first Super Admin is the platform owner)
+    // Alternatively, update all super admins or a specific platform account.
+    // Let's update all super admins or the first one found.
+    const admin = await Admin.findOne({ role: 'super_admin' });
+    if (admin) {
+      admin.wallet = (admin.wallet || 0) + plan.price;
+      await admin.save();
+    }
 
     res.status(200).json({ 
       success: true, 

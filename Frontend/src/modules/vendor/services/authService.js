@@ -293,3 +293,17 @@ export const getRegistrationStatus = async (vendorId) => {
   }
 };
 
+export default {
+  sendOTP,
+  verifyLogin,
+  login,
+  logout,
+  register,
+  getCurrentVendor,
+  updateProfile,
+  updateOnlineStatus,
+  changePassword,
+  requestPasswordReset,
+  verifyToken,
+  getRegistrationStatus
+};

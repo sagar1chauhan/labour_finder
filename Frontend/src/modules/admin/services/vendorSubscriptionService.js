@@ -56,5 +56,14 @@ export default {
   getAllPlans,
   createPlan,
   updatePlan,
-  deletePlan
+  deletePlan,
+  getAllTransactions: async (params = {}) => {
+    try {
+      const response = await api.get('/admin/vendor-subscriptions/transactions', { params });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching transactions:', error);
+      throw error;
+    }
+  }
 };

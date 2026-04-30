@@ -176,23 +176,25 @@ const scrapRoutes = require('./routes/scrap.routes');
 app.use('/api/scrap', scrapRoutes);
 
 // Vendor routes
+const { checkSubscription } = require('./middleware/roleMiddleware');
 app.use('/api/vendors/auth', require('./routes/vendor-routes/auth.routes'));
-app.use('/api/vendors', require('./routes/vendor-routes/profile.routes'));
-app.use('/api/vendors', require('./routes/vendor-routes/settings.routes'));
-app.use('/api/vendors', require('./routes/vendor-routes/wallet.routes'));
-app.use('/api/vendors', require('./routes/vendor-routes/dashboard.routes'));
-app.use('/api/vendors', require('./routes/vendor-routes/service.routes'));
-app.use('/api/vendors/bookings', require('./routes/vendor-routes/booking.routes'));
-app.use('/api/vendors/workers', require('./routes/vendor-routes/worker.routes'));
-app.use('/api/vendors/fcm-tokens', require('./routes/vendor-routes/fcmToken.routes'));
-app.use('/api/vendors', require('./routes/vendor-routes/vendorBill.routes'));
-app.use('/api/vendors/catalog', require('./routes/vendor-routes/catalog.routes'));
-app.use('/api/vendors/categories', require('./routes/vendor-routes/category.routes'));
-app.use('/api/vendors/products', require('./routes/vendor-routes/product.routes'));
-// app.use('/api/vendors/training', require('./routes/vendor-routes/training.routes'));
-app.use('/api/vendors/support', require('./routes/vendor-routes/support.routes'));
 app.use('/api/vendors/verification', require('./routes/vendor-routes/verification.routes'));
 app.use('/api/vendors/subscription', require('./routes/vendor-routes/subscription.routes'));
+
+// Protected Vendor routes (require active subscription)
+app.use('/api/vendors', checkSubscription, require('./routes/vendor-routes/profile.routes'));
+app.use('/api/vendors', checkSubscription, require('./routes/vendor-routes/settings.routes'));
+app.use('/api/vendors', checkSubscription, require('./routes/vendor-routes/wallet.routes'));
+app.use('/api/vendors', checkSubscription, require('./routes/vendor-routes/dashboard.routes'));
+app.use('/api/vendors', checkSubscription, require('./routes/vendor-routes/service.routes'));
+app.use('/api/vendors/bookings', checkSubscription, require('./routes/vendor-routes/booking.routes'));
+app.use('/api/vendors/workers', checkSubscription, require('./routes/vendor-routes/worker.routes'));
+app.use('/api/vendors/fcm-tokens', checkSubscription, require('./routes/vendor-routes/fcmToken.routes'));
+app.use('/api/vendors', checkSubscription, require('./routes/vendor-routes/vendorBill.routes'));
+app.use('/api/vendors/catalog', checkSubscription, require('./routes/vendor-routes/catalog.routes'));
+app.use('/api/vendors/categories', checkSubscription, require('./routes/vendor-routes/category.routes'));
+app.use('/api/vendors/products', checkSubscription, require('./routes/vendor-routes/product.routes'));
+app.use('/api/vendors/support', checkSubscription, require('./routes/vendor-routes/support.routes'));
 
 // Worker routes
 app.use('/api/workers/auth', require('./routes/worker-routes/auth.routes'));
