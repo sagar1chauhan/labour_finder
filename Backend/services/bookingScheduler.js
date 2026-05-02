@@ -21,12 +21,13 @@ const { createNotification } = require('../controllers/notificationControllers/n
 
 const Settings = require('../models/Settings');
 
-// Wave configuration
+// Wave configuration - More sequential (1 by 1 for first few vendors)
 let WAVE_CONFIG = {
-  1: { count: 3, duration: 60000 },
-  2: { count: 3, duration: 60000 },
-  3: { count: 4, duration: 60000 },
-  4: { count: Infinity, duration: 0 }
+  1: { count: 1, duration: 30000 }, // Closest vendor (30s)
+  2: { count: 1, duration: 30000 }, // 2nd closest (30s)
+  3: { count: 1, duration: 30000 }, // 3rd closest (30s)
+  4: { count: 2, duration: 30000 }, // Next 2 (30s)
+  5: { count: Infinity, duration: 0 } // Everyone else
 };
 
 let MAX_SEARCH_TIME_MS = 5 * 60 * 1000; // 5 mins fallback
@@ -40,7 +41,7 @@ const getVendorRange = (wave) => {
   for (let i = 1; i < wave; i++) {
     start += WAVE_CONFIG[i]?.count || 0;
   }
-  const config = WAVE_CONFIG[wave] || WAVE_CONFIG[4];
+  const config = WAVE_CONFIG[wave] || WAVE_CONFIG[5];
   const end = config.count === Infinity ? Infinity : start + config.count;
   return { start, end };
 };
@@ -93,12 +94,13 @@ class BookingScheduler {
       try {
         const globalSettings = await Settings.findOne({ type: 'global' }).lean();
         if (globalSettings) {
-          const waveDur = (globalSettings.waveDuration || 60) * 1000;
+          const waveDur = (globalSettings.waveDuration || 30) * 1000;
           WAVE_CONFIG = {
-            1: { count: 3, duration: waveDur },
-            2: { count: 3, duration: waveDur },
-            3: { count: 4, duration: waveDur },
-            4: { count: Infinity, duration: 0 }
+            1: { count: 1, duration: waveDur },
+            2: { count: 1, duration: waveDur },
+            3: { count: 1, duration: waveDur },
+            4: { count: 2, duration: waveDur },
+            5: { count: Infinity, duration: 0 }
           };
           MAX_SEARCH_TIME_MS = (globalSettings.maxSearchTime || 5) * 60 * 1000;
         }

@@ -95,9 +95,16 @@ const getPublicBrands = async (req, res) => {
 
     let brands = await Brand.find(query)
       .select('title slug iconUrl logo imageUrl badge categoryIds basePrice discountPrice sections type vendorId isPriceDisclosed')
-      .populate('vendorId', 'name businessName policeVerification address rating totalJobs profilePhoto')
+      .populate({
+        path: 'vendorId',
+        match: { isOnline: true, availability: 'AVAILABLE' },
+        select: 'name businessName policeVerification address rating totalJobs profilePhoto isOnline availability'
+      })
       .sort({ createdAt: -1 })
       .lean();
+
+    // Filter out brands where vendor is offline or not found
+    brands = brands.filter(b => b.vendorId);
 
     // If categorySlug is provided, filter by category
     if (categorySlug) {
@@ -143,7 +150,7 @@ const getPublicBrands = async (req, res) => {
         sections: brand.sections || [],
         type: brand.type || 'service',
         isPriceDisclosed: brand.isPriceDisclosed ?? true,
-        vendor: brand.vendorId ? {
+        vendor: {
           id: brand.vendorId._id,
           name: brand.vendorId.name,
           businessName: brand.vendorId.businessName,
@@ -151,8 +158,10 @@ const getPublicBrands = async (req, res) => {
           address: brand.vendorId.address,
           rating: brand.vendorId.rating,
           totalJobs: brand.vendorId.totalJobs,
-          profilePhoto: brand.vendorId.profilePhoto
-        } : null
+          profilePhoto: brand.vendorId.profilePhoto,
+          isOnline: brand.vendorId.isOnline,
+          availability: brand.vendorId.availability
+        }
       }))
     });
   } catch (error) {
@@ -314,14 +323,20 @@ const getPublicServices = async (req, res) => {
     }
 
     const services = await Service.find(query)
-      .populate('brandId', 'title iconUrl')
-      .populate('vendorId', 'name businessName policeVerification address rating totalJobs profilePhoto')
+      .populate({
+        path: 'vendorId',
+        match: { isOnline: true, availability: 'AVAILABLE' }, // Only populate if online
+        select: 'name businessName policeVerification address rating totalJobs profilePhoto isOnline availability'
+      })
       .sort({ createdAt: 1 })
       .lean();
 
+    // Filter out services where vendor is offline or not found (due to match condition above)
+    const activeServices = services.filter(svc => svc.vendorId);
+
     res.status(200).json({
       success: true,
-      services: services.map(svc => ({
+      services: activeServices.map(svc => ({
         id: svc._id.toString(),
         title: svc.title,
         slug: svc.slug,
@@ -335,7 +350,7 @@ const getPublicServices = async (req, res) => {
         brandIcon: svc.brandId?.iconUrl,
         type: svc.type || 'service',
         isPriceDisclosed: svc.isPriceDisclosed ?? true,
-        vendor: svc.vendorId ? {
+        vendor: {
           id: svc.vendorId._id,
           name: svc.vendorId.name,
           businessName: svc.vendorId.businessName,
@@ -343,8 +358,10 @@ const getPublicServices = async (req, res) => {
           address: svc.vendorId.address,
           rating: svc.vendorId.rating,
           totalJobs: svc.vendorId.totalJobs,
-          profilePhoto: svc.vendorId.profilePhoto
-        } : null
+          profilePhoto: svc.vendorId.profilePhoto,
+          isOnline: svc.vendorId.isOnline,
+          availability: svc.vendorId.availability
+        }
       }))
     });
   } catch (error) {

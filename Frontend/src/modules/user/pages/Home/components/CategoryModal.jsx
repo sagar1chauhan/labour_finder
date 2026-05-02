@@ -497,7 +497,7 @@ const CategoryModal = React.memo(({ isOpen, onClose, category, location, cartCou
                                       {svc.isPriceDisclosed !== false ? (
                                         <>
                                           <span className="text-lg font-black text-emerald-600">₹{svc.discountPrice || svc.basePrice}</span>
-                                          {svc.discountPrice && svc.discountPrice < svc.basePrice && (
+                                          {(svc.discountPrice > 0 && svc.discountPrice < svc.basePrice) && (
                                             <span className="text-xs text-gray-400 line-through font-bold opacity-60">₹{svc.basePrice}</span>
                                           )}
                                         </>

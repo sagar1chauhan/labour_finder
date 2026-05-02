@@ -106,44 +106,63 @@ const createBooking = async (req, res) => {
     // Check for Pending Penalty
     const pendingPenalty = user.wallet?.penalty || 0;
 
-    // --- MOVE VENDOR SEARCH UP HERE ---
-    // Find nearby vendors using location service
+    // --- VENDOR SEARCH LOGIC ---
     const { findNearbyVendors, geocodeAddress } = require('../../services/locationService');
+    let nearbyVendors = [];
 
-    // ... (Vendor Search Logic Omitted/Unchanged - keeping context)
     // Determine booking location (prioritize frontend coordinates)
     let bookingLocation;
     if (address.lat && address.lng) {
       bookingLocation = { lat: address.lat, lng: address.lng };
-      console.log('Using provided coordinates for vendor search:', bookingLocation);
     } else {
       bookingLocation = await geocodeAddress(
         `${address.addressLine1}, ${address.city}, ${address.state} ${address.pincode}`
       );
-      console.log('Geocoded address for vendor search:', bookingLocation);
     }
 
-    // Find vendors within 10km radius who offer this service category
-    // CUSTOM - Check Cash Limit only if payment method is CASH
-    const vendorFilters = {
-      ...(category ? { service: category.title } : {}),
-      checkCashLimit: paymentMethod === 'cash',
-      city: address.city
-    };
+    if (vendorId) {
+      // DIRECT BOOKING: User picked a specific vendor
+      console.log(`[CreateBooking] Direct booking for vendorId: ${vendorId}`);
+      const targetVendor = await Vendor.findById(vendorId).select('name businessName phone address isOnline availability approvalStatus isActive geoLocation settings');
+      
+      if (!targetVendor) {
+        return res.status(404).json({ success: false, message: 'The selected vendor was not found.' });
+      }
 
-    console.log(`[LocationService] Searching vendors with: center=${JSON.stringify(bookingLocation)}, radius=10km, filters=${JSON.stringify(vendorFilters)}`);
-    let nearbyVendors = await findNearbyVendors(bookingLocation, 10, vendorFilters);
+      // Check if vendor is online/available
+      if (!targetVendor.isOnline || targetVendor.availability === 'OFFLINE') {
+        return res.status(400).json({ 
+          success: false, 
+          message: `${targetVendor.businessName || targetVendor.name} is currently offline. Please try another vendor or book later.` 
+        });
+      }
 
-    // Deduplicate nearbyVendors by _id to prevent duplicate notifications
-    const uniqueVendorIds = new Set();
-    nearbyVendors = nearbyVendors.filter(vendor => {
-      const idStr = vendor._id.toString();
-      if (uniqueVendorIds.has(idStr)) return false;
-      uniqueVendorIds.add(idStr);
-      return true;
-    });
+      // If online, they are the only target
+      const vendorObj = targetVendor.toObject();
+      vendorObj.distance = 0; // Dist is not critical for direct booking
+      nearbyVendors = [vendorObj];
+    } else {
+      // BROADCAST BOOKING: Find all nearby available vendors
+      const vendorFilters = {
+        ...(category ? { service: category.title } : {}),
+        checkCashLimit: paymentMethod === 'cash',
+        city: address.city
+      };
 
-    console.log(`[CreateBooking] Found ${nearbyVendors.length} nearby vendors for booking`);
+      console.log(`[LocationService] Broadcast search: center=${JSON.stringify(bookingLocation)}, filters=${JSON.stringify(vendorFilters)}`);
+      nearbyVendors = await findNearbyVendors(bookingLocation, 10, vendorFilters);
+
+      // Deduplicate
+      const uniqueVendorIds = new Set();
+      nearbyVendors = nearbyVendors.filter(v => {
+        const idStr = v._id.toString();
+        if (uniqueVendorIds.has(idStr)) return false;
+        uniqueVendorIds.add(idStr);
+        return true;
+      });
+    }
+
+    console.log(`[CreateBooking] Targeting ${nearbyVendors.length} vendors for this booking`);
     // --- END VENDOR SEARCH BLOCK ---
 
     // Calculate pricing - use amount from frontend if provided, otherwise calculate
@@ -402,8 +421,8 @@ const createBooking = async (req, res) => {
         // WAVE-BASED ALERTING: Sort by distance and only notify first wave
         const sortedVendors = nearbyVendors.sort((a, b) => (a.distance || 0) - (b.distance || 0));
 
-        // Wave 1: First 3 vendors
-        const WAVE_1_COUNT = 3;
+        // Wave 1: Closest vendor first (Sequential alerting)
+        const WAVE_1_COUNT = 1;
         const wave1Vendors = sortedVendors.slice(0, WAVE_1_COUNT);
 
         // Store all potential vendors in booking for scheduler to use
