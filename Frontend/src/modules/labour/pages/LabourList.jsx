@@ -89,7 +89,10 @@ const LabourList = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-teal-50/20 to-emerald-50/10 pb-24">
       {/* Header */}
-      <div className="bg-gradient-to-r from-teal-500 to-emerald-600 px-4 pt-12 pb-24 relative overflow-hidden">
+      <div 
+        className="px-4 pt-12 pb-24 relative overflow-hidden"
+        style={{ background: 'linear-gradient(90deg, rgba(213, 181, 235, 1) 0%, rgba(240, 203, 242, 1) 90%)' }}
+      >
         <div className="absolute inset-0 bg-black/10" />
         <div className="absolute -top-8 -right-8 w-56 h-56 bg-white/10 rounded-full blur-2xl" />
         <div className="absolute -bottom-8 -left-8 w-40 h-40 bg-white/5 rounded-full blur-2xl" />

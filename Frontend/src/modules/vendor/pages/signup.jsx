@@ -382,7 +382,7 @@ const VendorSignup = () => {
   const brandColor = themeColors.brand?.teal || '#9634f7';
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col pt-8 pb-8 px-4 sm:px-6 lg:px-8 relative">
+    <div className="min-h-screen flex flex-col pt-8 pb-8 px-4 sm:px-6 lg:px-8 relative" style={{ background: 'linear-gradient(90deg, rgba(213, 181, 235, 1) 0%, rgba(240, 203, 242, 1) 90%)' }}>
       {/* Decorative Background Elements - Fixed Container to prevent scroll issues */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#9634f7] opacity-[0.05] rounded-full blur-3xl animate-floating" />

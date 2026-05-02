@@ -510,20 +510,25 @@ const Dashboard = memo(() => {
           <div className="px-4 pt-2 -mb-2">
             <div
               onClick={() => navigate('/vendor/profile')}
-              className="bg-orange-50 border-l-4 border-orange-500 p-4 rounded-r shadow-sm cursor-pointer hover:bg-orange-100 transition-colors"
+              className="p-4 rounded-2xl shadow-lg shadow-purple-500/10 cursor-pointer hover:opacity-95 transition-all duration-300 border border-white/50"
+              style={{ background: 'linear-gradient(90deg, rgba(213, 181, 235, 1) 0%, rgba(240, 203, 242, 1) 90%)' }}
             >
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <FiClock className="h-5 w-5 text-orange-500" />
+                  <div className="p-2 bg-white/40 rounded-xl">
+                    <FiClock className="h-5 w-5 text-purple-700" />
+                  </div>
                 </div>
                 <div className="ml-3">
-                  <p className="text-sm font-bold text-orange-700">Profile Incomplete</p>
-                  <p className="text-sm text-orange-600">
+                  <p className="text-sm font-black text-purple-900">Profile Incomplete</p>
+                  <p className="text-[11px] font-bold text-purple-800/80 uppercase tracking-tight">
                     Add services to your profile to start receiving bookings.
                   </p>
                 </div>
                 <div className="ml-auto">
-                  <FiArrowRight className="h-4 w-4 text-orange-500" />
+                  <div className="p-2 bg-white/40 rounded-full">
+                    <FiArrowRight className="h-4 w-4 text-purple-700" />
+                  </div>
                 </div>
               </div>
             </div>
@@ -548,50 +553,50 @@ const Dashboard = memo(() => {
 
           {/* Performance Metrics */}
           <div>
-            <h2 className="text-lg font-bold text-gray-800 mb-4 px-1">Performance</h2>
-            <div className="grid grid-cols-2 gap-4">
+            <h2 className="text-lg font-black text-gray-800 mb-3 px-1">Performance</h2>
+            <div className="grid grid-cols-2 gap-3">
               {/* Completed Jobs Card */}
               <div
-                className="rounded-3xl p-5 relative overflow-hidden transition-all duration-300 hover:shadow-xl group"
+                className="rounded-2xl p-4 relative overflow-hidden transition-all duration-300 hover:shadow-lg group"
                 style={{
                   background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)',
-                  border: '1.5px solid rgba(16, 185, 129, 0.1)',
+                  border: '1px solid rgba(16, 185, 129, 0.1)',
                 }}
               >
                 <div className="relative z-10 flex flex-col h-full">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="p-2.5 rounded-2xl bg-white shadow-sm border border-green-100 group-hover:scale-110 transition-transform duration-300">
-                      <FiCheckCircle className="w-6 h-6 text-green-600" />
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="p-2 rounded-xl bg-white shadow-sm border border-green-100 group-hover:scale-105 transition-transform duration-300">
+                      <FiCheckCircle className="w-5 h-5 text-green-600" />
                     </div>
-                    <span className="text-[10px] font-bold text-green-700 bg-green-100 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                    <span className="text-[9px] font-black text-green-700 bg-green-100 px-2 py-0.5 rounded-full uppercase tracking-wider">
                       Target Met
                     </span>
                   </div>
-                  <div className="mt-auto">
-                    <p className="text-3xl font-black text-green-900 mb-1">
+                  <div>
+                    <p className="text-2xl font-black text-green-900 leading-tight">
                       {stats.completedJobs}
                     </p>
-                    <p className="text-[11px] font-bold text-green-700 uppercase tracking-tight opacity-70">
+                    <p className="text-[10px] font-bold text-green-700 uppercase tracking-tight opacity-70">
                       Completed Jobs
                     </p>
                   </div>
                 </div>
                 {/* Decorative blob */}
-                <div className="absolute -bottom-6 -right-6 w-24 h-24 bg-green-500/5 rounded-full blur-2xl" />
+                <div className="absolute -bottom-6 -right-6 w-20 h-20 bg-green-500/5 rounded-full blur-2xl" />
               </div>
 
               {/* Rating Card */}
               <div
-                className="rounded-3xl p-5 relative overflow-hidden transition-all duration-300 hover:shadow-xl group"
+                className="rounded-2xl p-4 relative overflow-hidden transition-all duration-300 hover:shadow-lg group"
                 style={{
                   background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)',
-                  border: '1.5px solid rgba(245, 158, 11, 0.1)',
+                  border: '1px solid rgba(245, 158, 11, 0.1)',
                 }}
               >
                 <div className="relative z-10 flex flex-col h-full">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="p-2.5 rounded-2xl bg-white shadow-sm border border-amber-100 group-hover:scale-110 transition-transform duration-300">
-                      <FiTrendingUp className="w-6 h-6 text-amber-600" />
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="p-2 rounded-xl bg-white shadow-sm border border-amber-100 group-hover:scale-105 transition-transform duration-300">
+                      <FiTrendingUp className="w-5 h-5 text-amber-600" />
                     </div>
                     <div className="flex items-center gap-0.5 text-amber-600">
                       {[...Array(5)].map((_, i) => (
@@ -599,17 +604,17 @@ const Dashboard = memo(() => {
                       ))}
                     </div>
                   </div>
-                  <div className="mt-auto">
-                    <p className="text-3xl font-black text-amber-900 mb-1">
+                  <div>
+                    <p className="text-2xl font-black text-amber-900 leading-tight">
                       {stats.rating > 0 ? stats.rating.toFixed(1) : 'N/A'}
                     </p>
-                    <p className="text-[11px] font-bold text-amber-700 uppercase tracking-tight opacity-70">
+                    <p className="text-[10px] font-bold text-amber-700 uppercase tracking-tight opacity-70">
                       Average Rating
                     </p>
                   </div>
                 </div>
                 {/* Decorative blob */}
-                <div className="absolute -bottom-6 -right-6 w-24 h-24 bg-amber-500/5 rounded-full blur-2xl" />
+                <div className="absolute -bottom-6 -right-6 w-20 h-20 bg-amber-500/5 rounded-full blur-2xl" />
               </div>
             </div>
           </div>

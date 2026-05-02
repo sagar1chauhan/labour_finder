@@ -169,42 +169,34 @@ const Profile = () => {
       <main className="px-4 pt-4 pb-6">
         {/* Profile Header Card with Phone & Email */}
         <div
-          className="rounded-2xl p-5 mb-4 shadow-xl relative overflow-hidden"
+          className="rounded-[2rem] p-4 mb-4 shadow-xl relative overflow-hidden border border-white/60"
           style={{
-            background: themeColors.button,
-            border: `2px solid ${themeColors.button}`,
-            boxShadow: `0 8px 24px ${hexToRgba(themeColors.button, 0.3)}, 0 4px 12px ${hexToRgba(themeColors.button, 0.2)}`,
+            background: 'linear-gradient(90deg, rgba(213, 181, 235, 1) 0%, rgba(240, 203, 242, 1) 90%)',
+            boxShadow: '0 15px 30px rgba(150, 52, 247, 0.12)',
           }}
         >
           {/* Decorative Patterns */}
           <div
-            className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-10"
+            className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-20"
             style={{
-              background: `radial-gradient(circle, rgba(255, 255, 255, 0.4) 0%, transparent 70%)`,
+              background: `radial-gradient(circle, rgba(255, 255, 255, 0.8) 0%, transparent 70%)`,
               transform: 'translate(30px, -30px)',
-            }}
-          />
-          <div
-            className="absolute bottom-0 left-0 w-24 h-24 rounded-full opacity-8"
-            style={{
-              background: `radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%)`,
-              transform: 'translate(-20px, 20px)',
             }}
           />
 
           <div className="relative z-10">
-            <div className="flex items-start gap-4">
+            <div className="flex items-center gap-4">
               {/* Profile Photo - Circle with Rating Below */}
               <div className="flex flex-col items-center flex-shrink-0">
                 <div
-                  className="w-18 h-18 rounded-full flex items-center justify-center overflow-hidden mb-2"
+                  className="rounded-full flex items-center justify-center overflow-hidden mb-1.5 transition-transform duration-500 hover:rotate-6"
                   style={{
-                    background: 'rgba(255, 255, 255, 0.35)',
-                    backdropFilter: 'blur(15px)',
-                    boxShadow: '0 8px 20px rgba(0, 0, 0, 0.25), inset 0 2px 6px rgba(255, 255, 255, 0.5)',
-                    border: '3.5px solid rgba(255, 255, 255, 0.6)',
-                    width: '72px',
-                    height: '72px',
+                    background: 'rgba(255, 255, 255, 0.6)',
+                    backdropFilter: 'blur(10px)',
+                    boxShadow: '0 8px 16px rgba(150, 52, 247, 0.15), inset 0 2px 6px rgba(255, 255, 255, 0.8)',
+                    border: '3px solid white',
+                    width: '70px',
+                    height: '70px',
                   }}
                 >
                   {profile.photo ? (
@@ -214,36 +206,36 @@ const Profile = () => {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <FiUser className="w-9 h-9 text-white" />
+                    <FiUser className="w-8 h-8 text-purple-600" />
                   )}
                 </div>
                 {/* Star Rating Below Photo */}
                 {profile.rating > 0 && (
-                  <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-white/25 backdrop-blur-sm">
-                    <FiStar className="w-3 h-3 text-yellow-300" style={{ filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3))' }} />
-                    <span className="text-xs font-bold text-white">{profile.rating.toFixed(1)}</span>
+                  <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/50 backdrop-blur-md border border-white/50">
+                    <FiStar className="w-3 h-3 text-amber-500 fill-amber-500" />
+                    <span className="text-[10px] font-black text-purple-900">{profile.rating.toFixed(1)}</span>
                   </div>
                 )}
               </div>
 
               {/* Name and Info */}
               <div className="flex-1 min-w-0 flex flex-col">
-                <h2 className="text-xl font-bold text-white mb-1 break-words" style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}>{profile.name}</h2>
-                <p className="text-white text-sm opacity-95 mb-2.5 font-medium break-words" style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}>{profile.businessName}</p>
+                <h2 className="text-xl font-black text-purple-950 mb-0 break-words tracking-tight leading-tight">{profile.name}</h2>
+                <p className="text-purple-900/70 text-[10px] mb-2 font-bold break-words tracking-wide uppercase">{profile.businessName}</p>
 
                 {/* Phone and Email */}
                 <div className="space-y-1.5">
                   <div className="flex items-center gap-2">
-                    <div className="p-1 rounded-md bg-white/15 backdrop-blur-sm flex-shrink-0">
-                      <FiPhone className="w-3 h-3 text-white" />
+                    <div className="p-1 rounded-lg bg-white/40 backdrop-blur-sm flex-shrink-0 border border-white/60">
+                      <FiPhone className="w-3 h-3 text-purple-800" />
                     </div>
-                    <span className="text-xs text-white font-semibold break-words" style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}>{profile.phone}</span>
+                    <span className="text-xs text-purple-950 font-bold tracking-tight">{profile.phone}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="p-1 rounded-md bg-white/15 backdrop-blur-sm flex-shrink-0">
-                      <FiMail className="w-3 h-3 text-white" />
+                    <div className="p-1 rounded-lg bg-white/40 backdrop-blur-sm flex-shrink-0 border border-white/60">
+                      <FiMail className="w-3 h-3 text-purple-800" />
                     </div>
-                    <span className="text-xs text-white font-semibold break-words" style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}>{profile.email}</span>
+                    <span className="text-xs text-purple-950 font-bold tracking-tight truncate max-w-[150px]">{profile.email}</span>
                   </div>
                 </div>
               </div>
@@ -251,25 +243,9 @@ const Profile = () => {
               {/* Navigate Button */}
               <button
                 onClick={() => navigate('/vendor/profile/details')}
-                className="p-3.5 rounded-xl flex-shrink-0 transition-all duration-300 active:scale-95 mt-1"
-                style={{
-                  background: 'rgba(255, 255, 255, 0.28)',
-                  backdropFilter: 'blur(12px)',
-                  boxShadow: '0 4px 14px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.4)',
-                  border: '1.5px solid rgba(255, 255, 255, 0.35)',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'scale(1.12) rotate(5deg)';
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.38)';
-                  e.currentTarget.style.boxShadow = '0 6px 18px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.5)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'scale(1) rotate(0deg)';
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.28)';
-                  e.currentTarget.style.boxShadow = '0 4px 14px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.4)';
-                }}
+                className="p-3.5 rounded-2xl flex-shrink-0 transition-all duration-500 active:scale-90 group bg-white shadow-lg"
               >
-                <FiArrowRight className="w-5 h-5 text-white" style={{ fontWeight: 'bold' }} />
+                <FiArrowRight className="w-5 h-5 text-purple-700 group-hover:translate-x-1 transition-transform" />
               </button>
             </div>
           </div>

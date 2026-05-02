@@ -1,6 +1,6 @@
 import React, { memo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiArrowLeft, FiBell, FiSearch } from 'react-icons/fi';
+import { FiArrowLeft, FiSearch } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import { vendorTheme as themeColors } from '../../../../theme';
 import Logo from '../../../../components/common/Logo';
@@ -181,66 +181,28 @@ const Header = memo(({
 
           {showNotifications && (
             <motion.div
-              className="relative rounded-full cursor-pointer"
-              style={{
-                width: '42px',
-                height: '42px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                margin: '2px'
-              }}
+              className="relative cursor-pointer"
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.95 }}
             >
-              {/* 1. Animated Running Border */}
-              <div
-                className="absolute inset-[-2px] rounded-full z-0"
-                style={{
-                  background: themeColors.brand.conic,
-                  animation: 'spin 2s linear infinite',
-                  boxShadow: `0 0 8px ${themeColors.brand.orange}26`
-                }}
-              />
-
-              {/* 2. White Mask (to hide center of conic gradient) */}
-              <div className="absolute inset-[1px] rounded-full bg-white z-0" />
-
-              {/* 3. Inner Button */}
               <motion.button
                 onClick={handleNotifications}
-                className="relative z-10 w-full h-full rounded-full flex items-center justify-center overflow-hidden"
-                style={{
-                  background: count > 0
-                    ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(220, 38, 38, 0.12) 100%)'
-                    : 'linear-gradient(135deg, rgba(52, 121, 137, 0.1) 0%, rgba(187, 95, 54, 0.1) 100%)',
-                  boxShadow: count > 0
-                    ? '0 3px 12px rgba(239, 68, 68, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.4)'
-                    : '0 2px 6px rgba(52, 121, 137, 0.15)',
-                }}
+                className="relative z-10 w-10 h-10 rounded-full flex items-center justify-center transition-colors"
               >
-                {/* Define Gradient for Icon */}
-                <svg width="0" height="0" className="absolute">
-                  <linearGradient id="homestr-bell-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor={themeColors.brand.teal} />
-                    <stop offset="50%" stopColor={themeColors.brand.yellow} />
-                    <stop offset="100%" stopColor={themeColors.brand.orange} />
-                  </linearGradient>
-                </svg>
-
                 <motion.div
-                  whileHover={{ rotate: 15 }}
-                  transition={{ duration: 0.2 }}
+                  whileHover={{ scale: 1.15, rotate: [0, -10, 10, -10, 10, 0] }}
+                  transition={{ duration: 0.5 }}
+                  className="flex items-center justify-center"
                 >
-                  <FiBell
-                    className="w-5 h-5"
+                  <img 
+                    src="https://cdn-icons-gif.flaticon.com/8721/8721062.gif" 
+                    alt="Notifications" 
+                    className="w-7 h-7 object-contain"
                     style={{
-                      stroke: count > 0 ? '#EF4444' : 'url(#homestr-bell-gradient)',
-                      strokeWidth: '2.5',
-                      color: 'transparent',
-                      filter: count > 0
-                        ? 'drop-shadow(0 2px 6px rgba(239, 68, 68, 0.4))'
-                        : 'drop-shadow(0 1px 3px rgba(52, 121, 137, 0.3))',
+                      mixBlendMode: 'multiply',
+                      filter: count > 0 
+                        ? 'drop-shadow(0 2px 8px rgba(239, 68, 68, 0.4))' 
+                        : 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))'
                     }}
                   />
                 </motion.div>

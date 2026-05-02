@@ -212,7 +212,7 @@ const VendorLogin = () => {
   const brandColor = themeColors.brand?.teal || '#9634f7';
 
   return (
-    <div className="min-h-[100dvh] bg-gray-50 flex flex-col justify-start sm:justify-center pt-8 pb-12 sm:px-6 lg:px-8 relative overflow-x-hidden">
+    <div className="min-h-[100dvh] flex flex-col justify-start sm:justify-center pt-8 pb-12 sm:px-6 lg:px-8 relative overflow-x-hidden" style={{ background: 'linear-gradient(90deg, rgba(213, 181, 235, 1) 0%, rgba(240, 203, 242, 1) 90%)' }}>
       {/* Decorative Background Elements */}
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#9634f7] opacity-[0.03] rounded-full blur-3xl animate-floating" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#D68F35] opacity-[0.03] rounded-full blur-3xl animate-floating" style={{ animationDelay: '2s' }} />

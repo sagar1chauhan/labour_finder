@@ -1,7 +1,7 @@
 import React, { memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiClock, FiBriefcase, FiUsers, FiCheckCircle } from 'react-icons/fi';
-import { FaWallet } from 'react-icons/fa';
+
 import { vendorTheme as themeColors } from '../../../../../theme';
 
 const StatsCards = memo(({ stats }) => {
@@ -11,7 +11,7 @@ const StatsCards = memo(({ stats }) => {
     {
       title: "Today's Earnings",
       value: `₹${stats.todayEarnings.toLocaleString()}`,
-      icon: FaWallet,
+      icon: "https://cdn-icons-gif.flaticon.com/15575/15575639.gif",
       gradient: 'linear-gradient(135deg, #f3f0ff 0%, #e5dbff 100%)',
       accent: '#9634f7',
       onClick: () => navigate('/vendor/earnings')
@@ -19,7 +19,7 @@ const StatsCards = memo(({ stats }) => {
     {
       title: 'Pending Alerts',
       value: stats.pendingAlerts,
-      icon: FiClock,
+      icon: "https://cdn-icons-gif.flaticon.com/17702/17702121.gif",
       gradient: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
       accent: '#0284c7',
       onClick: () => navigate('/vendor/booking-alerts')
@@ -27,7 +27,7 @@ const StatsCards = memo(({ stats }) => {
     {
       title: 'Active Jobs',
       value: stats.activeJobs,
-      icon: FiBriefcase,
+      icon: "https://cdn-icons-gif.flaticon.com/19018/19018451.gif",
       gradient: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)',
       accent: '#16a34a',
       onClick: () => navigate('/vendor/jobs')
@@ -35,7 +35,7 @@ const StatsCards = memo(({ stats }) => {
     {
       title: 'My Services',
       value: stats.totalCategories || 0,
-      icon: FiBriefcase,
+      icon: "https://cdn-icons-gif.flaticon.com/15370/15370728.gif",
       gradient: 'linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%)',
       accent: '#ea580c',
       onClick: () => navigate('/vendor/my-services')
@@ -46,7 +46,8 @@ const StatsCards = memo(({ stats }) => {
     <div className="px-4 pt-4">
       <div className="grid grid-cols-2 gap-3 mb-4">
         {cards.map((card, index) => {
-          const IconComponent = card.icon;
+          const isAnimated = typeof card.icon === 'string' && card.icon.endsWith('.gif');
+          const IconComponent = !isAnimated ? card.icon : null;
 
           return (
             <div
@@ -78,14 +79,25 @@ const StatsCards = memo(({ stats }) => {
                     </p>
                   </div>
                   <div
-                    className="p-2.5 rounded-xl flex-shrink-0"
+                    className="p-1.5 rounded-xl flex-shrink-0 flex items-center justify-center"
                     style={{
-                      background: 'rgba(255, 255, 255, 0.6)',
-                      backdropFilter: 'blur(4px)',
-                      border: `1px solid ${card.accent}20`,
+                      background: 'rgba(255, 255, 255, 0.7)',
+                      backdropFilter: 'blur(8px)',
+                      border: `1px solid ${card.accent}25`,
+                      width: '40px',
+                      height: '40px'
                     }}
                   >
-                    <IconComponent className="w-5 h-5" style={{ color: card.accent }} />
+                    {isAnimated ? (
+                      <img 
+                        src={card.icon} 
+                        alt={card.title} 
+                        className="w-8 h-8 object-contain"
+                        style={{ mixBlendMode: 'multiply' }}
+                      />
+                    ) : (
+                      <IconComponent className="w-5 h-5" style={{ color: card.accent }} />
+                    )}
                   </div>
                 </div>
               </div>
