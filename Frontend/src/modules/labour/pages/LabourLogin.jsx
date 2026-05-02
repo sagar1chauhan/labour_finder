@@ -118,21 +118,21 @@ const LabourLogin = () => {
   };
 
   return (
-    <div className="min-h-[100dvh] bg-gradient-to-br from-slate-50 via-amber-50/30 to-orange-50/20 flex flex-col justify-center py-12 px-4 relative overflow-hidden">
+    <div className="min-h-[100dvh] bg-gradient-to-br from-slate-50 via-teal-50/30 to-emerald-50/20 flex flex-col justify-center py-12 px-4 relative overflow-hidden">
       {/* Background blobs */}
-      <div className="absolute top-[-15%] left-[-10%] w-[45%] h-[45%] bg-amber-400 opacity-[0.04] rounded-full blur-3xl" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-orange-400 opacity-[0.05] rounded-full blur-3xl" />
+      <div className="absolute top-[-15%] left-[-10%] w-[45%] h-[45%] bg-teal-400 opacity-[0.04] rounded-full blur-3xl" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-emerald-400 opacity-[0.05] rounded-full blur-3xl" />
 
       <div className="relative z-10 w-full max-w-md mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="w-20 h-20 rounded-[2rem] bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center mx-auto mb-5 shadow-xl shadow-orange-200">
+          <div className="w-20 h-20 rounded-[2.5rem] bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center mx-auto mb-5 shadow-xl shadow-teal-200">
             <FiTool className="w-9 h-9 text-white" />
           </div>
-          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
+          <h1 className="text-3xl font-black text-gray-900 tracking-tight leading-tight">
             {step === 'phone' ? (isRegisterMode ? 'Register as Labour' : 'Labour Sign In') : 'Verify OTP'}
           </h1>
-          <p className="mt-2 text-sm text-gray-500">
+          <p className="mt-2 text-sm text-gray-500 font-medium">
             {step === 'phone' 
               ? (isRegisterMode ? 'Enter your number to create an account' : 'Login to start receiving booking requests') 
               : `Code sent to +91 ${phoneNumber}`}
@@ -140,26 +140,26 @@ const LabourLogin = () => {
         </div>
 
         {/* Card */}
-        <div className="bg-white rounded-[2rem] shadow-2xl shadow-gray-200/60 p-8 border border-gray-100 relative overflow-hidden">
-          <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-400 via-orange-500 to-red-400 rounded-t-[2rem]" />
+        <div className="bg-white rounded-[2.5rem] shadow-2xl shadow-gray-200/60 p-8 border border-gray-100 relative overflow-hidden">
+          <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-teal-400 via-emerald-500 to-teal-400 rounded-t-[2.5rem]" />
 
           {step === 'phone' ? (
             <form onSubmit={handlePhoneSubmit} className="space-y-6">
               <div>
-                <label className="text-xs font-black text-gray-400 uppercase tracking-[0.18em] mb-2 block">Phone Number</label>
-                <div className="relative rounded-xl shadow-sm group">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 block">Phone Number</label>
+                <div className="relative rounded-2xl shadow-sm group">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                     <FiPhone className="h-5 w-5 text-gray-400" />
                   </div>
-                  <div className="absolute inset-y-0 left-10 flex items-center pointer-events-none">
-                    <span className="text-gray-500 font-medium border-r border-gray-300 pr-2">+91</span>
+                  <div className="absolute inset-y-0 left-12 flex items-center pointer-events-none">
+                    <span className="text-gray-500 font-bold border-r border-gray-200 pr-3">+91</span>
                   </div>
                   <input
                     ref={phoneRef}
                     type="tel"
                     value={phoneNumber}
                     onChange={e => setPhoneNumber(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                    className="block w-full pl-24 pr-4 py-3.5 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-400/30 focus:border-orange-400 transition-all"
+                    className="block w-full pl-28 pr-4 py-4 border border-gray-200 rounded-2xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-400/30 focus:border-teal-400 transition-all font-bold text-sm"
                     placeholder="9876543210"
                   />
                 </div>
@@ -167,16 +167,16 @@ const LabourLogin = () => {
               <button
                 type="submit"
                 disabled={isLoading || phoneNumber.length < 10}
-                className="w-full py-4 rounded-xl font-black text-white bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 shadow-lg shadow-orange-200 transition-all hover:-translate-y-0.5 active:scale-95 disabled:opacity-50 disabled:translate-y-0 flex items-center justify-center gap-2"
+                className="w-full py-4.5 rounded-2xl font-black text-sm uppercase tracking-widest text-white bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-600 hover:to-emerald-700 shadow-xl shadow-teal-200 transition-all hover:-translate-y-0.5 active:scale-95 disabled:opacity-50 disabled:translate-y-0 flex items-center justify-center gap-3"
               >
-                {isLoading ? 'Sending OTP...' : (<>Get Started <FiArrowRight /></>)}
+                {isLoading ? 'Sending OTP...' : (<>Get Started <FiArrowRight className="w-5 h-5" /></>)}
               </button>
 
               <div className="text-center mt-4">
                 <button
                   type="button"
                   onClick={() => setIsRegisterMode(!isRegisterMode)}
-                  className="text-sm font-bold text-orange-600 hover:text-orange-700"
+                  className="text-xs font-black uppercase tracking-widest text-teal-600 hover:text-teal-700"
                 >
                   {isRegisterMode ? 'Already have an account? Sign In' : "Don't have an account? Register Now"}
                 </button>
@@ -186,7 +186,7 @@ const LabourLogin = () => {
             <div className="space-y-6">
               <button
                 onClick={() => { setOtp(['','','','','','']); setStep('phone'); }}
-                className="flex items-center text-sm text-gray-500 hover:text-orange-500 transition-colors"
+                className="flex items-center text-xs font-black uppercase tracking-widest text-gray-400 hover:text-teal-600 transition-colors"
               >
                 <FiChevronLeft className="mr-1" /> Edit number
               </button>
@@ -202,8 +202,8 @@ const LabourLogin = () => {
                       value={digit}
                       onChange={e => handleOtpChange(i, e.target.value)}
                       onKeyDown={e => handleOtpKeyDown(i, e)}
-                      className="w-full h-14 text-center text-xl font-black border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400/30 focus:border-orange-400 transition-all"
-                      style={{ backgroundColor: digit ? '#FFF7ED' : 'white' }}
+                      className="w-full h-14 text-center text-xl font-black border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-400/30 focus:border-teal-400 transition-all"
+                      style={{ backgroundColor: digit ? '#F0FDFA' : 'white' }}
                     />
                   ))}
                 </div>
@@ -218,7 +218,7 @@ const LabourLogin = () => {
                       } catch { toast.error('Failed to resend'); }
                     }}
                     disabled={resendTimer > 0}
-                    className="text-sm font-bold text-orange-500 disabled:opacity-50"
+                    className="text-xs font-black uppercase tracking-widest text-teal-600 disabled:opacity-50"
                   >
                     {resendTimer > 0 ? `Resend in ${Math.floor(resendTimer/60)}:${String(resendTimer%60).padStart(2,'0')}` : 'Resend code'}
                   </button>
@@ -226,9 +226,9 @@ const LabourLogin = () => {
                 <button
                   type="submit"
                   disabled={isLoading || otp.join('').length !== 6}
-                  className="w-full py-4 rounded-xl font-black text-white bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 shadow-lg shadow-orange-200 transition-all hover:-translate-y-0.5 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="w-full py-4.5 rounded-2xl font-black text-sm uppercase tracking-widest text-white bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-600 hover:to-emerald-700 shadow-xl shadow-teal-200 transition-all hover:-translate-y-0.5 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3"
                 >
-                  {isLoading ? 'Verifying...' : (<>Login <FiArrowRight /></>)}
+                  {isLoading ? 'Verifying...' : (<>Login <FiArrowRight className="w-5 h-5" /></>)}
                 </button>
               </form>
             </div>
@@ -236,9 +236,9 @@ const LabourLogin = () => {
         </div>
 
         {/* Back to vendor login */}
-        <p className="text-center text-sm text-gray-500 mt-6">
+        <p className="text-center text-[10px] font-black uppercase tracking-widest text-gray-400 mt-8">
           Are you a vendor?{' '}
-          <Link to="/vendor/login" className="font-bold text-teal-600 hover:text-teal-700 transition-colors">
+          <Link to="/vendor/login" className="text-teal-600 hover:text-teal-700 transition-colors ml-1">
             Vendor Login
           </Link>
         </p>

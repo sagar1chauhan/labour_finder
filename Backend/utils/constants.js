@@ -32,7 +32,8 @@ const WORKER_STATUS = {
   INACTIVE: 'inactive',
   SUSPENDED: 'suspended',
   ONLINE: 'ONLINE',
-  OFFLINE: 'OFFLINE'
+  OFFLINE: 'OFFLINE',
+  BUSY: 'BUSY'
 };
 
 // Booking Status

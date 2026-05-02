@@ -87,28 +87,56 @@ const createWorker = async (req, res) => {
 
     const existingWorker = await Worker.findOne({ phone });
     if (existingWorker) {
-      return res.status(400).json({ success: false, message: 'Worker with this phone number already exists' });
+      return res.status(400).json({ success: false, message: 'This phone number is already registered' });
     }
 
-    // Default to approved and active since admin is creating them
-    const worker = await Worker.create({
+    // Prepare worker data
+    const workerData = {
       name,
       phone,
       serviceCategories,
-      serviceCategory: serviceCategories[0], // fallback for older schemas if needed
       approvalStatus: 'approved',
       isActive: true,
-      status: 'OFFLINE'
-    });
+      status: 'OFFLINE',
+      isPhoneVerified: true // Admin created, assume verified
+    };
+
+    // Only add email if it was provided (though not in current form)
+    if (req.body.email) {
+      workerData.email = req.body.email;
+    }
+
+    const worker = new Worker(workerData);
+    await worker.save();
 
     res.status(201).json({
       success: true,
-      message: 'Worker created successfully',
+      message: 'Account created successfully',
       data: worker
     });
   } catch (error) {
     console.error('Create worker error:', error);
-    res.status(500).json({ success: false, message: 'Failed to create worker' });
+    
+    // Handle duplicate key error (MongoDB error code 11000)
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyPattern)[0];
+      return res.status(400).json({ 
+        success: false, 
+        message: `This ${field} is already registered. Please use a different one.` 
+      });
+    }
+
+    // If validation error, send specific message
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(val => val.message);
+      return res.status(400).json({ success: false, message: messages.join(', ') });
+    }
+
+    res.status(500).json({ 
+      success: false, 
+      message: 'Internal server error while creating account',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 };
 

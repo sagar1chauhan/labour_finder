@@ -94,13 +94,13 @@ const AllWorkers = () => {
         setWorkers(prev => prev.map(w =>
           w.id === workerId ? { ...w, approvalStatus: 'approved' } : w
         ));
-        toast.success('Worker approved successfully!');
+        toast.success(`${entityName} approved successfully!`);
       } else {
-        toast.error(response.message || 'Failed to approve worker');
+        toast.error(response.message || `Failed to approve ${entityName.toLowerCase()}`);
       }
     } catch (error) {
-      console.error('Error approving worker:', error);
-      toast.error('Failed to approve worker. Please try again.');
+      console.error(`Error approving ${entityName.toLowerCase()}:`, error);
+      toast.error(`Failed to approve ${entityName.toLowerCase()}. Please try again.`);
     }
   };
 
@@ -111,13 +111,13 @@ const AllWorkers = () => {
         setWorkers(prev => prev.map(w =>
           w.id === workerId ? { ...w, approvalStatus: 'rejected' } : w
         ));
-        toast.success('Worker rejected successfully.');
+        toast.success(`${entityName} rejected successfully.`);
       } else {
-        toast.error(response.message || 'Failed to reject worker');
+        toast.error(response.message || `Failed to reject ${entityName.toLowerCase()}`);
       }
     } catch (error) {
-      console.error('Error rejecting worker:', error);
-      toast.error('Failed to reject worker. Please try again.');
+      console.error(`Error rejecting ${entityName.toLowerCase()}:`, error);
+      toast.error(`Failed to reject ${entityName.toLowerCase()}. Please try again.`);
     }
   };
 
@@ -129,18 +129,18 @@ const AllWorkers = () => {
         setWorkers(prev => prev.map(w =>
           w.id === workerId ? { ...w, isActive: newStatus } : w
         ));
-        toast.success(`Worker ${newStatus ? 'activated' : 'deactivated'} successfully`);
+        toast.success(`${entityName} ${newStatus ? 'activated' : 'deactivated'} successfully`);
       } else {
-        toast.error(response.message || 'Failed to update worker status');
+        toast.error(response.message || `Failed to update ${entityName.toLowerCase()} status`);
       }
     } catch (error) {
-      console.error('Error toggling worker status:', error);
+      console.error(`Error toggling ${entityName.toLowerCase()} status:`, error);
       toast.error('Failed to update status');
     }
   };
 
   const handleDelete = async (workerId) => {
-    if (!window.confirm('Are you sure you want to delete this worker? This action cannot be undone.')) {
+    if (!window.confirm(`Are you sure you want to delete this ${entityName.toLowerCase()}? This action cannot be undone.`)) {
       return;
     }
 
@@ -148,13 +148,13 @@ const AllWorkers = () => {
       const response = await adminWorkerService.deleteWorker(workerId);
       if (response.success) {
         setWorkers(prev => prev.filter(w => w.id !== workerId));
-        toast.success('Worker deleted successfully');
+        toast.success(`${entityName} deleted successfully`);
       } else {
-        toast.error(response.message || 'Failed to delete worker');
+        toast.error(response.message || `Failed to delete ${entityName.toLowerCase()}`);
       }
     } catch (error) {
-      console.error('Error deleting worker:', error);
-      toast.error('Failed to delete worker');
+      console.error(`Error deleting ${entityName.toLowerCase()}:`, error);
+      toast.error(`Failed to delete ${entityName.toLowerCase()}`);
     }
   };
 
@@ -222,15 +222,15 @@ const AllWorkers = () => {
     try {
       const res = await adminWorkerService.createWorker(newWorker);
       if (res.success) {
-        toast.success('Worker added successfully!');
+        toast.success(`${entityName} added successfully!`);
         setIsAddModalOpen(false);
         setNewWorker({ name: '', phone: '', serviceCategories: [] });
         loadWorkers();
       } else {
-        toast.error(res.message || 'Failed to add worker');
+        toast.error(res.message || `Failed to add ${entityName.toLowerCase()}`);
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to add worker');
+      toast.error(error.response?.data?.message || `Failed to add ${entityName.toLowerCase()}`);
     } finally {
       setIsAdding(false);
     }
@@ -261,7 +261,7 @@ const AllWorkers = () => {
               onClick={() => setIsAddModalOpen(true)}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold shadow-sm hover:bg-blue-700 transition-colors"
             >
-              + Add Labour
+              + Add {entityName}
             </button>
           )
         }
@@ -288,7 +288,7 @@ const AllWorkers = () => {
             <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
             <input
               type="text"
-              placeholder="Search workers..."
+              placeholder={`Search ${entityName.toLowerCase()}s...`}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all text-xs"
@@ -316,7 +316,7 @@ const AllWorkers = () => {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50/50">
-                  <th className="px-4 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Worker Details</th>
+                  <th className="px-4 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider">{entityName} Details</th>
                   <th className="px-4 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Category</th>
                   <th className="px-4 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Status</th>
                   <th className="px-4 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Actions</th>
@@ -325,11 +325,11 @@ const AllWorkers = () => {
               <tbody className="divide-y divide-gray-50">
                 {loading ? (
                   <tr>
-                    <td colSpan="4" className="px-4 py-8 text-center text-xs text-gray-500">Loading workers...</td>
+                    <td colSpan="4" className="px-4 py-8 text-center text-xs text-gray-500">Loading {entityName.toLowerCase()}s...</td>
                   </tr>
                 ) : filteredWorkers.length === 0 ? (
                   <tr>
-                    <td colSpan="4" className="px-4 py-8 text-center text-xs text-gray-500">No workers found</td>
+                    <td colSpan="4" className="px-4 py-8 text-center text-xs text-gray-500">No {entityName.toLowerCase()}s found</td>
                   </tr>
                 ) : (
                   filteredWorkers.map((worker) => (
@@ -422,7 +422,7 @@ const AllWorkers = () => {
           setIsViewModalOpen(false);
           setSelectedWorker(null);
         }}
-        title="Worker Details"
+        title={`${entityName} Details`}
         size="lg"
       >
         {selectedWorker && (
@@ -541,7 +541,7 @@ const AllWorkers = () => {
                   className="flex-1 px-4 py-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
                 >
                   <FiCheck className="w-5 h-5" />
-                  Approve Worker
+                  Approve {entityName}
                 </button>
                 <button
                   onClick={async () => {
@@ -552,7 +552,7 @@ const AllWorkers = () => {
                   className="flex-1 px-4 py-3 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 transition-colors flex items-center justify-center gap-2"
                 >
                   <FiX className="w-5 h-5" />
-                  Reject Worker
+                  Reject {entityName}
                 </button>
               </div>
             )}
@@ -605,7 +605,7 @@ const AllWorkers = () => {
       <Modal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
-        title="Add New Labour"
+        title={`Add New ${entityName}`}
         size="md"
       >
         <form onSubmit={handleAddWorker} className="space-y-4">
@@ -659,7 +659,7 @@ const AllWorkers = () => {
             disabled={isAdding}
             className="w-full mt-4 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50"
           >
-            {isAdding ? 'Adding...' : 'Save Labour'}
+            {isAdding ? 'Adding...' : `Save ${entityName}`}
           </button>
         </form>
       </Modal>

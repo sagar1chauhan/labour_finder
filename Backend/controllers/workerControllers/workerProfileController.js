@@ -65,7 +65,7 @@ const updateProfile = async (req, res) => {
     }
 
     const workerId = req.user.id;
-    const { name, serviceCategories, serviceCategory, skills, address, status, profilePhoto } = req.body;
+    const { name, phone, serviceCategories, serviceCategory, skills, address, status, profilePhoto } = req.body;
 
     const worker = await Worker.findById(workerId);
 
@@ -78,6 +78,14 @@ const updateProfile = async (req, res) => {
 
     // Update fields
     if (name) worker.name = name.trim();
+    if (phone) {
+      // Check if phone is already taken by another worker
+      const existingPhone = await Worker.findOne({ phone, _id: { $ne: workerId } });
+      if (existingPhone) {
+        return res.status(400).json({ success: false, message: 'This phone number is already registered with another account' });
+      }
+      worker.phone = phone.trim();
+    }
 
     // Handle categories: prefer array, fallback to single legacy string
     if (serviceCategories && Array.isArray(serviceCategories)) {

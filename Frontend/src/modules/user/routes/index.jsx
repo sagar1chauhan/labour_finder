@@ -75,8 +75,6 @@ const AboutCleaningExpert = lazyLoad(() => import('../pages/AboutCleaningExpert'
 const UpdateProfile = lazyLoad(() => import('../pages/UpdateProfile'));
 const Login = lazyLoad(() => import('../pages/login'));
 const Signup = lazyLoad(() => import('../pages/signup'));
-const Shop = lazyLoad(() => import('../pages/Shop'));
-const AddScrap = lazyLoad(() => import('../pages/Shop/AddScrap'));
 const Notifications = lazyLoad(() => import('../pages/Notifications'));
 const HelpSupport = lazyLoad(() => import('../pages/HelpSupport'));
 const CancellationPolicy = lazyLoad(() => import('../pages/CancellationPolicy'));
@@ -100,8 +98,14 @@ const UserRoutes = () => {
   // useAppNotifications('user');
 
   // Pages where BottomNav should be shown
-  const bottomNavPages = ['/user', '/user/', '/user/my-bookings', '/user/shop', '/user/cart', '/user/account', '/user/labour'];
-  const shouldShowBottomNav = bottomNavPages.includes(location.pathname);
+  const bottomNavPages = ['/user', '/user/my-bookings', '/user/cart', '/user/account', '/user/labour'];
+  
+  // Normalize path by removing trailing slash (except for root /user)
+  const normalizedPath = location.pathname.length > 5 && location.pathname.endsWith('/') 
+    ? location.pathname.slice(0, -1) 
+    : location.pathname;
+
+  const shouldShowBottomNav = bottomNavPages.includes(normalizedPath) || location.pathname === '/user/';
 
   // Check if we hide the live booking card (e.g. if we are on the specific booking details or track page)
   const isBookingDetailsPage = location.pathname.match(/^\/user\/booking\/[a-zA-Z0-9]+(\/track)?$/);
@@ -143,8 +147,6 @@ const UserRoutes = () => {
               <Route path="/my-rating" element={<ProtectedRoute userType="user"><MyRating /></ProtectedRoute>} />
               <Route path="/about-cleaning-expert" element={<ProtectedRoute userType="user"><AboutCleaningExpert /></ProtectedRoute>} />
               <Route path="/update-profile" element={<ProtectedRoute userType="user"><UpdateProfile /></ProtectedRoute>} />
-              <Route path="/shop" element={<ProtectedRoute userType="user"><Shop /></ProtectedRoute>} />
-              <Route path="/shop/add" element={<ProtectedRoute userType="user"><AddScrap /></ProtectedRoute>} />
               <Route path="/notifications" element={<ProtectedRoute userType="user"><Notifications /></ProtectedRoute>} />
               <Route path="/help-support" element={<ProtectedRoute userType="user"><HelpSupport /></ProtectedRoute>} />
               <Route path="/cancellation-policy" element={<ProtectedRoute userType="user"><CancellationPolicy /></ProtectedRoute>} />

@@ -141,10 +141,10 @@ const VendorRoutes = () => {
               <Route path="/my-services" element={<ProtectedRoute userType="vendor"><MyServices /></ProtectedRoute>} />
               <Route path="/categories" element={<ProtectedRoute userType="vendor"><Categories /></ProtectedRoute>} />
               <Route path="/products" element={<ProtectedRoute userType="vendor"><Products /></ProtectedRoute>} />
+              <Route path="/labour" element={<ProtectedRoute userType="vendor"><LabourList /></ProtectedRoute>} />
               <Route path="/support" element={<ProtectedRoute userType="vendor"><SupportList /></ProtectedRoute>} />
               <Route path="/support/:id" element={<ProtectedRoute userType="vendor"><TicketDetails /></ProtectedRoute>} />
               <Route path="/stock" element={<ProtectedRoute userType="vendor"><StockManagement /></ProtectedRoute>} />
-              <Route path="/labour" element={<ProtectedRoute userType="vendor"><LabourList /></ProtectedRoute>} />
             </Routes>
           </PageTransition>
         </Suspense>

@@ -154,7 +154,7 @@ const register = async (req, res) => {
     }
 
     // verificationToken handling
-    const { name, email, verificationToken, aadharNumber, aadharDocument, aadharBackDocument } = req.body;
+    const { name, email, verificationToken, aadharNumber, aadharDocument, aadharBackDocument, address, location } = req.body;
     let phone = req.body.phone;
 
     if (verificationToken) {
@@ -169,7 +169,7 @@ const register = async (req, res) => {
     }
 
     // Check existing
-    const existingWorker = await Worker.findOne({ $or: [{ phone }, { email }] });
+    const existingWorker = await Worker.findOne({ $or: [{ phone }, { email: email || 'undefined_email' }] });
     if (existingWorker) {
       return res.status(400).json({
         success: false,
@@ -200,6 +200,8 @@ const register = async (req, res) => {
         document: aadharUrl,
         backDocument: aadharBackUrl
       },
+      address,
+      location,
       status: WORKER_STATUS.OFFLINE
     });
 

@@ -368,21 +368,6 @@ const Account = () => {
 
           {/* Menu Groups */}
 
-          {/* Shopping */}
-          <motion.div variants={itemVariants} className="mb-6">
-            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 pl-2">Shopping</h3>
-            <MenuItem
-              icon={FiShoppingBag}
-              label="My Shop"
-              onClick={() => navigate('/user/shop')}
-            />
-            <MenuItem
-              icon={FiFileText}
-              label="My Plans"
-              onClick={() => navigate('/user/my-plan')}
-            />
-          </motion.div>
-
           {/* Activity */}
           <motion.div variants={itemVariants} className="mb-6">
             <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 pl-2">Activity</h3>
@@ -390,6 +375,11 @@ const Account = () => {
               icon={FiClipboard}
               label="My Bookings"
               onClick={() => navigate('/user/my-bookings')}
+            />
+            <MenuItem
+              icon={FiFileText}
+              label="My Plans"
+              onClick={() => navigate('/user/my-plan')}
             />
             <MenuItem
               icon={FiStar}

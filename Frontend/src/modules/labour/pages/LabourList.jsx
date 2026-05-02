@@ -187,19 +187,21 @@ const LabourList = () => {
                       </span>
                     </div>
                     {/* Skills */}
-                    {labour.serviceCategories?.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {labour.serviceCategories.slice(0, 3).map(s => (
-                          <span key={s} className="px-2 py-0.5 bg-teal-50 text-teal-700 text-[9px] font-black rounded-lg border border-teal-100 uppercase tracking-wide">
+                    {labour.serviceCategories?.length > 0 ? (
+                      <div className="flex flex-wrap gap-1.5 mt-2">
+                        {labour.serviceCategories.slice(0, 4).map(s => (
+                          <span key={s} className="px-2.5 py-1 bg-emerald-50 text-emerald-700 text-[10px] font-black rounded-lg border border-emerald-100 uppercase tracking-wide">
                             {s}
                           </span>
                         ))}
-                        {labour.serviceCategories.length > 3 && (
-                          <span className="px-2 py-0.5 bg-gray-100 text-gray-500 text-[9px] font-black rounded-lg">
-                            +{labour.serviceCategories.length - 3}
+                        {labour.serviceCategories.length > 4 && (
+                          <span className="px-2.5 py-1 bg-gray-100 text-gray-500 text-[10px] font-black rounded-lg">
+                            +{labour.serviceCategories.length - 4}
                           </span>
                         )}
                       </div>
+                    ) : (
+                      <p className="text-[10px] text-gray-400 font-bold mt-1 uppercase tracking-wider italic">General Help</p>
                     )}
                   </div>
 

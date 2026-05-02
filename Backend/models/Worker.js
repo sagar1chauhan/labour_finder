@@ -13,8 +13,7 @@ const workerSchema = new mongoose.Schema({
     unique: true,
     sparse: true, // Allow multiple nulls
     trim: true,
-    lowercase: true,
-    default: null
+    lowercase: true
   },
   phone: {
     type: String,
@@ -159,7 +158,7 @@ workerSchema.index({ vendorId: 1 });
 
 // Hash password before saving
 workerSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) {
+  if (!this.isModified('password') || !this.password) {
     return next();
   }
   const salt = await bcrypt.genSalt(10);
