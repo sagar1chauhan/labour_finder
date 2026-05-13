@@ -419,7 +419,7 @@ const Account = () => {
             >
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-gray-50 transition-colors group-hover:bg-opacity-80">
-                  <Logo className="w-8 h-8" />
+                  <Logo className="w-8 h-8" iconOnly={true} />
                 </div>
                 <span className="font-semibold text-gray-900">About Civil connect</span>
               </div>

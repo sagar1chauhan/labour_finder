@@ -12,8 +12,12 @@ export const LocationPermissionChecker = () => {
             if (isManualTrigger) {
                 try {
                     const location = await flutterBridge.getCurrentLocation();
-                    localStorage.setItem('location_granted', 'true');
-                    window.dispatchEvent(new CustomEvent('locationUpdate', { detail: location }));
+                    if (location && location.latitude) {
+                        localStorage.setItem('user_lat', location.latitude.toString());
+                        localStorage.setItem('user_lng', location.longitude.toString());
+                        localStorage.setItem('location_granted', 'true');
+                        window.dispatchEvent(new CustomEvent('locationUpdate', { detail: location }));
+                    }
                 } catch (err) {
                     toast.error("Please enable your location to use this feature.");
                 }
@@ -23,7 +27,11 @@ export const LocationPermissionChecker = () => {
             // 1. Silent check via Unified Bridge
             try {
                 const location = await flutterBridge.getCurrentLocation();
-                localStorage.setItem('location_granted', 'true');
+                if (location && location.latitude) {
+                    localStorage.setItem('user_lat', location.latitude.toString());
+                    localStorage.setItem('user_lng', location.longitude.toString());
+                    localStorage.setItem('location_granted', 'true');
+                }
             } catch (err) {
                 if (!hasGrantedPreviously || err.code === 1 || err.code === 2) {
                     // Just show a toast once on mount if we can't get location

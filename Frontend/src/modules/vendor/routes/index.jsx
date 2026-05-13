@@ -74,7 +74,6 @@ const MyServices = lazyLoad(() => import('../pages/MyServices'));
 const Categories = lazyLoad(() => import('../pages/Categories'));
 const Products = lazyLoad(() => import('../pages/Products'));
 const StockManagement = lazyLoad(() => import('../pages/Stock'));
-const LabourList = lazyLoad(() => import('../../labour/pages/LabourList'));
 
 // Loading fallback component
 const LoadingFallback = () => (
@@ -141,7 +140,6 @@ const VendorRoutes = () => {
               <Route path="/my-services" element={<ProtectedRoute userType="vendor"><MyServices /></ProtectedRoute>} />
               <Route path="/categories" element={<ProtectedRoute userType="vendor"><Categories /></ProtectedRoute>} />
               <Route path="/products" element={<ProtectedRoute userType="vendor"><Products /></ProtectedRoute>} />
-              <Route path="/labour" element={<ProtectedRoute userType="vendor"><LabourList /></ProtectedRoute>} />
               <Route path="/support" element={<ProtectedRoute userType="vendor"><SupportList /></ProtectedRoute>} />
               <Route path="/support/:id" element={<ProtectedRoute userType="vendor"><TicketDetails /></ProtectedRoute>} />
               <Route path="/stock" element={<ProtectedRoute userType="vendor"><StockManagement /></ProtectedRoute>} />

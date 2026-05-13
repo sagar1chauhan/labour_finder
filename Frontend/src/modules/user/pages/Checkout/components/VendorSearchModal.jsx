@@ -210,6 +210,28 @@ const VendorSearchModal = ({
             <button onClick={onClose} className="w-full py-5 bg-black text-white rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] shadow-xl transition-all active:scale-95">Go to Details</button>
           </div>
         )}
+ 
+        {/* FAILED STATE */}
+        {currentStep === 'failed' && (
+          <div className="flex flex-col items-center pt-14 pb-10 px-8 bg-white w-full h-full min-h-[480px]">
+            <div className="w-24 h-24 rounded-[2.5rem] flex items-center justify-center mb-8 shadow-2xl shadow-red-500/20 bg-gradient-to-br from-red-500 to-rose-600"><FiX className="w-12 h-12 text-white" strokeWidth={3} /></div>
+            <h3 className="text-3xl font-black text-gray-900 mb-2 italic uppercase">No Vendors!</h3>
+            <p className="text-gray-500 text-xs text-center mb-10 px-4 font-bold leading-relaxed">
+              We couldn't find any available professionals for your request at the moment.
+            </p>
+            <div className="w-full space-y-3">
+              <button 
+                onClick={() => {
+                  onClose();
+                  setTimeout(() => window.location.reload(), 500);
+                }} 
+                className="w-full py-5 bg-black text-white rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] shadow-xl transition-all active:scale-95"
+              >
+                Back to Details
+              </button>
+            </div>
+          </div>
+        )}
 
       </div>
     </div>

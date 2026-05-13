@@ -14,7 +14,6 @@ npm-debug.log*
 # OS
 .DS_Store
 Thumbs.db
-
 # IDE
 .vscode/
 .idea/
@@ -40,4 +39,3 @@ config/firebase-service-account.json
 !package.json
 !package-lock.json
 
-homsterKey.json

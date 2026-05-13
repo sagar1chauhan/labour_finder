@@ -142,24 +142,30 @@ const createBooking = async (req, res) => {
       vendorObj.distance = 0; // Dist is not critical for direct booking
       nearbyVendors = [vendorObj];
     } else {
-      // BROADCAST BOOKING: Find all nearby available vendors
-      const vendorFilters = {
-        ...(category ? { service: category.title } : {}),
-        checkCashLimit: paymentMethod === 'cash',
-        city: address.city
-      };
+      // Find all active services with this EXACT title to get qualified vendors
+      const matchingServices = await Service.find({
+        title: { $regex: `^${service.title.trim()}$`, $options: 'i' },
+        status: 'active',
+        vendorId: { $ne: null }
+      }).select('vendorId').lean();
 
-      console.log(`[LocationService] Broadcast search: center=${JSON.stringify(bookingLocation)}, filters=${JSON.stringify(vendorFilters)}`);
-      nearbyVendors = await findNearbyVendors(bookingLocation, 10, vendorFilters);
+      const qualifiedVendorIds = Array.from(new Set(matchingServices.map(ms => ms.vendorId.toString())));
+      console.log(`[CreateBooking] Found ${qualifiedVendorIds.length} vendors offering "${service.title}" globally.`);
 
-      // Deduplicate
-      const uniqueVendorIds = new Set();
-      nearbyVendors = nearbyVendors.filter(v => {
-        const idStr = v._id.toString();
-        if (uniqueVendorIds.has(idStr)) return false;
-        uniqueVendorIds.add(idStr);
-        return true;
-      });
+      if (qualifiedVendorIds.length === 0) {
+        nearbyVendors = [];
+      } else {
+        // Find qualified vendors who are nearby
+        const vendorFilters = {
+          _id: { $in: qualifiedVendorIds },
+          checkCashLimit: paymentMethod === 'cash',
+          city: address.city
+        };
+
+        console.log(`[CreateBooking] Searching for ${qualifiedVendorIds.length} specific vendors near user location...`);
+        nearbyVendors = await findNearbyVendors(bookingLocation, 10, vendorFilters);
+        console.log(`[CreateBooking] Found ${nearbyVendors.length} qualified vendors within 10km.`);
+      }
     }
 
     console.log(`[CreateBooking] Targeting ${nearbyVendors.length} vendors for this booking`);
@@ -362,7 +368,7 @@ const createBooking = async (req, res) => {
       paymentStatus: isBiddingRequired ? PAYMENT_STATUS.PENDING : bookingPaymentStatus,
       isBidding: isBiddingRequired,
       biddingDeadline: biddingDeadline,
-      expiresAt: new Date(Date.now() + 1 * 60 * 1000) // 1 minute initial search
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000) // 10 minutes search limit (sequential takes time)
     });
 
     // --- IMMEDIATE RESPONSE ---
@@ -418,12 +424,22 @@ const createBooking = async (req, res) => {
         }
 
         // Nearby vendors already found above
-        // WAVE-BASED ALERTING: Sort by distance and only notify first wave
         const sortedVendors = nearbyVendors.sort((a, b) => (a.distance || 0) - (b.distance || 0));
 
-        // Wave 1: Closest vendor first (Sequential alerting)
-        const WAVE_1_COUNT = 1;
+        // Wave 1 Configuration:
+        // - Products/Materials: Broadcast to ALL vendors immediately
+        // Determine if this is a Product (Broadcast) or Service (Sequential)
+        // Check service type, booking type, AND category type for robustness
+        const categoryForBackground = await Category.findById(serviceForBackground.categoryId);
+        const isProduct = 
+          serviceForBackground.type === 'product' || 
+          bookingForBackground.serviceType === 'product' ||
+          categoryForBackground?.categoryType === 'product';
+
+        const WAVE_1_COUNT = isProduct ? sortedVendors.length : 1;
         const wave1Vendors = sortedVendors.slice(0, WAVE_1_COUNT);
+
+        console.log(`[CreateBooking] ${isProduct ? 'PRODUCT' : 'SERVICE'} Flow: Wave 1 will notify ${wave1Vendors.length} vendors`);
 
         // Store all potential vendors in booking for scheduler to use
         bookingForBackground.potentialVendors = sortedVendors.map(v => ({
@@ -495,30 +511,6 @@ const createBooking = async (req, res) => {
               message: `New booking request within ${vendor.distance?.toFixed(1) || '?'}km!`
             });
           });
-
-          // BROADCAST to all vendors (Optional: for 'Broadcart' flow)
-          io.to('all_vendors').emit('new_booking_request', {
-            bookingId: bookingForBackground._id,
-            serviceName: serviceForBackground.title,
-            customerName: userForBackground.name,
-            customerPhone: userForBackground.phone,
-            scheduledDate: scheduledDate,
-            scheduledTime: scheduledTime,
-            price: finalAmount,
-            address: address,
-            serviceCategory: bookingForBackground.serviceCategory,
-            brandName: bookingForBackground.brandName,
-            brandIcon: bookingForBackground.brandIcon,
-            categoryIcon: bookingForBackground.categoryIcon,
-            createdAt: bookingForBackground.createdAt || new Date(),
-            expiresAt: new Date(new Date(bookingForBackground.createdAt || Date.now()).getTime() + (60 * 1000)).toISOString(),
-            status: bookingForBackground.status,
-            serviceType: bookingForBackground.serviceType || 'service',
-            playSound: true,
-            isBroadcast: true,
-            message: `New booking request broadcast!`
-          });
-          console.log(`[CreateBooking] Broadcasted new_booking_request to all_vendors room`);
         }
 
         // 2. Send Firebase/FCM notifications (External service - call AFTER socket)

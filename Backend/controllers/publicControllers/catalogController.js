@@ -2,6 +2,7 @@ const Category = require('../../models/Category');
 const Brand = require('../../models/Brand');
 const Service = require('../../models/UserService');
 const HomeContent = require('../../models/HomeContent');
+const { calculateDistance } = require('../../services/locationService');
 
 /**
  * Public Catalog Controllers
@@ -26,22 +27,48 @@ const getPublicCategories = async (req, res) => {
       ];
     }
 
+    // Find all online and available vendors
+    const onlineVendors = await require('../../models/Vendor').find({ 
+      isOnline: true, 
+      availability: 'AVAILABLE' 
+    }).select('_id');
+    const onlineVendorIds = onlineVendors.map(v => v._id);
+
+    // Find categories that have at least one active brand/service with an online vendor
+    const [activeCategoryIdsFromBrands, activeCategoryIdsFromServices] = await Promise.all([
+      Brand.distinct('categoryIds', { 
+        status: 'active', 
+        vendorId: { $in: onlineVendorIds } 
+      }),
+      Service.distinct('categoryId', { 
+        status: 'active', 
+        vendorId: { $in: onlineVendorIds } 
+      })
+    ]);
+
+    const activeCategoryIds = new Set([
+      ...activeCategoryIdsFromBrands.map(id => id.toString()),
+      ...activeCategoryIdsFromServices.map(id => id.toString())
+    ]);
+
     const categories = await Category.find(query)
       .select('title slug homeIconUrl homeBadge hasSaleBadge homeOrder showOnHome categoryType')
       .sort({ homeOrder: 1, createdAt: -1 })
       .lean();
 
-    // Fetch only necessary fields for initial category list
-    const initialCategories = categories.map(cat => ({
-      id: cat._id.toString(),
-      title: cat.title,
-      slug: cat.slug,
-      icon: cat.homeIconUrl || '',
-      badge: cat.homeBadge || '',
-      hasSaleBadge: cat.hasSaleBadge || false,
-      showOnHome: cat.showOnHome || false,
-      categoryType: cat.categoryType || 'service'
-    }));
+    // Filter and map
+    const initialCategories = categories
+      .filter(cat => activeCategoryIds.has(cat._id.toString()))
+      .map(cat => ({
+        id: cat._id.toString(),
+        title: cat.title,
+        slug: cat.slug,
+        icon: cat.homeIconUrl || '',
+        badge: cat.homeBadge || '',
+        hasSaleBadge: cat.hasSaleBadge || false,
+        showOnHome: cat.showOnHome || false,
+        categoryType: cat.categoryType || 'service'
+      }));
 
     res.status(200).json({
       success: true,
@@ -56,13 +83,9 @@ const getPublicCategories = async (req, res) => {
   }
 };
 
-/**
- * Get all active brands for user app (Formerly Services)
- * GET /api/public/brands
- */
 const getPublicBrands = async (req, res) => {
   try {
-    const { categoryId, categorySlug, search, cityId } = req.query;
+    const { categoryId, categorySlug, search, cityId, lat, lng } = req.query;
 
     // Build query
     const query = { status: 'active' };
@@ -98,13 +121,61 @@ const getPublicBrands = async (req, res) => {
       .populate({
         path: 'vendorId',
         match: { isOnline: true, availability: 'AVAILABLE' },
-        select: 'name businessName policeVerification address rating totalJobs profilePhoto isOnline availability'
+        select: 'name businessName policeVerification address rating totalJobs profilePhoto isOnline availability geoLocation location'
       })
       .sort({ createdAt: -1 })
       .lean();
 
     // Filter out brands where vendor is offline or not found
     brands = brands.filter(b => b.vendorId);
+
+    // Deduplicate by title to ensure a clean catalog
+    const groupedBrands = new Map();
+    const userLoc = (lat && lng) ? { lat: parseFloat(lat), lng: parseFloat(lng) } : null;
+    
+    brands.forEach(brand => {
+      const vendor = brand.vendorId;
+      // STRICT CHECK: Only show Available vendors
+      if (!vendor || vendor.isOnline === false || vendor.availability !== 'AVAILABLE') return;
+      
+      if (userLoc) {
+        const vLat = vendor.location?.lat || vendor.address?.lat || (vendor.geoLocation?.coordinates ? vendor.geoLocation.coordinates[1] : null);
+        const vLng = vendor.location?.lng || vendor.address?.lng || (vendor.geoLocation?.coordinates ? vendor.geoLocation.coordinates[0] : null);
+        if (vLat && vLng) {
+          brand.distance = calculateDistance(userLoc, { lat: vLat, lng: vLng });
+        } else {
+          brand.distance = Infinity;
+        }
+      } else {
+        brand.distance = 0;
+      }
+
+      const titleKey = brand.title.toLowerCase().trim();
+      const existing = groupedBrands.get(titleKey);
+      
+      // LOGIC: 
+      // 1. If brand doesn't exist in map yet, add it.
+      // 2. If it exists and we have location, pick the NEAREST.
+      // 3. If distances are equal (or no location), pick the CHEAPEST (basePrice).
+      if (!existing) {
+        groupedBrands.set(titleKey, brand);
+      } else {
+        const currentPrice = brand.basePrice || 0;
+        const existingPrice = existing.basePrice || 0;
+        
+        if (userLoc) {
+          if (brand.distance < existing.distance) {
+            groupedBrands.set(titleKey, brand);
+          } else if (brand.distance === existing.distance && currentPrice < existingPrice) {
+            groupedBrands.set(titleKey, brand);
+          }
+        } else if (currentPrice < existingPrice) {
+          groupedBrands.set(titleKey, brand);
+        }
+      }
+    });
+
+    brands = Array.from(groupedBrands.values());
 
     // If categorySlug is provided, filter by category
     if (categorySlug) {
@@ -183,6 +254,7 @@ const getPublicBrandBySlug = async (req, res) => {
 
     const brand = await Brand.findOne({ slug, status: 'active' })
       .populate('categoryIds', 'title slug')
+      .populate('vendorId', 'name businessName isOnline availability')
       .lean();
 
     if (!brand) {
@@ -213,23 +285,115 @@ const getPublicBrandBySlug = async (req, res) => {
       return obj;
     };
 
-    // Fetch services associated with this brand
-    const brandServices = await Service.find({ brandId: brand._id, status: 'active' }).lean();
+    // Find all brands with the same title to ensure we show the closest one's details
+    const relatedBrands = await Brand.find({
+      title: { $regex: `^${brand.title.trim()}$`, $options: 'i' },
+      status: 'active'
+    }).populate('vendorId', 'name businessName isOnline availability location address geoLocation').lean();
+
+    // Determine the closest brand/vendor if location is provided
+    const { lat, lng } = req.query;
+    const userLoc = (lat && lng) ? { lat: parseFloat(lat), lng: parseFloat(lng) } : null;
+    
+    let closestBrand = brand;
+    if (userLoc) {
+      let minDistance = Infinity;
+      relatedBrands.forEach(rb => {
+        const vendor = rb.vendorId;
+        if (vendor) {
+          const vLat = vendor.location?.lat || vendor.address?.lat || (vendor.geoLocation?.coordinates ? vendor.geoLocation.coordinates[1] : null);
+          const vLng = vendor.location?.lng || vendor.address?.lng || (vendor.geoLocation?.coordinates ? vendor.geoLocation.coordinates[0] : null);
+          if (vLat && vLng) {
+            const dist = calculateDistance(userLoc, { lat: vLat, lng: vLng });
+            if (dist < minDistance) {
+              minDistance = dist;
+              closestBrand = rb;
+            }
+          }
+        }
+      });
+    }
+
+    // Fetch ALL services in the same category that have the same title as any service in this brand
+    // This is more robust than just looking at brand IDs
+    const initialServices = await Service.find({ brandId: brand._id, status: 'active' }).select('title categoryId');
+    const serviceTitles = [...new Set(initialServices.map(s => s.title.toLowerCase().trim()))];
+    
+    // Fallback to brand title if no services found yet
+    if (serviceTitles.length === 0) {
+      serviceTitles.push(brand.title.toLowerCase().trim());
+    }
+
+    const allServices = await Service.find({
+      title: { $in: serviceTitles.map(t => new RegExp(`${t}`, 'i')) },
+      status: 'active'
+    })
+      .populate('vendorId', 'name businessName isOnline availability location address geoLocation')
+      .lean();
+
+    // Deduplicate services by title, picking the one from the closest/best vendor
+    const groupedServices = new Map();
+    allServices.forEach(svc => {
+      const vendor = svc.vendorId;
+      // STRICT CHECK: Only show Available vendors
+      if (!vendor || vendor.isOnline === false || vendor.availability !== 'AVAILABLE') return;
+
+      if (userLoc) {
+        const vLat = vendor.location?.lat || vendor.address?.lat || (vendor.geoLocation?.coordinates ? vendor.geoLocation.coordinates[1] : null);
+        const vLng = vendor.location?.lng || vendor.address?.lng || (vendor.geoLocation?.coordinates ? vendor.geoLocation.coordinates[0] : null);
+        if (vLat && vLng) {
+          svc.distance = calculateDistance(userLoc, { lat: vLat, lng: vLng });
+        } else {
+          svc.distance = Infinity;
+        }
+      } else {
+        svc.distance = 0;
+      }
+
+      const titleKey = svc.title.toLowerCase().trim();
+      const existing = groupedServices.get(titleKey);
+      // LOGIC: 
+      // 1. If service doesn't exist, add it.
+      // 2. If it exists and we have location, pick the NEAREST.
+      // 3. If distances are equal (or no location), pick the CHEAPEST.
+      if (!existing) {
+        groupedServices.set(titleKey, svc);
+      } else {
+        const currentPrice = svc.basePrice || 0;
+        const existingPrice = existing.basePrice || 0;
+
+        if (userLoc) {
+          if (svc.distance < existing.distance) {
+            groupedServices.set(titleKey, svc);
+          } else if (svc.distance === existing.distance && currentPrice < existingPrice) {
+            groupedServices.set(titleKey, svc);
+          }
+        } else if (currentPrice < existingPrice) {
+          groupedServices.set(titleKey, svc);
+        }
+      }
+    });
+
+    const brandServices = Array.from(groupedServices.values());
 
     // Map services to a default section structure for the frontend
     const servicesSection = {
-      title: brand.title,
+      title: closestBrand.title,
       subtitle: 'Available Services',
       cards: brandServices.map(svc => ({
         id: svc._id.toString(),
+        serviceId: svc._id.toString(), // CRITICAL for 'Add' button
+        categoryId: svc.categoryId?.toString() || brand.categoryId?.toString() || null, // CRITICAL for 'Add' button
         title: svc.title,
         subtitle: svc.description || '',
         price: svc.basePrice,
-        rating: "4.8", // Default rating
-        reviews: "1k+", // Default reviews
-        imageUrl: svc.iconUrl || brand.iconUrl || '',
+        vendorName: svc.vendorId?.businessName || svc.vendorId?.name,
+        vendorId: svc.vendorId?._id?.toString(),
+        rating: "4.8", 
+        reviews: "1k+",
+        image: svc.iconUrl || closestBrand.iconUrl || '', // Changed to 'image' for ServiceWithRatingCard
         features: svc.description ? [svc.description] : [],
-        duration: "60 min", // Default duration
+        duration: "60 min",
         type: svc.type || 'service',
         isPriceDisclosed: svc.isPriceDisclosed ?? true
       }))
@@ -260,7 +424,14 @@ const getPublicBrandBySlug = async (req, res) => {
       },
       sections: brandServices.length > 0 ? [servicesSection] : [],
       type: brand.type || 'service',
-      isPriceDisclosed: brand.isPriceDisclosed ?? true
+      isPriceDisclosed: brand.isPriceDisclosed ?? true,
+      vendor: brand.vendorId ? {
+        id: brand.vendorId._id,
+        name: brand.vendorId.name,
+        businessName: brand.vendorId.businessName,
+        isOnline: brand.vendorId.isOnline,
+        availability: brand.vendorId.availability
+      } : null
     };
 
     res.status(200).json({
@@ -276,40 +447,18 @@ const getPublicBrandBySlug = async (req, res) => {
   }
 };
 
-/**
- * Get services based on brand
- * GET /api/public/services
- */
 const getPublicServices = async (req, res) => {
   try {
-    const { brandId, brandSlug, categoryId } = req.query;
+    const { brandId, brandSlug, categoryId, lat, lng } = req.query;
 
     const query = { status: 'active' };
 
-    if (brandId) {
-      const brand = await Brand.findById(brandId);
+    if (brandId || brandSlug) {
+      const brand = brandId ? await Brand.findById(brandId) : await Brand.findOne({ slug: brandSlug });
       if (brand) {
-        // Find all brands with the same title to show all vendors' services for this brand type
-        const relatedBrands = await Brand.find({ 
-          title: { $regex: `^${brand.title.trim()}$`, $options: 'i' }, 
-          status: 'active' 
-        }).select('_id');
-        const brandIds = relatedBrands.map(b => b._id);
-        query.brandId = { $in: brandIds };
-      } else {
-        query.brandId = brandId;
-      }
-    } else if (brandSlug) {
-      const brand = await Brand.findOne({ slug: brandSlug });
-      if (brand) {
-        const relatedBrands = await Brand.find({ 
-          title: { $regex: `^${brand.title.trim()}$`, $options: 'i' }, 
-          status: 'active' 
-        }).select('_id');
-        const brandIds = relatedBrands.map(b => b._id);
-        query.brandId = { $in: brandIds };
-      } else {
-        return res.status(200).json({ success: true, services: [] });
+        // Search by title globally to allow ALL available vendors to show up
+        const escapedTitle = brand.title.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        query.title = { $regex: escapedTitle, $options: 'i' };
       }
     }
 
@@ -326,13 +475,64 @@ const getPublicServices = async (req, res) => {
       .populate({
         path: 'vendorId',
         match: { isOnline: true, availability: 'AVAILABLE' }, // Only populate if online
-        select: 'name businessName policeVerification address rating totalJobs profilePhoto isOnline availability'
+        select: 'name businessName policeVerification address rating totalJobs profilePhoto isOnline availability geoLocation location'
       })
       .sort({ createdAt: 1 })
       .lean();
 
     // Filter out services where vendor is offline or not found (due to match condition above)
-    const activeServices = services.filter(svc => svc.vendorId);
+    let activeServices = services.filter(svc => svc.vendorId);
+
+    // Deduplicate by title to ensure only one "Reti" shows up even if 10 vendors have it
+    const groupedServices = new Map();
+    const userLoc = (lat && lng) ? { lat: parseFloat(lat), lng: parseFloat(lng) } : null;
+
+    activeServices.forEach(svc => {
+      const vendor = svc.vendorId;
+      // STRICT CHECK: Only show Available vendors
+      if (!vendor || vendor.isOnline === false || vendor.availability !== 'AVAILABLE') return;
+      
+      // Calculate distance if coordinates available
+      if (userLoc) {
+        const vLat = vendor.location?.lat || vendor.address?.lat || (vendor.geoLocation?.coordinates ? vendor.geoLocation.coordinates[1] : null);
+        const vLng = vendor.location?.lng || vendor.address?.lng || (vendor.geoLocation?.coordinates ? vendor.geoLocation.coordinates[0] : null);
+        if (vLat && vLng) {
+          svc.distance = calculateDistance(userLoc, { lat: vLat, lng: vLng });
+        } else {
+          svc.distance = Infinity;
+        }
+      } else {
+        svc.distance = 0; // No distance sorting if no user location
+      }
+
+      const titleKey = svc.title.toLowerCase().trim();
+      const existing = groupedServices.get(titleKey);
+
+      // If no user location, just keep the first one. 
+      // If user location exists, keep the closest one.
+      // LOGIC: 
+      // 1. If service doesn't exist, add it.
+      // 2. If it exists and we have location, pick the NEAREST.
+      // 3. If distances are equal (or no location), pick the CHEAPEST.
+      if (!existing) {
+        groupedServices.set(titleKey, svc);
+      } else {
+        const currentPrice = svc.basePrice || 0;
+        const existingPrice = existing.basePrice || 0;
+
+        if (userLoc) {
+          if (svc.distance < existing.distance) {
+            groupedServices.set(titleKey, svc);
+          } else if (svc.distance === existing.distance && currentPrice < existingPrice) {
+            groupedServices.set(titleKey, svc);
+          }
+        } else if (currentPrice < existingPrice) {
+          groupedServices.set(titleKey, svc);
+        }
+      }
+    });
+
+    activeServices = Array.from(groupedServices.values());
 
     res.status(200).json({
       success: true,
@@ -473,8 +673,15 @@ const getPublicHomeData = async (req, res) => {
   try {
     const { cityId } = req.query;
 
-    // Fetch both in parallel
-    const [categoriesRes, homeContent] = await Promise.all([
+    // 1. Find all online and available vendors
+    const onlineVendors = await require('../../models/Vendor').find({ 
+      isOnline: true, 
+      availability: 'AVAILABLE' 
+    }).select('_id');
+    const onlineVendorIds = onlineVendors.map(v => v._id);
+
+    // 2. Find categories that have at least one active brand/service with an online vendor
+    const [categoriesRes, homeContent, activeCategoryIdsFromBrands, activeCategoryIdsFromServices] = await Promise.all([
       Category.find({ 
         status: 'active', 
         $or: cityId ? [
@@ -486,18 +693,34 @@ const getPublicHomeData = async (req, res) => {
         .select('title slug homeIconUrl homeBadge hasSaleBadge categoryType')
         .sort({ homeOrder: 1 })
         .lean(),
-      HomeContent.getHomeContent(cityId)
+      HomeContent.getHomeContent(cityId),
+      Brand.distinct('categoryIds', { 
+        status: 'active', 
+        vendorId: { $in: onlineVendorIds } 
+      }),
+      Service.distinct('categoryId', { 
+        status: 'active', 
+        vendorId: { $in: onlineVendorIds } 
+      })
     ]);
 
-    const formattedCategories = categoriesRes.map(cat => ({
-      id: cat._id.toString(),
-      title: cat.title,
-      slug: cat.slug,
-      icon: cat.homeIconUrl || '',
-      badge: cat.homeBadge || '',
-      hasSaleBadge: cat.hasSaleBadge || false,
-      categoryType: cat.categoryType || 'service'
-    }));
+    // Combine active category IDs
+    const activeCategoryIds = new Set([
+      ...activeCategoryIdsFromBrands.map(id => id.toString()),
+      ...activeCategoryIdsFromServices.map(id => id.toString())
+    ]);
+
+    const formattedCategories = categoriesRes
+      .filter(cat => activeCategoryIds.has(cat._id.toString())) // Filter by availability
+      .map(cat => ({
+        id: cat._id.toString(),
+        title: cat.title,
+        slug: cat.slug,
+        icon: cat.homeIconUrl || '',
+        badge: cat.homeBadge || '',
+        hasSaleBadge: cat.hasSaleBadge || false,
+        categoryType: cat.categoryType || 'service'
+      }));
 
     // Deduplicate by title to prevent duplicate icons on home page
     const uniqueCategories = [];
@@ -510,9 +733,73 @@ const getPublicHomeData = async (req, res) => {
       }
     });
 
+    const { lat, lng } = req.query;
+    const userLoc = (lat && lng) ? { lat: parseFloat(lat), lng: parseFloat(lng) } : null;
+
     let formattedContent = null;
     if (homeContent) {
       const contentObj = homeContent.toObject();
+      
+      // We need to fetch all active services and brands to dynamically update home page cards
+      // This ensures the price shown on home matches the nearest vendor
+      const allActiveServices = await Service.find({ status: 'active' })
+        .populate({
+          path: 'vendorId',
+          select: 'name businessName isOnline availability location address geoLocation',
+          match: { isOnline: true, availability: 'AVAILABLE' }
+        })
+        .lean();
+      
+      const allActiveBrands = await Brand.find({ status: 'active' })
+        .populate({
+          path: 'vendorId',
+          select: 'name businessName isOnline availability location address geoLocation',
+          match: { isOnline: true, availability: 'AVAILABLE' }
+        })
+        .lean();
+
+      // Helper to find best item for a title
+      const findBestItem = (title, items) => {
+        if (!title) return null;
+        const targetTitle = title.toLowerCase().trim();
+        
+        let best = null;
+        items.forEach(item => {
+          const vendor = item.vendorId;
+          // STRICT CHECK: Vendor must be Online AND Available
+          if (!vendor || vendor.isOnline === false || vendor.availability !== 'AVAILABLE') return;
+          
+          if (item.title.toLowerCase().trim().includes(targetTitle) || targetTitle.includes(item.title.toLowerCase().trim())) {
+            // Calculate distance
+            if (userLoc) {
+              const vLat = vendor.location?.lat || vendor.address?.lat || (vendor.geoLocation?.coordinates ? vendor.geoLocation.coordinates[1] : null);
+              const vLng = vendor.location?.lng || vendor.address?.lng || (vendor.geoLocation?.coordinates ? vendor.geoLocation.coordinates[0] : null);
+              item.distance = (vLat && vLng) ? calculateDistance(userLoc, { lat: vLat, lng: vLng }) : Infinity;
+            } else {
+              item.distance = 0;
+            }
+
+            if (!best) {
+              best = item;
+            } else {
+              const currentPrice = item.basePrice || 0;
+              const bestPrice = best.basePrice || 0;
+              
+              if (userLoc) {
+                if (item.distance < best.distance) {
+                  best = item;
+                } else if (item.distance === best.distance && currentPrice < bestPrice) {
+                  best = item;
+                }
+              } else if (currentPrice < bestPrice) {
+                best = item;
+              }
+            }
+          }
+        });
+        return best;
+      };
+
       formattedContent = {
         banners: (contentObj.banners || []).map(item => ({
           imageUrl: item.imageUrl,
@@ -538,24 +825,45 @@ const getPublicHomeData = async (req, res) => {
           targetCategoryId: item.targetCategoryId?.toString() || null,
           order: item.order
         })),
-        booked: (contentObj.booked || []).map(item => ({
-          title: item.title,
-          rating: item.rating,
-          price: item.price,
-          imageUrl: item.imageUrl,
-          targetCategoryId: item.targetCategoryId?.toString() || null,
-          order: item.order
-        })),
+        booked: (contentObj.booked || []).map(item => {
+          // Dynamically update booked items price
+          const bestService = findBestItem(item.title, allActiveServices);
+          return {
+            title: item.title,
+            rating: item.rating,
+            price: bestService ? bestService.basePrice : item.price,
+            imageUrl: item.imageUrl,
+            targetCategoryId: item.targetCategoryId?.toString() || null,
+            targetServiceId: bestService ? bestService._id.toString() : (item.targetServiceId?.toString() || null),
+            slug: bestService ? bestService.slug : (item.slug || ''),
+            order: item.order
+          };
+        }),
         categorySections: (contentObj.categorySections || []).map(section => ({
           title: section.title,
           seeAllTargetCategoryId: section.seeAllTargetCategoryId?.toString() || null,
-          cards: (section.cards || []).map(card => ({
-            title: card.title,
-            imageUrl: card.imageUrl,
-            price: card.price,
-            rating: card.rating,
-            targetCategoryId: card.targetCategoryId?.toString() || null
-          })),
+          cards: (section.cards || []).map(card => {
+            // Dynamically update card price and vendor name based on nearest logic
+            const bestService = findBestItem(card.title, allActiveServices);
+            const bestBrand = findBestItem(card.title, allActiveBrands);
+            const best = bestService || bestBrand;
+            
+            let displayTitle = card.title;
+            if (best && best.vendorId) {
+              const vendorName = best.vendorId.businessName || best.vendorId.name;
+              displayTitle = `${card.title} by ${vendorName}`;
+            }
+
+            return {
+              title: displayTitle,
+              imageUrl: card.imageUrl,
+              price: best ? (best.basePrice || best.price) : card.price,
+              rating: card.rating,
+              targetCategoryId: card.targetCategoryId?.toString() || null,
+              targetServiceId: card.targetServiceId?.toString() || null,
+              slug: card.slug, // VITAL: Keep the original brand slug so navigation doesn't break
+            };
+          }),
           order: section.order
         })),
         isBannersVisible: contentObj.isBannersVisible ?? true,

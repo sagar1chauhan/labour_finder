@@ -264,6 +264,14 @@ export const publicCatalogService = {
     if (params.categorySlug) queryParams.append('categorySlug', params.categorySlug);
     if (params.search) queryParams.append('search', params.search);
     if (params.cityId) queryParams.append('cityId', params.cityId);
+    
+    // Add user location if available for proximity-based filtering
+    const lat = localStorage.getItem('user_lat');
+    const lng = localStorage.getItem('user_lng');
+    if (lat && lng) {
+      queryParams.append('lat', lat);
+      queryParams.append('lng', lng);
+    }
 
     const cacheKey = `public:brands:${queryParams.toString()}`;
     const cached = apiCache.get(cacheKey);
@@ -283,6 +291,14 @@ export const publicCatalogService = {
     if (params.brandId) queryParams.append('brandId', params.brandId);
     if (params.brandSlug) queryParams.append('brandSlug', params.brandSlug);
     if (params.categoryId) queryParams.append('categoryId', params.categoryId);
+    
+    // Add user location if available for proximity-based filtering
+    const lat = localStorage.getItem('user_lat');
+    const lng = localStorage.getItem('user_lng');
+    if (lat && lng) {
+      queryParams.append('lat', lat);
+      queryParams.append('lng', lng);
+    }
 
     const cacheKey = `public:services:${queryParams.toString()}`;
     const cached = apiCache.get(cacheKey);
@@ -297,14 +313,24 @@ export const publicCatalogService = {
 
   // Get brand by slug (cached for 1 minute)
   getBrandBySlug: async (slug, cityId) => {
-    const cacheKey = `public:brand:${slug}:${cityId || 'default'}`;
+    const lat = localStorage.getItem('user_lat');
+    const lng = localStorage.getItem('user_lng');
+    
+    const queryParams = new URLSearchParams();
+    if (cityId) queryParams.append('cityId', cityId);
+    if (lat && lng) {
+      queryParams.append('lat', lat);
+      queryParams.append('lng', lng);
+    }
+
+    const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    const cacheKey = `public:brand:${slug}:${cityId || 'default'}:${lat || '0'}:${lng || '0'}`;
     const cached = apiCache.get(cacheKey);
     if (cached) return cached;
 
-    const query = cityId ? `?cityId=${cityId}` : '';
-    const response = await api.get(`/public/brands/slug/${slug}${query}`);
+    const response = await api.get(`/public/brands/slug/${slug}${queryString}`);
     if (response.data.success) {
-      apiCache.set(cacheKey, response.data, 60); // 1 minute
+      apiCache.set(cacheKey, response.data, 0); // Disabling cache for instant real-time updates
     }
     return response.data;
   },
@@ -318,21 +344,31 @@ export const publicCatalogService = {
     const query = cityId ? `?cityId=${cityId}` : '';
     const response = await api.get(`/public/home-content${query}`);
     if (response.data.success) {
-      apiCache.set(cacheKey, response.data, 120); // 2 minutes
+      apiCache.set(cacheKey, response.data, 0); // Disabling cache for instant real-time updates
     }
     return response.data;
   },
 
   // Get consolidated home data (cached for 2 minutes)
   getHomeData: async (cityId) => {
-    const cacheKey = `public:homeData:${cityId || 'default'}`;
+    const lat = localStorage.getItem('user_lat');
+    const lng = localStorage.getItem('user_lng');
+
+    const queryParams = new URLSearchParams();
+    if (cityId) queryParams.append('cityId', cityId);
+    if (lat && lng) {
+      queryParams.append('lat', lat);
+      queryParams.append('lng', lng);
+    }
+
+    const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    const cacheKey = `public:homeData:${cityId || 'default'}:${lat || '0'}:${lng || '0'}`;
     const cached = apiCache.get(cacheKey);
     if (cached) return cached;
 
-    const query = cityId ? `?cityId=${cityId}` : '';
-    const response = await api.get(`/public/home-data${query}`);
+    const response = await api.get(`/public/home-data${queryString}`);
     if (response.data.success) {
-      apiCache.set(cacheKey, response.data, 30); // Reduced to 30 seconds
+      apiCache.set(cacheKey, response.data, 0); // Disabling cache for instant real-time updates
     }
     return response.data;
   },

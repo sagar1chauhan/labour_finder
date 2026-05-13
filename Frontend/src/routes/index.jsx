@@ -6,7 +6,6 @@ import UserRoutes from '../modules/user/routes';
 import VendorRoutes from '../modules/vendor/routes';
 import WorkerRoutes from '../modules/worker/routes';
 import AdminRoutes from '../modules/admin/routes';
-import LabourRoutes from '../modules/labour/routes';
 
 import LandingPage from '../modules/landing/pages/LandingPage';
 
@@ -30,9 +29,6 @@ const AppRoutes = () => {
 
       {/* Admin Routes */}
       <Route path="/admin/*" element={<AdminRoutes />} />
-
-      {/* Labour Routes */}
-      <Route path="/labour/*" element={<LabourRoutes />} />
     </Routes>
   );
 };

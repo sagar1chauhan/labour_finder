@@ -120,6 +120,11 @@ const Home = () => {
       const newAddress = locationObj.address;
       setAddress(newAddress);
       localStorage.setItem('currentAddress', newAddress);
+      
+      if (locationObj.lat && locationObj.lng) {
+        localStorage.setItem('user_lat', locationObj.lat);
+        localStorage.setItem('user_lng', locationObj.lng);
+      }
 
       // Try to parse city from location object (Google Places)
       const components = locationObj.components || locationObj.address_components;
@@ -190,6 +195,8 @@ const Home = () => {
                   const formattedAddress = `${area}, ${city}, ${state}`;
                   setAddress(formattedAddress);
                   localStorage.setItem('currentAddress', formattedAddress);
+                  localStorage.setItem('user_lat', latitude);
+                  localStorage.setItem('user_lng', longitude);
 
                   if (city) {
                     setDetectedCityName(city);

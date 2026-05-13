@@ -23,10 +23,10 @@ const Settings = require('../models/Settings');
 
 // Wave configuration - More sequential (1 by 1 for first few vendors)
 let WAVE_CONFIG = {
-  1: { count: 1, duration: 30000 }, // Closest vendor (30s)
-  2: { count: 1, duration: 30000 }, // 2nd closest (30s)
-  3: { count: 1, duration: 30000 }, // 3rd closest (30s)
-  4: { count: 2, duration: 30000 }, // Next 2 (30s)
+  1: { count: 1, duration: 60000 }, // Closest vendor (1 min)
+  2: { count: 1, duration: 60000 }, // 2nd closest (1 min)
+  3: { count: 1, duration: 60000 }, // 3rd closest (1 min)
+  4: { count: 2, duration: 60000 }, // Next 2 (1 min)
   5: { count: Infinity, duration: 0 } // Everyone else
 };
 
@@ -94,7 +94,7 @@ class BookingScheduler {
       try {
         const globalSettings = await Settings.findOne({ type: 'global' }).lean();
         if (globalSettings) {
-          const waveDur = (globalSettings.waveDuration || 30) * 1000;
+          const waveDur = (globalSettings.waveDuration || 60) * 1000;
           WAVE_CONFIG = {
             1: { count: 1, duration: waveDur },
             2: { count: 1, duration: waveDur },
@@ -102,7 +102,7 @@ class BookingScheduler {
             4: { count: 2, duration: waveDur },
             5: { count: Infinity, duration: 0 }
           };
-          MAX_SEARCH_TIME_MS = (globalSettings.maxSearchTime || 5) * 60 * 1000;
+          MAX_SEARCH_TIME_MS = (globalSettings.maxSearchTime || 10) * 60 * 1000;
         }
       } catch (sErr) {
         console.error('[BookingScheduler] Settings fetch error:', sErr);

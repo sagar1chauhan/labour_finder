@@ -476,11 +476,11 @@ const rejectBooking = async (req, res) => {
     const remainingPotential = booking.potentialVendors.length;
 
     if (pendingRequests === 0 && remainingPotential === 0) {
-      // No vendors left - mark booking as rejected/failed
-      booking.status = BOOKING_STATUS.REJECTED;
+      // No vendors left - mark booking as failed
+      booking.status = BOOKING_STATUS.NO_VENDORS;
       booking.cancelledAt = new Date();
       booking.cancelledBy = 'system';
-      booking.cancellationReason = 'No vendors available';
+      booking.cancellationReason = 'All vendors rejected the request';
 
       // Notify user that no vendors are available
       await createNotification({
@@ -496,6 +496,29 @@ const rejectBooking = async (req, res) => {
           link: `/user/booking/${booking._id}`
         }
       });
+
+      // --- ADD SOCKET NOTIFICATION FOR REAL-TIME UI UPDATE ---
+      const io = req.app.get('io');
+      if (io) {
+        const userIdStr = booking.userId.toString();
+        const bookingIdStr = booking._id.toString();
+
+        console.log(`[RejectBooking] No vendors left for booking ${booking.bookingNumber}. Notifying rooms: user_${userIdStr}, booking_${bookingIdStr}`);
+
+        const payload = {
+          bookingId: bookingIdStr,
+          status: BOOKING_STATUS.NO_VENDORS,
+          message: 'All nearby vendors are currently unavailable for this request.'
+        };
+
+        // Emit to user room
+        io.to(`user_${userIdStr}`).emit('booking_search_failed', payload);
+        io.to(`user_${userIdStr}`).emit('booking_updated', payload);
+
+        // Also emit to specific booking room (as fallback)
+        io.to(`booking_${bookingIdStr}`).emit('booking_search_failed', payload);
+        io.to(`booking_${bookingIdStr}`).emit('booking_updated', payload);
+      }
     }
     // Otherwise, booking stays SEARCHING for other vendors
 

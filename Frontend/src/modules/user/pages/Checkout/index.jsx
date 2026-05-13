@@ -456,30 +456,61 @@ const Checkout = () => {
     });
 
     socket.on('booking_search_failed', (data) => {
-      if (data.bookingId === bookingRequest._id) {
+      if (String(data.bookingId) === String(bookingRequest?._id)) {
         setSearchingVendors(false);
         setCurrentStep('failed');
         toast.error(data.message || 'No vendors available at the moment.');
-
-        // Auto-cancel and refresh on failure
-        const handleAutoCancel = async () => {
-          try {
-            await bookingService.cancel(bookingRequest._id, 'No vendors found after search timeout');
-            setTimeout(() => {
-              window.location.reload();
-            }, 3000); // 3 second delay to let the user see the error
-          } catch (err) {
-            console.error('Auto-cancel failed:', err);
-            setTimeout(() => {
-              window.location.reload();
-            }, 3000);
-          }
-        };
-        handleAutoCancel();
       }
     });
 
+    socket.on('booking_updated', (data) => {
+      if (String(data.bookingId) === String(bookingRequest?._id)) {
+        if (data.status === 'no_vendors' || data.status === 'rejected' || data.status === 'cancelled') {
+          setSearchingVendors(false);
+          setCurrentStep('failed');
+          toast.error(data.message || 'All vendors are currently unavailable.');
+        }
+      }
+    });
+
+    // --- FALLBACK: POLLING CHECK ---
+    // If socket fails for any reason, poll the booking status every 3 seconds
+    const pollInterval = setInterval(async () => {
+      if (currentStep === 'waiting' && bookingRequest?._id) {
+        try {
+          const response = await bookingService.getById(bookingRequest._id);
+          if (response.success) {
+            const status = response.data.status;
+            if (status === 'no_vendors' || status === 'rejected' || status === 'cancelled') {
+              console.log('[Checkout] Polling detected failure status:', status);
+              setSearchingVendors(false);
+              setCurrentStep('failed');
+              clearInterval(pollInterval);
+            } else if (status === 'accepted' || status === 'assigned') {
+              // Also handle success via polling as fallback
+              console.log('[Checkout] Polling detected success status:', status);
+              const vendor = response.data.vendorId;
+              if (vendor) {
+                setAcceptedVendor({
+                  id: vendor._id || vendor.id,
+                  name: vendor.name,
+                  businessName: vendor.businessName,
+                  price: response.data.finalAmount
+                });
+                setCurrentStep('accepted');
+                setSearchingVendors(false);
+                clearInterval(pollInterval);
+              }
+            }
+          }
+        } catch (err) {
+          console.error('[Checkout] Polling error:', err);
+        }
+      }
+    }, 3000);
+
     return () => {
+      clearInterval(pollInterval);
       socket.disconnect();
     };
   }, [currentStep, bookingRequest]);
