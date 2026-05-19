@@ -207,7 +207,7 @@ const LandingPage = () => {
                         <div className="relative w-20 h-20 lg:w-28 lg:h-28 bg-white rounded-[2.5rem] flex items-center justify-center p-5 lg:p-7 shadow-[0_8px_30px_rgb(0,0,0,0.04)] group-hover:shadow-[0_20px_50px_rgba(52,121,137,0.15)] border border-gray-100 group-hover:border-brand/20 transition-all duration-500 z-10 overflow-hidden">
                           {/* Subtle background pattern in card */}
                           <div className="absolute inset-0 opacity-[0.03] group-hover:opacity-[0.06] transition-opacity">
-                            <div className="absolute inset-0" style={{ backgroundImage: `radial-gradient(${idx % 2 === 0 ? '#347989' : '#D68F35'} 1px, transparent 1px)`, backgroundSize: '12px 12px' }}></div>
+                            <div className="absolute inset-0" style={{ backgroundImage: `radial-gradient(${idx % 2 === 0 ? '#cfdc01' : '#a2ad02'} 1px, transparent 1px)`, backgroundSize: '12px 12px' }}></div>
                           </div>
 
                           {cat.icon ? (

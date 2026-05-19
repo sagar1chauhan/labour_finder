@@ -242,11 +242,11 @@ const BookingConfirmation = () => {
         <div className="absolute inset-0"
           style={{
             background: `
-              radial-gradient(at 0% 0%, ${themeColors?.brand?.teal || '#347989'}25 0%, transparent 70%),
-              radial-gradient(at 100% 0%, ${themeColors?.brand?.yellow || '#D68F35'}20 0%, transparent 70%),
-              radial-gradient(at 100% 100%, ${themeColors?.brand?.orange || '#BB5F36'}15 0%, transparent 75%),
-              radial-gradient(at 0% 100%, ${themeColors?.brand?.teal || '#347989'}10 0%, transparent 70%),
-              radial-gradient(at 50% 50%, ${themeColors?.brand?.teal || '#347989'}03 0%, transparent 100%),
+              radial-gradient(at 0% 0%, ${themeColors?.brand?.teal || '#cfdc01'}25 0%, transparent 70%),
+              radial-gradient(at 100% 0%, ${themeColors?.brand?.yellow || '#a2ad02'}20 0%, transparent 70%),
+              radial-gradient(at 100% 100%, ${themeColors?.brand?.orange || '#b6c200'}15 0%, transparent 75%),
+              radial-gradient(at 0% 100%, ${themeColors?.brand?.teal || '#cfdc01'}10 0%, transparent 70%),
+              radial-gradient(at 50% 50%, ${themeColors?.brand?.teal || '#cfdc01'}03 0%, transparent 100%),
               #FFFFFF
             `
           }}
@@ -254,7 +254,7 @@ const BookingConfirmation = () => {
         {/* Elegant Dot Grid Pattern */}
         <div className="absolute inset-0 opacity-[0.04]"
           style={{
-            backgroundImage: `radial-gradient(${themeColors?.brand?.teal || '#347989'} 0.8px, transparent 0.8px)`,
+            backgroundImage: `radial-gradient(${themeColors?.brand?.teal || '#cfdc01'} 0.8px, transparent 0.8px)`,
             backgroundSize: '32px 32px'
           }}
         />

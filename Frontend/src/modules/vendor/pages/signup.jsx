@@ -379,14 +379,14 @@ const VendorSignup = () => {
     }
   };
 
-  const brandColor = themeColors.brand?.teal || '#9634f7';
+  const brandColor = themeColors.brand?.teal || '#cfdc01';
 
   return (
-    <div className="min-h-screen flex flex-col pt-8 pb-8 px-4 sm:px-6 lg:px-8 relative" style={{ background: 'linear-gradient(90deg, rgba(213, 181, 235, 1) 0%, rgba(240, 203, 242, 1) 90%)' }}>
+    <div className="min-h-screen flex flex-col pt-8 pb-8 px-4 sm:px-6 lg:px-8 relative" style={{ background: 'linear-gradient(90deg, #fbfde8 0%, #f5f8be 90%)' }}>
       {/* Decorative Background Elements - Fixed Container to prevent scroll issues */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#9634f7] opacity-[0.05] rounded-full blur-3xl animate-floating" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#9634f7] opacity-[0.03] rounded-full blur-3xl animate-floating" style={{ animationDelay: '2s' }} />
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#cfdc01] opacity-[0.05] rounded-full blur-3xl animate-floating" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#cfdc01] opacity-[0.03] rounded-full blur-3xl animate-floating" style={{ animationDelay: '2s' }} />
       </div>
 
       <div className="sm:mx-auto sm:w-full sm:max-w-2xl text-center mb-1 relative z-10 animate-fade-in">
@@ -401,7 +401,7 @@ const VendorSignup = () => {
 
       <div className="sm:mx-auto sm:w-full sm:max-w-2xl relative z-10">
         <div className="bg-white py-5 px-4 shadow-2xl shadow-gray-200/50 sm:rounded-2xl sm:px-10 border border-gray-100 relative overflow-hidden animate-slide-in-bottom">
-          <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#9634f7] via-[#b87cff] to-[#9634f7]" />
+          <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#cfdc01] via-[#b6c200] to-[#cfdc01]" />
 
           {step === 'details' ? (
             <form onSubmit={handleDetailsSubmit} className="space-y-6">
@@ -413,7 +413,7 @@ const VendorSignup = () => {
                   <div className="animate-fade-in" style={{ animationDelay: '0.1s' }}>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
                     <div className="relative group">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none group-focus-within:text-[#9634f7] transition-colors">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none group-focus-within:text-[#cfdc01] transition-colors">
                         <FiUser className="text-gray-400" />
                       </div>
                       <input
@@ -433,7 +433,7 @@ const VendorSignup = () => {
                   <div className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
                     <div className="relative group">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none group-focus-within:text-[#9634f7] transition-colors">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none group-focus-within:text-[#cfdc01] transition-colors">
                         <FiMail className="text-gray-400" />
                       </div>
                       <input
@@ -472,7 +472,7 @@ const VendorSignup = () => {
                   <div className="animate-fade-in" style={{ animationDelay: '0.4s' }}>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Aadhar Number</label>
                     <div className="relative group">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none group-focus-within:text-[#9634f7] transition-colors">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none group-focus-within:text-[#cfdc01] transition-colors">
                         <FiFileText className="text-gray-400" />
                       </div>
                       <input
@@ -490,7 +490,7 @@ const VendorSignup = () => {
                   <div className="animate-fade-in" style={{ animationDelay: '0.5s' }}>
                     <label className="block text-sm font-medium text-gray-700 mb-1">PAN Number</label>
                     <div className="relative group">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none group-focus-within:text-[#9634f7] transition-colors">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none group-focus-within:text-[#cfdc01] transition-colors">
                         <FiFileText className="text-gray-400" />
                       </div>
                       <input
@@ -508,7 +508,7 @@ const VendorSignup = () => {
                   <div className="animate-fade-in" style={{ animationDelay: '0.6s' }}>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Years of Experience</label>
                     <div className="relative group">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none group-focus-within:text-[#9634f7] transition-colors">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none group-focus-within:text-[#cfdc01] transition-colors">
                         <FiAward className="text-gray-400" />
                       </div>
                       <input
@@ -543,10 +543,10 @@ const VendorSignup = () => {
                           </div>
                         </div>
                       ) : (
-                        <div className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-gray-200 rounded-xl hover:bg-gray-50 transition-all duration-300 hover:border-[#9634f7] group bg-white relative">
+                        <div className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-gray-200 rounded-xl hover:bg-gray-50 transition-all duration-300 hover:border-[#cfdc01] group bg-white relative">
                           {uploadingDocs.aadhar ? (
                             <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-10 rounded-xl">
-                              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#9634f7]"></div>
+                              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#cfdc01]"></div>
                             </div>
                           ) : null}
                           <label className="flex flex-col items-center cursor-pointer w-full h-full justify-center">
@@ -573,10 +573,10 @@ const VendorSignup = () => {
                           </div>
                         </div>
                       ) : (
-                        <div className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-gray-200 rounded-xl hover:bg-gray-50 transition-all duration-300 hover:border-[#9634f7] group bg-white relative">
+                        <div className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-gray-200 rounded-xl hover:bg-gray-50 transition-all duration-300 hover:border-[#cfdc01] group bg-white relative">
                           {uploadingDocs.aadharBack ? (
                             <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-10 rounded-xl">
-                              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#9634f7]"></div>
+                              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#cfdc01]"></div>
                             </div>
                           ) : null}
                           <label className="flex flex-col items-center cursor-pointer w-full h-full justify-center">
@@ -603,10 +603,10 @@ const VendorSignup = () => {
                           </div>
                         </div>
                       ) : (
-                        <div className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-gray-200 rounded-xl hover:bg-gray-50 transition-all duration-300 hover:border-[#9634f7] group bg-white relative">
+                        <div className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-gray-200 rounded-xl hover:bg-gray-50 transition-all duration-300 hover:border-[#cfdc01] group bg-white relative">
                           {uploadingDocs.pan ? (
                             <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-10 rounded-xl">
-                              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#9634f7]"></div>
+                              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#cfdc01]"></div>
                             </div>
                           ) : null}
                           <label className="flex flex-col items-center cursor-pointer w-full h-full justify-center">
@@ -621,8 +621,8 @@ const VendorSignup = () => {
                     </div>
                   </div>
 
-                  <div className="p-3 bg-purple-50 border border-purple-100 rounded-xl mt-2 animate-pulse-subtle">
-                    <p className="text-[10px] text-purple-700 leading-relaxed italic">
+                  <div className="p-3 bg-green-50 border border-green-100 rounded-xl mt-2 animate-pulse-subtle">
+                    <p className="text-[10px] text-green-700 leading-relaxed italic">
                       "Civilconnect values trust. Please ensure all documents are clear and valid for faster approval."
                     </p>
                   </div>
@@ -658,7 +658,7 @@ const VendorSignup = () => {
             <div className="space-y-4">
               <button
                 onClick={() => setStep('details')}
-                className="flex items-center text-xs text-gray-500 hover:text-[#9634f7] transition-colors mb-2 animate-fade-in"
+                className="flex items-center text-xs text-gray-500 hover:text-[#cfdc01] transition-colors mb-2 animate-fade-in"
               >
                 <FiChevronLeft className="mr-1" /> Re-check details
               </button>
@@ -736,7 +736,7 @@ const VendorSignup = () => {
 
         <p className="mt-4 text-center text-sm text-gray-600 animate-fade-in animate-stagger-4">
           Already a partner?{' '}
-          <Link to="/vendor/login" className="font-semibold hover:text-[#b87cff] transition-colors" style={{ color: brandColor }}>
+          <Link to="/vendor/login" className="font-semibold hover:text-[#b6c200] transition-colors" style={{ color: brandColor }}>
             Login here
           </Link>
         </p>

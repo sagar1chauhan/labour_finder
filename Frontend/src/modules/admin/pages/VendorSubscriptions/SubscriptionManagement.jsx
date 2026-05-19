@@ -37,7 +37,7 @@ const VendorSubscriptionManagement = () => {
     isActive: true
   });
 
-  const brandColor = themeColors.brand?.teal || '#347989';
+  const brandColor = themeColors.brand?.teal || '#cfdc01';
 
   useEffect(() => {
     if (activeTab === 'plans') {
@@ -166,13 +166,13 @@ const VendorSubscriptionManagement = () => {
           <div className="flex gap-2 bg-white p-1 rounded-xl border border-gray-200">
             <button
               onClick={() => navigate('/admin/vendor-subscriptions/plans')}
-              className={`px-6 py-2 rounded-lg font-semibold transition-all ${activeTab === 'plans' ? 'bg-[#347989] text-white shadow-md' : 'text-gray-600 hover:bg-gray-50'}`}
+              className={`px-6 py-2 rounded-lg font-semibold transition-all ${activeTab === 'plans' ? 'bg-[#cfdc01] text-white shadow-md' : 'text-gray-600 hover:bg-gray-50'}`}
             >
               Plans
             </button>
             <button
               onClick={() => navigate('/admin/vendor-subscriptions/transactions')}
-              className={`px-6 py-2 rounded-lg font-semibold transition-all ${activeTab === 'transactions' ? 'bg-[#347989] text-white shadow-md' : 'text-gray-600 hover:bg-gray-50'}`}
+              className={`px-6 py-2 rounded-lg font-semibold transition-all ${activeTab === 'transactions' ? 'bg-[#cfdc01] text-white shadow-md' : 'text-gray-600 hover:bg-gray-50'}`}
             >
               Transactions
             </button>
@@ -184,7 +184,7 @@ const VendorSubscriptionManagement = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-center">
               <div className="text-xs font-bold text-gray-400 mb-1 uppercase tracking-wider">Total Revenue</div>
-              <div className="text-3xl font-black text-[#347989]">₹{(stats?.totalRevenue || 0).toLocaleString('en-IN')}</div>
+              <div className="text-3xl font-black text-[#cfdc01]">₹{(stats?.totalRevenue || 0).toLocaleString('en-IN')}</div>
             </div>
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-center">
               <div className="text-xs font-bold text-gray-400 mb-1 uppercase tracking-wider">Total Transactions</div>
@@ -197,13 +197,13 @@ const VendorSubscriptionManagement = () => {
                   type="date"
                   value={dateRange.startDate}
                   onChange={(e) => setDateRange({...dateRange, startDate: e.target.value})}
-                  className="flex-1 px-3 py-2 text-xs rounded-lg border border-gray-100 bg-gray-50 outline-none focus:ring-1 focus:ring-[#347989]"
+                  className="flex-1 px-3 py-2 text-xs rounded-lg border border-gray-100 bg-gray-50 outline-none focus:ring-1 focus:ring-[#cfdc01]"
                 />
                 <input
                   type="date"
                   value={dateRange.endDate}
                   onChange={(e) => setDateRange({...dateRange, endDate: e.target.value})}
-                  className="flex-1 px-3 py-2 text-xs rounded-lg border border-gray-100 bg-gray-50 outline-none focus:ring-1 focus:ring-[#347989]"
+                  className="flex-1 px-3 py-2 text-xs rounded-lg border border-gray-100 bg-gray-50 outline-none focus:ring-1 focus:ring-[#cfdc01]"
                 />
               </div>
             </div>
@@ -224,7 +224,7 @@ const VendorSubscriptionManagement = () => {
 
         {loading ? (
           <div className="p-12 text-center bg-white rounded-3xl border border-gray-100 shadow-sm">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#347989] mx-auto mb-4"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#cfdc01] mx-auto mb-4"></div>
             <p className="text-gray-500 font-medium">Fetching records...</p>
           </div>
         ) : activeTab === 'plans' ? (
@@ -356,7 +356,7 @@ const VendorSubscriptionManagement = () => {
                             onClick={() => handlePageChange(pageNum)}
                             className={`w-10 h-10 flex items-center justify-center rounded-xl font-bold transition-all ${
                               pagination.page === pageNum
-                                ? 'bg-[#347989] text-white shadow-md'
+                                ? 'bg-[#cfdc01] text-white shadow-md'
                                 : 'text-gray-600 hover:bg-gray-100'
                             }`}
                           >
@@ -416,7 +416,7 @@ const VendorSubscriptionManagement = () => {
                     required
                     value={formData.name}
                     onChange={(e) => setFormData({...formData, name: e.target.value})}
-                    className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#347989] outline-none"
+                    className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#cfdc01] outline-none"
                     placeholder="e.g. Premium Partner"
                   />
                 </div>
@@ -427,7 +427,7 @@ const VendorSubscriptionManagement = () => {
                     required
                     value={formData.price}
                     onChange={(e) => setFormData({...formData, price: e.target.value})}
-                    className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#347989] outline-none"
+                    className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#cfdc01] outline-none"
                     placeholder="999"
                   />
                 </div>
@@ -438,7 +438,7 @@ const VendorSubscriptionManagement = () => {
                     required
                     value={formData.duration}
                     onChange={(e) => setFormData({...formData, duration: e.target.value})}
-                    className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#347989] outline-none"
+                    className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#cfdc01] outline-none"
                     placeholder="30"
                   />
                 </div>
@@ -449,7 +449,7 @@ const VendorSubscriptionManagement = () => {
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({...formData, description: e.target.value})}
-                  className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#347989] outline-none"
+                  className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#cfdc01] outline-none"
                   rows="2"
                   placeholder="Short description of the plan"
                 />
@@ -461,7 +461,7 @@ const VendorSubscriptionManagement = () => {
                   required
                   value={formData.features}
                   onChange={(e) => setFormData({...formData, features: e.target.value})}
-                  className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#347989] outline-none"
+                  className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#cfdc01] outline-none"
                   rows="3"
                   placeholder="Unlimited leads, Priority listing, 24/7 support"
                 />
@@ -473,7 +473,7 @@ const VendorSubscriptionManagement = () => {
                   id="isActive"
                   checked={formData.isActive}
                   onChange={(e) => setFormData({...formData, isActive: e.target.checked})}
-                  className="w-5 h-5 rounded border-gray-300 text-[#347989] focus:ring-[#347989]"
+                  className="w-5 h-5 rounded border-gray-300 text-[#cfdc01] focus:ring-[#cfdc01]"
                 />
                 <label htmlFor="isActive" className="text-sm font-semibold text-gray-700 cursor-pointer">
                   Make this plan active for vendors

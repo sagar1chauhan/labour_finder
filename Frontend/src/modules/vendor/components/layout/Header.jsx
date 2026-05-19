@@ -111,9 +111,9 @@ const Header = memo(({
 
   return (
     <header
-      className="w-full bg-[#fdfbff]"
+      className="w-full bg-[#fbfde8]"
       style={{
-        borderBottom: '1.5px solid rgba(150, 52, 247, 0.15)',
+        borderBottom: '1.5px solid rgba(207, 220, 1, 0.3)',
       }}
     >
       <div className="px-4 py-3 flex items-center justify-between">
@@ -167,7 +167,7 @@ const Header = memo(({
                   className="w-4 h-4 bg-white rounded-full shadow-md flex items-center justify-center"
                 >
                   {isToggling ? (
-                    <div className="w-2 h-2 border-2 border-[#9634f7] border-t-transparent rounded-full animate-spin" />
+                    <div className="w-2 h-2 border-2 border-[#cfdc01] border-t-transparent rounded-full animate-spin" />
                   ) : (
                     <div className={`w-1 h-1 rounded-full ${isOnline ? 'bg-green-500' : 'bg-gray-400'}`} />
                   )}

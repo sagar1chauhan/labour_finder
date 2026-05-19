@@ -142,7 +142,7 @@ const SubscriptionSelection = () => {
             contact: ""
           },
           theme: {
-            color: "#9634f7"
+            color: "#cfdc01"
           },
           modal: {
             ondismiss: () => setProcessingPayment(false)
@@ -163,7 +163,7 @@ const SubscriptionSelection = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#9634f7]"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#cfdc01]"></div>
       </div>
     );
   }
@@ -175,9 +175,9 @@ const SubscriptionSelection = () => {
           {/* Back Button */}
           <button
             onClick={handleBackToLogin}
-            className="absolute top-2 left-0 flex items-center gap-2 text-slate-500 hover:text-[#9634f7] font-bold transition-all z-20 group"
+            className="absolute top-2 left-0 flex items-center gap-2 text-slate-500 hover:text-[#cfdc01] font-bold transition-all z-20 group"
           >
-            <div className="p-2 rounded-full bg-white shadow-sm border border-slate-100 group-hover:border-[#9634f7] transition-all">
+            <div className="p-2 rounded-full bg-white shadow-sm border border-slate-100 group-hover:border-[#cfdc01] transition-all">
               <FiArrowLeft className="w-5 h-5" />
             </div>
             <span className="hidden sm:inline">Back to Login</span>
@@ -197,11 +197,11 @@ const SubscriptionSelection = () => {
             <div 
               key={plan._id}
               className={`relative bg-white rounded-2xl shadow-xl p-5 border transition-all duration-300 flex flex-col ${
-                index === 1 ? 'border-[#9634f7] scale-105 z-10' : 'border-slate-100 hover:border-slate-200'
+                index === 1 ? 'border-[#cfdc01] scale-105 z-10' : 'border-slate-100 hover:border-slate-200'
               }`}
             >
               {index === 1 && (
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#9634f7] text-white px-4 py-1 rounded-full text-sm font-bold shadow-lg">
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#cfdc01] text-white px-4 py-1 rounded-full text-sm font-bold shadow-lg">
                   MOST POPULAR
                 </div>
               )}
@@ -229,7 +229,7 @@ const SubscriptionSelection = () => {
               <button
                 onClick={() => handleSubscribe(plan)}
                 disabled={processingPayment}
-                className={`w-full py-3 rounded-xl font-semibold text-white transition-all transform hover:-translate-y-1 shadow-lg flex items-center justify-center gap-2 bg-[#9634f7] hover:bg-[#8529db] disabled:opacity-50`}
+                className={`w-full py-3 rounded-xl font-semibold text-white transition-all transform hover:-translate-y-1 shadow-lg flex items-center justify-center gap-2 bg-[#cfdc01] hover:bg-[#b6c200] disabled:opacity-50`}
               >
                 {processingPayment ? 'Processing...' : (
                   <>

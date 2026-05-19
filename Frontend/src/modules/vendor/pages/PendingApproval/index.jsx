@@ -11,7 +11,7 @@ const PendingApproval = () => {
   const isRejected = location.state?.status === 'REJECTED' || location.state?.status === 'rejected' || location.state?.rejected;
   const reason = location.state?.reason || 'Your application did not meet our requirements.';
   
-  const brandColor = themeColors.brand?.teal || '#347989';
+  const brandColor = themeColors.brand?.teal || '#cfdc01';
 
   useEffect(() => {
     const checkStatus = async () => {
@@ -60,8 +60,8 @@ const PendingApproval = () => {
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
       {/* Decorative Background Elements */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#347989] opacity-[0.03] rounded-full blur-3xl animate-floating" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#D68F35] opacity-[0.03] rounded-full blur-3xl animate-floating" style={{ animationDelay: '2s' }} />
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#cfdc01] opacity-[0.03] rounded-full blur-3xl animate-floating" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#a2ad02] opacity-[0.03] rounded-full blur-3xl animate-floating" style={{ animationDelay: '2s' }} />
       </div>
 
       <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10 text-center mb-8">
@@ -70,14 +70,14 @@ const PendingApproval = () => {
 
       <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10">
         <div className="bg-white py-12 px-8 shadow-2xl shadow-gray-200/50 sm:rounded-3xl border border-gray-100 relative overflow-hidden animate-slide-in-bottom">
-          <div className={`absolute top-0 left-0 right-0 h-2 bg-gradient-to-r ${isRejected ? 'from-red-500 to-orange-500' : 'from-[#347989] via-[#D68F35] to-[#BB5F36]'}`} />
+          <div className={`absolute top-0 left-0 right-0 h-2 bg-gradient-to-r ${isRejected ? 'from-red-500 to-orange-500' : 'from-[#cfdc01] via-[#a2ad02] to-[#b6c200]'}`} />
           
           <div className="text-center">
             <div className={`mx-auto flex items-center justify-center h-24 w-24 rounded-full mb-6 animate-bounce-subtle ${isRejected ? 'bg-red-50' : 'bg-orange-50'}`}>
               {isRejected ? (
                 <FiX className="h-12 w-12 text-red-500" />
               ) : (
-                <FiClock className="h-12 w-12 text-[#D68F35]" />
+                <FiClock className="h-12 w-12 text-[#a2ad02]" />
               )}
             </div>
             
@@ -119,7 +119,7 @@ const PendingApproval = () => {
         </div>
 
         <p className="mt-8 text-center text-sm text-gray-500">
-          Need help? <a href="mailto:support@civilconnect.in" className="font-bold text-[#347989] hover:underline">Contact Support</a>
+          Need help? <a href="mailto:support@civilconnect.in" className="font-bold text-[#cfdc01] hover:underline">Contact Support</a>
         </p>
       </div>
     </div>

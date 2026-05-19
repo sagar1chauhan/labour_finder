@@ -9,7 +9,7 @@ const dotenv = require('dotenv');
 const connectDB = require('./config/db');
 const rateLimiter = require('./middleware/rateLimiter');
 
-// Load environment variables
+// Load environment variables (forced nodemon reload)
 dotenv.config({ path: path.join(__dirname, '.env') });
 
 // Connect to database

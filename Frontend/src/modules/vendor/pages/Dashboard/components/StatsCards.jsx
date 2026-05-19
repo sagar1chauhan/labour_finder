@@ -12,8 +12,8 @@ const StatsCards = memo(({ stats }) => {
       title: "Today's Earnings",
       value: `₹${stats.todayEarnings.toLocaleString()}`,
       icon: "https://cdn-icons-gif.flaticon.com/15575/15575639.gif",
-      gradient: 'linear-gradient(135deg, #f3f0ff 0%, #e5dbff 100%)',
-      accent: '#9634f7',
+      gradient: 'linear-gradient(135deg, #fbfde8 0%, #f5f8be 100%)',
+      accent: '#a2ad02',
       onClick: () => navigate('/vendor/earnings')
     },
     {

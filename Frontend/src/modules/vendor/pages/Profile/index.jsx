@@ -172,7 +172,7 @@ const Profile = () => {
           className="rounded-[2rem] p-4 mb-4 shadow-xl relative overflow-hidden border border-white/60"
           style={{
             background: 'linear-gradient(90deg, rgba(213, 181, 235, 1) 0%, rgba(240, 203, 242, 1) 90%)',
-            boxShadow: '0 15px 30px rgba(150, 52, 247, 0.12)',
+            boxShadow: '0 15px 30px rgba(207, 220, 1, 0.12)',
           }}
         >
           {/* Decorative Patterns */}
@@ -193,7 +193,7 @@ const Profile = () => {
                   style={{
                     background: 'rgba(255, 255, 255, 0.6)',
                     backdropFilter: 'blur(10px)',
-                    boxShadow: '0 8px 16px rgba(150, 52, 247, 0.15), inset 0 2px 6px rgba(255, 255, 255, 0.8)',
+                    boxShadow: '0 8px 16px rgba(207, 220, 1, 0.15), inset 0 2px 6px rgba(255, 255, 255, 0.8)',
                     border: '3px solid white',
                     width: '70px',
                     height: '70px',

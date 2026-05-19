@@ -278,13 +278,13 @@ const WorkerSignup = () => {
     }
   };
 
-  const brandColor = themeColors.brand?.teal || '#347989';
+  const brandColor = themeColors.brand?.teal || '#cfdc01';
 
   return (
     <div className="min-h-[100dvh] bg-gray-50 flex flex-col justify-start sm:justify-center py-12 sm:px-6 lg:px-8 relative overflow-x-hidden">
       {/* Decorative Background Elements */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#347989] opacity-[0.03] rounded-full blur-3xl animate-floating" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#D68F35] opacity-[0.03] rounded-full blur-3xl animate-floating" style={{ animationDelay: '2s' }} />
+      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#cfdc01] opacity-[0.03] rounded-full blur-3xl animate-floating" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#a2ad02] opacity-[0.03] rounded-full blur-3xl animate-floating" style={{ animationDelay: '2s' }} />
 
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center mb-8 relative z-10 animate-fade-in">
         <Logo className="h-16 w-auto mx-auto transform hover:scale-110 transition-transform duration-500" />
@@ -298,14 +298,14 @@ const WorkerSignup = () => {
 
       <div className="sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0 relative z-10">
         <div className="bg-white py-8 px-4 shadow-2xl shadow-gray-200/50 sm:rounded-2xl sm:px-10 border border-gray-100 relative overflow-hidden animate-slide-in-bottom">
-          <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#347989] via-[#D68F35] to-[#BB5F36]" />
+          <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#cfdc01] via-[#a2ad02] to-[#b6c200]" />
 
           {step === 'details' ? (
             <form onSubmit={handleDetailsSubmit} className="space-y-6">
               <div className="animate-stagger-1 animate-fade-in">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
                 <div className="relative rounded-xl shadow-sm group">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none group-focus-within:text-[#347989] transition-colors">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none group-focus-within:text-[#cfdc01] transition-colors">
                     <FiUser className="text-gray-400" />
                   </div>
                   <input
@@ -325,7 +325,7 @@ const WorkerSignup = () => {
               <div className="animate-stagger-2 animate-fade-in">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                 <div className="relative rounded-xl shadow-sm group">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none group-focus-within:text-[#347989] transition-colors">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none group-focus-within:text-[#cfdc01] transition-colors">
                     <FiMail className="text-gray-400" />
                   </div>
                   <input
@@ -345,7 +345,7 @@ const WorkerSignup = () => {
                 <div className="animate-stagger-3 animate-fade-in">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
                   <div className="relative rounded-xl shadow-sm group">
-                    <div className="absolute inset-y-0 left-0 pl-3 border-r pr-2 flex items-center pointer-events-none group-focus-within:text-[#347989] transition-colors">
+                    <div className="absolute inset-y-0 left-0 pl-3 border-r pr-2 flex items-center pointer-events-none group-focus-within:text-[#cfdc01] transition-colors">
                       <span className="text-gray-500 font-bold text-sm">+91</span>
                     </div>
                     <input
@@ -364,7 +364,7 @@ const WorkerSignup = () => {
               <div className="animate-stagger-4 animate-fade-in">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Aadhar Number</label>
                 <div className="relative rounded-xl shadow-sm group">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none group-focus-within:text-[#347989] transition-colors">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none group-focus-within:text-[#cfdc01] transition-colors">
                     <FiFileText className="text-gray-400" />
                   </div>
                   <input
@@ -393,7 +393,7 @@ const WorkerSignup = () => {
                     </div>
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-200 rounded-xl hover:bg-gray-50 transition-all duration-300 hover:border-[#347989] group bg-white">
+                  <div className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-200 rounded-xl hover:bg-gray-50 transition-all duration-300 hover:border-[#cfdc01] group bg-white">
                     <label className="flex flex-col items-center cursor-pointer w-full h-full justify-center">
                       <div className="p-3 bg-blue-50 text-blue-600 rounded-full mb-2 hover:bg-blue-100 transition-colors">
                         <FiUpload className="w-6 h-6" />
@@ -418,7 +418,7 @@ const WorkerSignup = () => {
                     </div>
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-200 rounded-xl hover:bg-gray-50 transition-all duration-300 hover:border-[#347989] group bg-white">
+                  <div className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-200 rounded-xl hover:bg-gray-50 transition-all duration-300 hover:border-[#cfdc01] group bg-white">
                     <label className="flex flex-col items-center cursor-pointer w-full h-full justify-center">
                       <div className="p-3 bg-blue-50 text-blue-600 rounded-full mb-2 hover:bg-blue-100 transition-colors">
                         <FiUpload className="w-6 h-6" />
@@ -451,7 +451,7 @@ const WorkerSignup = () => {
             <div className="space-y-6">
               <button
                 onClick={() => setStep('details')}
-                className="flex items-center text-sm text-gray-500 hover:text-[#347989] transition-colors mb-4 animate-fade-in"
+                className="flex items-center text-sm text-gray-500 hover:text-[#cfdc01] transition-colors mb-4 animate-fade-in"
               >
                 <FiChevronLeft className="mr-1" /> Edit details
               </button>
@@ -523,7 +523,7 @@ const WorkerSignup = () => {
 
         <p className="mt-8 text-center text-sm text-gray-500 animate-fade-in animate-stagger-4">
           Already an Xpert?{' '}
-          <Link to="/worker/login" className="font-semibold hover:text-[#D68F35] transition-colors" style={{ color: brandColor }}>
+          <Link to="/worker/login" className="font-semibold hover:text-[#a2ad02] transition-colors" style={{ color: brandColor }}>
             Sign In
           </Link>
         </p>

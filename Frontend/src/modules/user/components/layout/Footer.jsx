@@ -88,7 +88,7 @@ const Footer = () => {
                 <a
                   key={i}
                   href="#"
-                  className="w-10 h-10 rounded-full bg-white border border-gray-100 flex items-center justify-center text-gray-400 hover:text-[#347989] hover:border-[#347989] hover:shadow-lg transition-all duration-300"
+                  className="w-10 h-10 rounded-full bg-white border border-gray-100 flex items-center justify-center text-gray-400 hover:text-[#cfdc01] hover:border-[#cfdc01] hover:shadow-lg transition-all duration-300"
                 >
                   <Icon className="w-5 h-5" />
                 </a>
@@ -106,7 +106,7 @@ const Footer = () => {
                     {link.path.startsWith('http') || link.path.startsWith('mailto') || link.path.startsWith('tel') ? (
                       <a
                         href={link.path}
-                        className="text-gray-500 hover:text-[#347989] text-sm flex items-center gap-2 transition-colors duration-200"
+                        className="text-gray-500 hover:text-[#cfdc01] text-sm flex items-center gap-2 transition-colors duration-200"
                       >
                         {link.icon && <link.icon className="w-4 h-4" />}
                         {link.label}
@@ -114,7 +114,7 @@ const Footer = () => {
                     ) : (
                       <Link
                         to={link.path}
-                        className="text-gray-500 hover:text-[#347989] text-sm flex items-center gap-2 transition-colors duration-200"
+                        className="text-gray-500 hover:text-[#cfdc01] text-sm flex items-center gap-2 transition-colors duration-200"
                       >
                         {link.icon && <link.icon className="w-4 h-4" />}
                         {link.label}

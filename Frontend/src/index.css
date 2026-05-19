@@ -1,9 +1,9 @@
 @import "tailwindcss";
 
 @theme {
-  --color-brand: #347989;
-  --color-brand-light: #f0fbfc;
-  --color-brand-dark: #2d6977;
+  --color-brand: #cfdc01;
+  --color-brand-light: #fbfde8;
+  --color-brand-dark: #b6c200;
 }
 
 /* Slide up animation for modal */
@@ -230,7 +230,7 @@ body {
   margin: 0;
   padding: 0;
   background-color: #ffffff !important;
-  background: linear-gradient(to bottom, rgba(52, 121, 137, 0.03) 0%, rgba(187, 95, 54, 0.02) 10%, #ffffff 20%) !important;
+  background: linear-gradient(to bottom, rgba(207, 220, 1, 0.03) 0%, rgba(207, 220, 1, 0.02) 10%, #ffffff 20%) !important;
   background-attachment: fixed;
 }
 
@@ -290,27 +290,27 @@ html {
 
 /* Custom brand color - Homestr Update */
 .bg-brand {
-  background-color: #347989;
+  background-color: #cfdc01;
 }
 
 .bg-brand-hover:hover {
-  background-color: #2d6977;
+  background-color: #b6c200;
 }
 
 .text-brand {
-  color: #347989;
+  color: #a2ad02;
 }
 
 .border-brand {
-  border-color: #347989;
+  border-color: #cfdc01;
 }
 
 .bg-brand-light {
-  background-color: rgba(52, 121, 137, 0.1);
+  background-color: rgba(207, 220, 1, 0.1);
 }
 
 .hover\:bg-brand-light:hover {
-  background-color: rgba(52, 121, 137, 0.15);
+  background-color: rgba(207, 220, 1, 0.15);
 }
 
 /* Admin Panel Styles */

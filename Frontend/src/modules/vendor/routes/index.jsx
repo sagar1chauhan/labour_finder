@@ -25,7 +25,7 @@ const lazyLoad = (importFunc) => {
               <button
                 onClick={() => window.location.reload()}
                 className="px-6 py-3 rounded-xl text-white font-semibold transition-all duration-300 hover:opacity-90"
-                style={{ backgroundColor: '#347989' }}
+                style={{ backgroundColor: '#cfdc01' }}
               >
                 Refresh Page
               </button>

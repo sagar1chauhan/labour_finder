@@ -24,7 +24,7 @@ const AboutHomestr = () => {
   }, []);
 
   // Gradient Definition for re-use in inline styles
-  const homestrGradient = 'linear-gradient(135deg, #347989 0%, #BB5F36 100%)';
+  const homestrGradient = 'linear-gradient(135deg, #cfdc01 0%, #b6c200 100%)';
   const homestrTextGradient = {
     background: homestrGradient,
     WebkitBackgroundClip: 'text',
@@ -65,9 +65,9 @@ const AboutHomestr = () => {
       {/* SVG Gradient Definition */}
       <svg width="0" height="0" className="absolute">
         <linearGradient id="homestr-about-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#347989" />
-          <stop offset="50%" stopColor="#D68F35" />
-          <stop offset="100%" stopColor="#BB5F36" />
+          <stop offset="0%" stopColor="#cfdc01" />
+          <stop offset="50%" stopColor="#a2ad02" />
+          <stop offset="100%" stopColor="#b6c200" />
         </linearGradient>
       </svg>
 
@@ -92,7 +92,7 @@ const AboutHomestr = () => {
             <div
               className="absolute inset-[-3px] rounded-full opacity-70"
               style={{
-                background: 'conic-gradient(from 0deg, #347989, #D68F35, #BB5F36, #347989)',
+                background: 'conic-gradient(from 0deg, #cfdc01, #a2ad02, #b6c200, #cfdc01)',
                 animation: 'spin 4s linear infinite',
               }}
             />
@@ -114,7 +114,7 @@ const AboutHomestr = () => {
         <div className="animate-item flex justify-between bg-white rounded-2xl p-6 shadow-sm border border-gray-100 divide-x divide-gray-100">
           {stats.map((stat, idx) => (
             <div key={idx} className="flex-1 text-center px-2">
-              <div className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#347989] to-[#BB5F36]">
+              <div className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#cfdc01] to-[#b6c200]">
                 {stat.number}
               </div>
               <div className="text-[10px] uppercase tracking-wider text-gray-400 font-medium mt-1">
@@ -126,7 +126,7 @@ const AboutHomestr = () => {
 
         {/* Mission Statement */}
         <div className="animate-item">
-          <div className="bg-gradient-to-br from-[#347989]/5 to-[#BB5F36]/5 rounded-2xl p-6 border border-[#347989]/10 relative overflow-hidden">
+          <div className="bg-gradient-to-br from-[#cfdc01]/5 to-[#b6c200]/5 rounded-2xl p-6 border border-[#cfdc01]/10 relative overflow-hidden">
             <div className="absolute top-0 right-0 p-4 opacity-5">
               <FiGlobe className="w-24 h-24" />
             </div>
@@ -168,7 +168,7 @@ const AboutHomestr = () => {
             ].map((step, i) => (
               <div key={i} className="flex items-center p-4 border-b last:border-0 border-gray-50 relative">
                 <div className="w-12 h-12 rounded-full flex items-center justify-center shrink-0 mr-4 shadow-sm text-white font-bold text-lg relative overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-br from-[#347989] to-[#BB5F36]" />
+                  <div className="absolute inset-0 bg-gradient-to-br from-[#cfdc01] to-[#b6c200]" />
                   <span className="relative z-10">{i + 1}</span>
                 </div>
                 <div>

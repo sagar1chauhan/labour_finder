@@ -63,10 +63,10 @@ const Header = ({ location, onLocationClick }) => {
 
             {/* Desktop Navigation - Hidden on Mobile */}
             <nav className="hidden lg:flex items-center gap-8 ml-10">
-              <Link to="/user" className="text-gray-700 font-semibold hover:text-[#347989] transition-colors">Home</Link>
-              <Link to="/user/my-bookings" className="text-gray-700 font-semibold hover:text-[#347989] transition-colors">Bookings</Link>
-              <Link to="/user/cart" className="text-gray-700 font-semibold hover:text-[#347989] transition-colors">Cart</Link>
-              <Link to="/user/account" className="text-gray-700 font-semibold hover:text-[#347989] transition-colors">Account</Link>
+              <Link to="/user" className="text-gray-700 font-semibold hover:text-[#cfdc01] transition-colors">Home</Link>
+              <Link to="/user/my-bookings" className="text-gray-700 font-semibold hover:text-[#cfdc01] transition-colors">Bookings</Link>
+              <Link to="/user/cart" className="text-gray-700 font-semibold hover:text-[#cfdc01] transition-colors">Cart</Link>
+              <Link to="/user/account" className="text-gray-700 font-semibold hover:text-[#cfdc01] transition-colors">Account</Link>
             </nav>
 
             {/* Right: City & Location */}

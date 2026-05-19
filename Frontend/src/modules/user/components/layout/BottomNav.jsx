@@ -7,9 +7,7 @@ import { useCart } from '../../../../context/CartContext';
 const BottomNav = React.memo(() => {
   const navigate = useNavigate();
   const location = useLocation();
-  const navRef = useRef(null);
   const { cartCount } = useCart();
-  const [indicatorStyle, setIndicatorStyle] = useState({ left: 0 });
   const [isVisible, setIsVisible] = useState(true);
 
   useEffect(() => {
@@ -37,46 +35,19 @@ const BottomNav = React.memo(() => {
   };
 
   const activeTab = getActiveTab();
-  const activeIndex = navItems.findIndex(item => item.id === activeTab);
-
-  useEffect(() => {
-    if (navRef.current) {
-      const buttons = navRef.current.querySelectorAll('button');
-      if (buttons[activeIndex]) {
-        const button = buttons[activeIndex];
-        const navRect = navRef.current.getBoundingClientRect();
-        const buttonRect = button.getBoundingClientRect();
-
-        setIndicatorStyle({
-          left: (buttonRect.left - navRect.left) + (buttonRect.width / 2) - 22,
-        });
-      }
-    }
-  }, [activeIndex]);
 
   return (
     <AnimatePresence>
       {isVisible && (
         <motion.div 
-          initial={{ y: 100, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: 100, opacity: 0 }}
-          className="fixed bottom-6 left-0 right-0 z-50 flex justify-center px-6 pointer-events-none"
+          initial={{ y: 100 }}
+          animate={{ y: 0 }}
+          exit={{ y: 100 }}
+          transition={{ type: 'spring', damping: 25, stiffness: 250 }}
+          className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-100 shadow-[0_-4px_16px_rgba(0,0,0,0.04)] px-4 pb-safe pointer-events-auto"
         >
-          <nav 
-            ref={navRef}
-            className="w-full max-w-sm h-[64px] bg-[#111111]/95 backdrop-blur-2xl rounded-full shadow-[0_20px_50px_rgba(0,0,0,0.3)] border border-white/5 flex items-center justify-between px-3 pointer-events-auto relative"
-          >
-            {/* Active Circle Indicator */}
-            <motion.div
-              className="absolute w-[44px] h-[44px] bg-white rounded-full z-0 shadow-lg"
-              animate={{
-                left: indicatorStyle.left,
-              }}
-              transition={{ type: "spring", stiffness: 400, damping: 35 }}
-            />
-
-            {navItems.map((item, idx) => {
+          <nav className="w-full max-w-md mx-auto h-[64px] flex items-center justify-between">
+            {navItems.map((item) => {
               const isActive = activeTab === item.id;
               const Icon = item.icon;
               
@@ -84,19 +55,26 @@ const BottomNav = React.memo(() => {
                 <button
                   key={item.id}
                   onClick={() => navigate(item.path)}
-                  className="relative z-10 flex items-center justify-center w-[52px] h-full group outline-none"
+                  className="flex-1 flex flex-col items-center justify-center h-full gap-1 outline-none relative active:scale-95 transition-transform"
                 >
-                  <div className="relative">
+                  <div className="relative flex items-center justify-center">
                     <Icon 
-                      className={`w-5 h-5 transition-all duration-300 ${isActive ? 'text-[#0D9488] scale-110' : 'text-gray-500 group-hover:text-gray-300'}`} 
+                      className={`w-[22px] h-[22px] transition-colors duration-200 ${
+                        isActive ? 'text-[#a2ad02]' : 'text-gray-400 group-hover:text-gray-600'
+                      }`} 
                     />
                     
                     {item.isCart && cartCount > 0 && (
-                      <span className={`absolute -top-2 -right-2 bg-orange-500 text-white text-[8px] font-black w-4 h-4 rounded-full flex items-center justify-center border-2 ${isActive ? 'border-white' : 'border-[#111111]'} transition-colors`}>
+                      <span className="absolute -top-1.5 -right-2.5 bg-red-500 text-white text-[8px] font-black w-4.5 h-4.5 rounded-full flex items-center justify-center border border-white">
                         {cartCount > 9 ? '9+' : cartCount}
                       </span>
                     )}
                   </div>
+                  <span className={`text-[10px] font-bold tracking-tight transition-colors duration-200 ${
+                    isActive ? 'text-[#a2ad02]' : 'text-gray-400'
+                  }`}>
+                    {item.label}
+                  </span>
                 </button>
               );
             })}
