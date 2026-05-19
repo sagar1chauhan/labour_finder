@@ -44,12 +44,12 @@ const NotificationBell = ({ notificationCount = 0 }) => {
       ref={bellButtonRef}
       className="relative rounded-full cursor-pointer group active:scale-95 transition-transform duration-300 z-50 shrink-0"
       style={{
-        width: '42px',
-        height: '42px',
+        width: '36px',
+        height: '36px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        margin: '2px'
+        margin: '1px'
       }}
       onClick={(e) => {
         e.stopPropagation();
@@ -122,7 +122,7 @@ const NotificationBell = ({ notificationCount = 0 }) => {
 
         <FiBell
           ref={bellRef}
-          className="w-5 h-5 transition-all duration-300"
+          className="w-4 h-4 transition-all duration-300"
           style={{
             stroke: count > 0 ? '#EF4444' : 'url(#homestr-bell-gradient)',
             strokeWidth: '2.5',
@@ -137,10 +137,10 @@ const NotificationBell = ({ notificationCount = 0 }) => {
       {/* 4. Active Badge (Moved outside for robustness and to prevent clipping) */}
       {count > 0 && (
         <span
-          className="absolute -top-1.5 -right-1.5 bg-gradient-to-br from-red-500 to-red-600 text-white text-[10px] font-black rounded-full flex items-center justify-center z-20"
+          className="absolute -top-1 -right-1 bg-gradient-to-br from-red-500 to-red-600 text-white text-[8px] font-black rounded-full flex items-center justify-center z-20"
           style={{
-            minWidth: '20px',
-            height: '20px',
+            minWidth: '17px',
+            height: '17px',
             boxShadow: '0 3px 8px rgba(239, 68, 68, 0.5), 0 0 0 2px #fff',
             border: '2px solid #fff'
           }}

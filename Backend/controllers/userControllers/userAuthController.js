@@ -161,7 +161,7 @@ const register = async (req, res) => {
       });
     }
 
-    const { name, email, verificationToken } = req.body;
+    const { name, email, verificationToken, usageRole } = req.body;
     let phone = req.body.phone;
 
     // Verify token if provided (New Flow)
@@ -200,7 +200,8 @@ const register = async (req, res) => {
       email: email || null,
       phone,
       isPhoneVerified: true,
-      isEmailVerified: email ? false : true
+      isEmailVerified: email ? false : true,
+      usageRole: usageRole || null
     });
 
     // Send Welcome Email
@@ -227,7 +228,8 @@ const register = async (req, res) => {
         email: user.email,
         phone: user.phone,
         isPhoneVerified: user.isPhoneVerified,
-        isEmailVerified: user.isEmailVerified
+        isEmailVerified: user.isEmailVerified,
+        usageRole: user.usageRole
       },
       ...tokens
     });

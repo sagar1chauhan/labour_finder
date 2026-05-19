@@ -1,30 +1,69 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { FiPhone, FiArrowRight, FiCheckCircle, FiChevronLeft } from 'react-icons/fi';
+import { 
+  FiPhone, 
+  FiArrowRight, 
+  FiArrowLeft, 
+  FiEdit3, 
+  FiRotateCw, 
+  FiShield,
+  FiHome,
+  FiCompass,
+  FiBriefcase,
+  FiTool,
+  FiDroplet,
+  FiZap,
+  FiGrid
+} from 'react-icons/fi';
+import { FcGoogle } from 'react-icons/fc';
+import { FaFacebook } from 'react-icons/fa';
 import { toast } from 'react-hot-toast';
-import { themeColors } from '../../../theme';
 import { userAuthService } from '../../../services/authService';
-import Logo from '../../../components/common/Logo';
-import LogoLoader from '../../../components/common/LogoLoader';
-
-
-import { z } from "zod";
-
-// Zod schema
-const phoneSchema = z.object({
-  phone: z.string().regex(/^[6-9]\d{9}$/, "Please enter a valid 10-digit Indian phone number"),
-});
+import { motion, AnimatePresence } from 'framer-motion';
 
 const Login = () => {
   const navigate = useNavigate();
-  const [step, setStep] = useState('phone'); // 'phone' or 'otp'
-  const [phoneNumber, setPhoneNumber] = useState('');
+  const [step, setStep] = useState('phone'); // 'phone' | 'otp' | 'name' | 'usage'
+  const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
-  const [otpToken, setOtpToken] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [resendTimer, setResendTimer] = useState(0);
 
-  // Timer countdown effect
+  // New user onboarding states
+  const [fullName, setFullName] = useState('');
+  const [selectedRole, setSelectedRole] = useState('');
+  const [verificationToken, setVerificationToken] = useState('');
+
+  const phoneInputRef = useRef(null);
+  const nameInputRef = useRef(null);
+  const otpInputRefs = useRef([]);
+
+  // Usage selection options with description and icons
+  const usageOptions = [
+    { id: 'Home Owner', label: 'Home Owner', desc: 'Hire professionals & book services', icon: FiHome },
+    { id: 'Architect', label: 'Architect', desc: 'Designing, mapping & planning structures', icon: FiCompass },
+    { id: 'Contractor', label: 'Contractor', desc: 'Building, civil & construction works', icon: FiBriefcase },
+    { id: 'Carpenter', label: 'Carpenter', desc: 'Furniture, kitchen & woodwork jobs', icon: FiTool },
+    { id: 'Plumber', label: 'Plumber', desc: 'Pipes, leaks, fittings & bathrooms', icon: FiDroplet },
+    { id: 'Electrician', label: 'Electrician', desc: 'Wiring, switches & lightning panels', icon: FiZap },
+    { id: 'Flooring', label: 'Flooring', desc: 'Tiles, marble & adhesive specialist', icon: FiGrid }
+  ];
+
+  // Auto focus phone input on mount
+  useEffect(() => {
+    if (step === 'phone' && phoneInputRef.current) {
+      setTimeout(() => phoneInputRef.current.focus(), 150);
+    }
+  }, [step]);
+
+  // Auto focus name input when entering the name step
+  useEffect(() => {
+    if (step === 'name' && nameInputRef.current) {
+      setTimeout(() => nameInputRef.current.focus(), 150);
+    }
+  }, [step]);
+
+  // Countdown timer for Resend OTP
   useEffect(() => {
     let interval;
     if (resendTimer > 0) {
@@ -35,84 +74,115 @@ const Login = () => {
     return () => clearInterval(interval);
   }, [resendTimer]);
 
-  // Refs for focus management
-  const phoneInputRef = useRef(null);
-  const otpInputRefs = useRef([]);
-
-  // Auto-focus logic
+  // Auto trigger verify when full 6-digit OTP is entered
   useEffect(() => {
-    // Redirect if already logged in
-    if (localStorage.getItem('accessToken')) {
-      navigate('/user', { replace: true });
+    const otpValue = otp.join('');
+    if (otpValue.length === 6 && !loading && step === 'otp') {
+      handleVerifyOtp();
+    }
+  }, [otp]);
+
+  const handleSendOtp = async (e) => {
+    if (e) e.preventDefault();
+    
+    if (phone.length < 10) {
+      toast.error('Enter a valid 10-digit mobile number');
       return;
     }
-
-    if (step === 'phone' && phoneInputRef.current) {
-      setTimeout(() => phoneInputRef.current.focus(), 100);
-    } else if (step === 'otp' && otpInputRefs.current[0]) {
-      setTimeout(() => otpInputRefs.current[0].focus(), 100);
-    }
-  }, [step, navigate]);
-
-  const handlePhoneSubmit = async (e) => {
-    e.preventDefault();
-
-    // Zod Validation
-    const validationResult = phoneSchema.safeParse({ phone: phoneNumber });
-    if (!validationResult.success) {
-      toast.error(validationResult.error.errors[0].message);
-      return;
-    }
-
-    setIsLoading(true);
+    setLoading(true);
     try {
-      // Clean phone number
-      const cleanPhone = phoneNumber.replace(/\D/g, '');
-      const response = await userAuthService.sendOTP(cleanPhone);
-
-      if (response.success) {
-        setOtpToken(response.token);
-        setIsLoading(false);
+      const res = await userAuthService.sendOTP(phone);
+      if (res.success) {
         setStep('otp');
-        setResendTimer(120); // Start 2 min timer
-        toast.success(
-          <div className="flex items-center gap-2">
-            <FiCheckCircle className="text-green-500" />
-            <span>OTP sent successfully!</span>
-          </div>
-        );
+        setResendTimer(60);
+        toast.success('OTP sent successfully');
+        setOtp(['', '', '', '', '', '']);
+        setTimeout(() => {
+          otpInputRefs.current[0]?.focus();
+        }, 150);
       } else {
-        setIsLoading(false);
-        toast.error(response.message || 'Failed to send OTP');
+        toast.error(res.message || 'Failed to send OTP');
       }
-    } catch (error) {
-      setIsLoading(false);
-      toast.error(error.response?.data?.message || 'Failed to send OTP. Please try again.');
+    } catch (err) {
+      toast.error('Network error. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleOtpChange = (index, value) => {
-    // Allow only numbers
-    if (value && !/^\d+$/.test(value)) return;
-
-    if (value.length > 1) {
-      // Handle paste of full OTP
-      if (index === 0 && value.length === 6) {
-        const chars = value.split('');
-        setOtp(chars);
-        // Focus the last input or verify button
-        otpInputRefs.current[5]?.focus();
-        return;
-      }
+  const handleVerifyOtp = async (e) => {
+    if (e) e.preventDefault();
+    const otpValue = otp.join('');
+    if (otpValue.length < 6) {
+      toast.error('Enter full 6-digit OTP');
       return;
     }
+    setLoading(true);
+    try {
+      const res = await userAuthService.verifyLogin({ phone, otp: otpValue });
+      if (res.success) {
+        if (res.isNewUser) {
+          // Store token and move to Name entry step
+          setVerificationToken(res.verificationToken);
+          setStep('name');
+          toast.success('Number verified! Let\'s set up your profile.');
+        } else {
+          toast.success('Login successful!');
+          navigate('/user');
+        }
+      } else {
+        toast.error(res.message || 'Invalid OTP');
+      }
+    } catch (err) {
+      toast.error('Verification failed');
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  const handleNameSubmit = (e) => {
+    if (e) e.preventDefault();
+    if (!fullName.trim()) {
+      toast.error('Please enter your full name');
+      return;
+    }
+    setStep('usage');
+  };
+
+  const handleRegisterSubmit = async (e) => {
+    if (e) e.preventDefault();
+    if (!selectedRole) {
+      toast.error('Please choose how you will use Civil Connect');
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await userAuthService.register({
+        name: fullName.trim(),
+        verificationToken,
+        usageRole: selectedRole
+      });
+      if (res.success) {
+        toast.success('Welcome to Civil Connect!');
+        navigate('/user');
+      } else {
+        toast.error(res.message || 'Registration failed');
+      }
+    } catch (err) {
+      toast.error('Failed to complete onboarding');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOtpChange = (value, index) => {
+    const cleanValue = value.replace(/\D/g, '').slice(0, 1);
     const newOtp = [...otp];
-    newOtp[index] = value;
+    newOtp[index] = cleanValue;
     setOtp(newOtp);
-
-    // Auto focus next input
-    if (value && index < 5) {
+    
+    // Auto focus next field
+    if (cleanValue && index < 5) {
       otpInputRefs.current[index + 1]?.focus();
     }
   };
@@ -123,240 +193,323 @@ const Login = () => {
     }
   };
 
-  // Auto-verify as last digit enters
-  useEffect(() => {
-    const otpValue = otp.join('');
-    if (otpValue.length === 6 && !isLoading && otpToken) {
-      handleOtpSubmit();
-    }
-  }, [otp]);
-
-  const handleOtpSubmit = async (e) => {
-    if (e) e.preventDefault();
-    const otpValue = otp.join('');
-    if (otpValue.length !== 6) {
-      toast.error('Please enter complete OTP');
-      return;
-    }
-    if (!otpToken) {
-      toast.error('Please request OTP first');
-      return;
-    }
-    setIsLoading(true);
-    try {
-      const response = await userAuthService.verifyLogin({
-        phone: phoneNumber.replace(/\D/g, ''),
-        otp: otpValue
-      });
-
-      if (response.success) {
-        if (response.isNewUser) {
-          toast.success('Phone verified! Please complete your registration.');
-          navigate('/user/signup', {
-            state: {
-              phone: phoneNumber,
-              verificationToken: response.verificationToken
-            }
-          });
-        } else {
-          toast.success('Welcome back!');
-          navigate('/user', { replace: true });
-        }
-      } else {
-        setIsLoading(false);
-        toast.error(response.message || 'Verification failed');
-      }
-    } catch (error) {
-      setIsLoading(false);
-      toast.error(error.response?.data?.message || 'Verification failed. Please try again.');
-    }
-  };
-
-  // Brand Colors from theme
-  const brandColor = themeColors.brand?.teal || '#347989';
+  const isPhoneValid = phone.length === 10;
+  const isNameValid = fullName.trim().length > 0;
 
   return (
-    <div className="min-h-[100dvh] bg-gray-50 flex flex-col justify-start sm:justify-center py-12 sm:px-6 lg:px-8 relative overflow-x-hidden">
-      {/* Decorative Background Elements */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#347989] opacity-[0.03] rounded-full blur-3xl animate-floating" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#D68F35] opacity-[0.03] rounded-full blur-3xl animate-floating" style={{ animationDelay: '2s' }} />
-
-      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center mb-8 relative z-10 animate-fade-in">
-        <div className="flex justify-center mb-6">
-          <Logo className="h-24 w-auto mx-auto transform hover:scale-110 transition-transform duration-500" />
-        </div>
-        <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">
-          {step === 'phone' ? 'Sign in to account' : 'Verify your phone'}
-        </h2>
-        <p className="mt-2 text-sm text-gray-600 animate-stagger-1 animate-fade-in">
-          {step === 'phone'
-            ? 'Enter your mobile number to get started'
-            : `We've sent a code to +91 ${phoneNumber}`
-          }
-        </p>
+    <div className="min-h-screen bg-white flex flex-col justify-between px-6 pt-4 pb-8 relative overflow-hidden font-['Inter',sans-serif]">
+      {/* Top Header Section */}
+      <div className="flex items-center justify-start w-full h-12 relative z-20">
+        {step !== 'phone' && (
+          <button 
+            onClick={() => {
+              if (step === 'otp') setStep('phone');
+              else if (step === 'name') setStep('otp');
+              else if (step === 'usage') setStep('name');
+            }}
+            className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-700 hover:bg-gray-100 transition-colors active:scale-90 shadow-sm"
+          >
+            <FiArrowLeft className="w-5 h-5" />
+          </button>
+        )}
       </div>
 
-      <div className="sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0 relative z-10">
-        <div className="bg-white py-8 px-4 shadow-2xl shadow-gray-200/50 sm:rounded-2xl sm:px-10 border border-gray-100 relative overflow-hidden animate-slide-in-bottom">
-          <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#347989] via-[#D68F35] to-[#BB5F36]" />
+      {/* Main Form content wrapper centered */}
+      <div className="flex-1 flex flex-col justify-center max-w-md w-full mx-auto relative z-10 my-4">
+        
+        {/* Branding Logo - Displayed only for phone and OTP steps */}
+        {(step === 'phone' || step === 'otp') && (
+          <div className="flex flex-col items-center mb-8">
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.5, ease: 'easeOut' }}
+              className="flex items-center gap-1.5 select-none"
+            >
+              <span className="text-[#1F2937] font-black text-5xl tracking-tighter font-['Outfit',sans-serif] lowercase flex items-center">
+                civil<span className="text-[#0D9488]">connect</span>
+              </span>
+            </motion.div>
+            <p className="text-gray-400 text-sm font-semibold tracking-wide mt-4 uppercase">
+              Sign up or Log in
+            </p>
+          </div>
+        )}
 
+        {/* Dynamic step container */}
+        <AnimatePresence mode="wait">
           {step === 'phone' ? (
-            <form className="space-y-6" onSubmit={handlePhoneSubmit}>
-              <div className="animate-stagger-1 animate-fade-in">
-                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
-                  Mobile Number
-                </label>
-                <div className="relative rounded-xl shadow-sm group">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none group-focus-within:text-[#347989] transition-colors">
-                    <FiPhone className="h-5 w-5 text-gray-400" />
+            <motion.div
+              key="phone-step"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -15 }}
+              transition={{ duration: 0.3 }}
+              className="w-full space-y-6"
+            >
+              <form onSubmit={handleSendOtp} className="space-y-5">
+                <div className="space-y-2">
+                  <div className="flex items-center border border-gray-200/90 focus-within:border-[#0D9488] focus-within:ring-2 focus-within:ring-[#0D9488]/10 rounded-2xl p-1 bg-white transition-all shadow-sm">
+                    <div className="flex items-center px-4">
+                      <span className="text-gray-900 font-extrabold text-base tracking-wide">+91</span>
+                    </div>
+                    <div className="h-6 w-px bg-gray-200"></div>
+                    <input 
+                      ref={phoneInputRef}
+                      type="tel"
+                      required
+                      maxLength="10"
+                      placeholder="635584264"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
+                      className="w-full px-4 py-4 border-none outline-none focus:ring-0 text-base font-extrabold text-gray-900 placeholder:text-gray-300 tracking-wider"
+                    />
                   </div>
-                  <div className="absolute inset-y-0 left-10 flex items-center pointer-events-none">
-                    <span className="text-gray-500 font-medium border-r pr-2 border-gray-300 sm:text-sm">+91</span>
-                  </div>
-                  <input
-                    ref={phoneInputRef}
-                    type="tel"
-                    inputMode="numeric"
-                    autoComplete="tel"
-                    id="phone"
-                    className="block w-full pl-24 pr-4 py-3.5 border-gray-300 rounded-xl focus:ring-[#347989] focus:border-[#347989] sm:text-sm transition-all duration-300 ease-in-out hover:border-gray-400"
-                    placeholder="98765 43210"
-                    value={phoneNumber}
-                    onChange={(e) => {
-                      const val = e.target.value.replace(/\D/g, '');
-                      if (val.length <= 10) setPhoneNumber(val);
-                    }}
-                    style={{ '--tw-ring-color': brandColor }}
-                  />
+                  <p className="text-[11px] text-gray-400 font-medium ml-2">We'll send a 6-digit OTP for secure authentication.</p>
                 </div>
-              </div>
 
-              <div className="animate-stagger-2 animate-fade-in">
-                <button
+                <button 
                   type="submit"
-                  disabled={isLoading || phoneNumber.length < 10}
-                  className="group relative w-full flex justify-center py-3.5 px-4 border border-transparent rounded-xl text-sm font-bold text-white transition-all duration-500 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#347989] disabled:opacity-50 disabled:cursor-not-allowed hover:-translate-y-1 transform shadow-lg shadow-[#347989]/30 hover:shadow-[#347989]/40 overflow-hidden"
-                  style={{ backgroundColor: brandColor }}
+                  disabled={loading}
+                  className={`w-full h-14 rounded-2xl font-black text-base transition-all duration-300 shadow-md flex items-center justify-center gap-2 ${
+                    isPhoneValid 
+                      ? 'bg-[#0D9488] text-white hover:bg-[#0b7a70] active:scale-[0.98] shadow-teal-600/10' 
+                      : 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none'
+                  }`}
                 >
-                  <span className="absolute inset-0 w-full h-full bg-white/10 group-hover:translate-x-full transition-transform duration-700 -translate-x-full" />
-                  {isLoading ? (
-                    <LogoLoader fullScreen={false} inline={true} size="w-6 h-6" />
-                  ) : (
-                    <span className="flex items-center gap-2 relative z-10">
-                      Get OTP <FiArrowRight className="group-hover:translate-x-1 transition-transform" />
-                    </span>
-                  )}
+                  {loading ? 'Processing...' : 'Continue'}
+                  {!loading && <FiArrowRight className="w-5 h-5" />}
                 </button>
-              </div>
+              </form>
 
-              <div className="mt-6 animate-stagger-3 animate-fade-in">
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-gray-200" />
-                  </div>
-                  <div className="relative flex justify-center text-sm">
-                    <span className="px-2 bg-white text-gray-500">New to Civil connect?</span>
-                  </div>
+              {/* Social Login Options */}
+              <div className="space-y-5 pt-4">
+                <div className="relative flex items-center">
+                  <div className="flex-grow border-t border-gray-100"></div>
+                  <span className="flex-shrink mx-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Or login with</span>
+                  <div className="flex-grow border-t border-gray-100"></div>
                 </div>
 
-                <div className="mt-6">
-                  <Link
-                    to="/user/signup"
-                    className="w-full inline-flex justify-center py-3 px-4 rounded-xl shadow-sm bg-white text-sm font-medium text-gray-500 hover:text-[#347989] hover:bg-gray-50 border border-gray-200 transition-all duration-300 hover:border-[#347989]/30"
+                <div className="grid grid-cols-2 gap-4">
+                  <button 
+                    type="button" 
+                    className="h-13 bg-white rounded-2xl flex items-center justify-center gap-2 border border-gray-200 hover:border-gray-300 hover:bg-gray-50 active:scale-95 transition-all shadow-sm"
                   >
-                    Create an account
-                  </Link>
+                    <FcGoogle className="w-5 h-5" />
+                    <span className="text-xs font-black text-gray-800 uppercase tracking-wider">Google</span>
+                  </button>
+                  <button 
+                    type="button" 
+                    className="h-13 bg-[#1877F2] rounded-2xl flex items-center justify-center gap-2 active:scale-95 transition-all hover:opacity-90 shadow-sm"
+                  >
+                    <FaFacebook className="w-5 h-5 text-white" />
+                    <span className="text-xs font-black text-white uppercase tracking-wider">Facebook</span>
+                  </button>
                 </div>
               </div>
-            </form>
-          ) : (
-            <form className="space-y-6" onSubmit={handleOtpSubmit}>
-              <div className="flex justify-center gap-2 sm:gap-3 py-4 animate-stagger-1 animate-fade-in">
-                {otp.map((digit, index) => (
-                  <input
-                    key={index}
-                    ref={(el) => (otpInputRefs.current[index] = el)}
-                    type="text"
-                    inputMode="numeric"
-                    autoComplete="one-time-code"
-                    maxLength={1}
-                    value={digit}
-                    onChange={(e) => handleOtpChange(index, e.target.value)}
-                    onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                    className="w-11 h-12 sm:w-12 sm:h-14 text-center text-xl sm:text-2xl font-bold border-gray-300 rounded-xl focus:ring-[#347989] focus:border-[#347989] transition-all duration-300 shadow-sm border focus:-translate-y-1 hover:border-gray-400"
-                    style={{ caretColor: brandColor }}
-                  />
-                ))}
+            </motion.div>
+          ) : step === 'otp' ? (
+            <motion.div
+              key="otp-step"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -15 }}
+              transition={{ duration: 0.3 }}
+              className="w-full space-y-6"
+            >
+              <div className="text-center space-y-1.5">
+                <h2 className="text-2xl font-black text-gray-900 tracking-tight">Verify Identity</h2>
+                <div className="flex items-center justify-center gap-1.5 text-sm text-gray-500">
+                  <span>Code sent to +91 {phone}</span>
+                  <button 
+                    onClick={() => setStep('phone')}
+                    className="text-[#0D9488] hover:text-[#0b7a70] p-1 rounded-lg hover:bg-teal-50 transition-colors"
+                  >
+                    <FiEdit3 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
 
-              <div className="flex items-center justify-between text-sm animate-stagger-2 animate-fade-in">
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setOtp(['', '', '', '', '', '']);
-                    setOtpToken('');
-                    setStep('phone');
-                    setResendTimer(0);
-                  }}
-                  className="flex items-center font-medium text-gray-600 hover:text-[#347989] transition-colors"
-                >
-                  <FiChevronLeft className="mr-1" /> Change Number
-                </button>
+              <form onSubmit={handleVerifyOtp} className="space-y-6">
+                <div className="flex justify-between gap-2.5 px-1">
+                  {otp.map((digit, i) => (
+                    <input
+                      key={i}
+                      ref={(el) => (otpInputRefs.current[i] = el)}
+                      type="tel"
+                      maxLength="1"
+                      value={digit}
+                      onChange={(e) => handleOtpChange(e.target.value, i)}
+                      onKeyDown={(e) => handleOtpKeyDown(i, e)}
+                      className="w-12 h-14 bg-gray-50 rounded-xl border border-gray-200 focus:border-[#0D9488] focus:bg-white text-center text-xl font-extrabold text-gray-900 transition-all outline-none"
+                    />
+                  ))}
+                </div>
 
-                <button
-                  type="button"
-                  onClick={async () => {
-                    if (isLoading || resendTimer > 0) return;
-                    try {
-                      setIsLoading(true);
-                      const response = await userAuthService.sendOTP(phoneNumber.replace(/\D/g, ''));
-                      if (response.success) {
-                        setOtpToken(response.token);
-                        setResendTimer(120);
-                        toast.success('OTP resent!');
-                      }
-                    } catch (err) {
-                      toast.error('Error sending OTP');
-                    } finally {
-                      setIsLoading(false);
-                    }
-                  }}
-                  disabled={isLoading || resendTimer > 0}
-                  className="font-medium text-[#347989] hover:text-[#D68F35] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {resendTimer > 0
-                    ? `Resend in ${Math.floor(resendTimer / 60)}:${String(resendTimer % 60).padStart(2, '0')}`
-                    : 'Resend OTP'}
-                </button>
-              </div>
-
-              <div className="animate-stagger-3 animate-fade-in">
-                <button
+                <button 
                   type="submit"
-                  disabled={isLoading || otp.join('').length !== 6}
-                  className="group relative w-full flex justify-center py-3.5 px-4 border border-transparent rounded-xl text-sm font-bold text-white transition-all duration-500 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#347989] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-[#347989]/30 hover:shadow-[#347989]/40 hover:-translate-y-1 transform overflow-hidden"
-                  style={{ backgroundColor: brandColor }}
+                  disabled={loading || otp.join('').length < 6}
+                  className={`w-full h-14 rounded-2xl font-black text-base transition-all duration-300 shadow-md flex items-center justify-center gap-2 ${
+                    otp.join('').length === 6
+                      ? 'bg-[#0D9488] text-white hover:bg-[#0b7a70] active:scale-[0.98]'
+                      : 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none'
+                  }`}
                 >
-                  <span className="absolute inset-0 w-full h-full bg-white/10 group-hover:translate-x-full transition-transform duration-700 -translate-x-full" />
-                  {isLoading ? (
-                    <LogoLoader fullScreen={false} inline={true} size="w-6 h-6" />
-                  ) : (
-                    <span className="flex items-center gap-2 relative z-10">
-                      Verify & Continue <FiArrowRight className="group-hover:translate-x-1 transition-transform" />
-                    </span>
-                  )}
+                  {loading ? 'Verifying...' : 'Verify & Continue'}
                 </button>
+              </form>
+
+              <button 
+                type="button" 
+                disabled={resendTimer > 0}
+                onClick={handleSendOtp}
+                className="w-full flex items-center justify-center gap-2 text-xs font-semibold text-gray-400 uppercase tracking-widest group disabled:opacity-80 disabled:cursor-not-allowed"
+              >
+                Don't receive OTP? 
+                <span className="text-[#0D9488] flex items-center gap-1 group-active:rotate-180 transition-transform font-bold">
+                   {resendTimer > 0 
+                     ? `Resend in ${resendTimer}s` 
+                     : <><FiRotateCw className="w-3.5 h-3.5" /> Resend</>}
+                </span>
+              </button>
+            </motion.div>
+          ) : step === 'name' ? (
+            <motion.div
+              key="name-step"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -15 }}
+              transition={{ duration: 0.3 }}
+              className="w-full space-y-6"
+            >
+              <div className="space-y-1">
+                <h2 className="text-3xl font-black text-gray-900 tracking-tight">Create Your Account</h2>
+                <p className="text-xs font-medium text-gray-400">Please provide your details to continue</p>
               </div>
-            </form>
+
+              <form onSubmit={handleNameSubmit} className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block ml-1">
+                    Full Name *
+                  </label>
+                  <div className="flex items-center border border-gray-200/90 focus-within:border-[#0D9488] focus-within:ring-2 focus-within:ring-[#0D9488]/10 rounded-2xl p-1 bg-white transition-all shadow-sm">
+                    <input 
+                      ref={nameInputRef}
+                      type="text"
+                      required
+                      placeholder="Shiv"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      className="w-full px-4 py-4 border-none outline-none focus:ring-0 text-base font-extrabold text-gray-900 placeholder:text-gray-300"
+                    />
+                  </div>
+                </div>
+
+                <button 
+                  type="submit"
+                  disabled={!isNameValid}
+                  className={`w-full h-14 rounded-2xl font-black text-base transition-all duration-300 shadow-md flex items-center justify-center gap-2 ${
+                    isNameValid 
+                      ? 'bg-[#0D9488] text-white hover:bg-[#0b7a70] active:scale-[0.98]' 
+                      : 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none'
+                  }`}
+                >
+                  Continue
+                  <FiArrowRight className="w-5 h-5" />
+                </button>
+
+                <p className="text-[10px] text-gray-400 text-center font-medium leading-relaxed max-w-xs mx-auto">
+                  By continuing, you agree to our <span className="text-[#0D9488] cursor-pointer hover:underline">Terms of Service</span> & <span className="text-[#0D9488] cursor-pointer hover:underline">Privacy Policy</span>.
+                </p>
+              </form>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="usage-step"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -15 }}
+              transition={{ duration: 0.3 }}
+              className="w-full space-y-6"
+            >
+              <div className="space-y-1">
+                <h2 className="text-2xl font-black text-gray-900 tracking-tight">How will you use Civil Connect?</h2>
+                <p className="text-xs font-medium text-gray-400">Choose your primary account type</p>
+              </div>
+
+              <div className="space-y-2 max-h-[350px] overflow-y-auto pr-1 scrollbar-thin">
+                {usageOptions.map((opt) => {
+                  const Icon = opt.icon;
+                  const isSelected = selectedRole === opt.id;
+                  return (
+                    <div
+                      key={opt.id}
+                      onClick={() => setSelectedRole(opt.id)}
+                      className={`flex items-center justify-between p-3.5 rounded-2xl border-2 cursor-pointer transition-all duration-200 ${
+                        isSelected 
+                          ? 'border-[#0D9488] bg-teal-50/20' 
+                          : 'border-gray-100 hover:border-gray-200 bg-white'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${
+                          isSelected ? 'bg-[#0D9488] text-white' : 'bg-gray-50 text-gray-500'
+                        }`}>
+                          <Icon className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-black text-gray-900 tracking-tight">{opt.label}</p>
+                          <p className="text-[9px] font-bold text-gray-400 mt-0.5 uppercase tracking-wide">{opt.desc}</p>
+                        </div>
+                      </div>
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all shrink-0 ${
+                        isSelected ? 'border-[#0D9488] bg-white' : 'border-gray-200 bg-white'
+                      }`}>
+                        {isSelected && (
+                          <div className="w-2.5 h-2.5 rounded-full bg-[#0D9488]" />
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <button
+                onClick={handleRegisterSubmit}
+                disabled={loading || !selectedRole}
+                className={`w-full h-14 rounded-2xl font-black text-base transition-all duration-300 shadow-md flex items-center justify-center gap-2 ${
+                  selectedRole
+                    ? 'bg-[#0D9488] text-white hover:bg-[#0b7a70] active:scale-[0.98]'
+                    : 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none'
+                }`}
+              >
+                {loading ? 'Completing registration...' : 'Continue'}
+              </button>
+            </motion.div>
           )}
+        </AnimatePresence>
+      </div>
+
+      {/* Footer / Onboarding Route Links */}
+      {(step === 'phone' || step === 'otp') && (
+        <div className="w-full text-center space-y-4 pt-4 relative z-10 border-t border-gray-100/60 max-w-md mx-auto">
+          <div className="flex items-center justify-center gap-2 text-xs text-gray-400 font-bold tracking-wide uppercase">
+            <FiShield className="w-4 h-4 text-[#0D9488]" />
+            <span>Secure AES Encrypted Connection</span>
+          </div>
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+            New here? <Link to="/user/signup" className="text-[#0D9488] font-black hover:underline tracking-widest ml-1">Create Account</Link>
+          </p>
         </div>
-      </div>
-
-      <div className="mt-8 text-center text-xs text-gray-400 animate-fade-in animate-stagger-4">
-        &copy; {new Date().getFullYear()} Civil connect. All rights reserved.
-      </div>
-
+      )}
+      {(step === 'name' || step === 'usage') && (
+        <div className="w-full text-center space-y-4 pt-4 relative z-10 border-t border-gray-100/60 max-w-md mx-auto">
+          <div className="flex items-center justify-center gap-2 text-xs text-gray-400 font-bold tracking-wide uppercase">
+            <FiShield className="w-4 h-4 text-[#0D9488]" />
+            <span>Step {step === 'name' ? '1 of 2' : '2 of 2'} - Set up Profile</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

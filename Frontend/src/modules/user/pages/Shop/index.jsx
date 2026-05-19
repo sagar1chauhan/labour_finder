@@ -1,220 +1,145 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiArrowLeft, FiClock, FiMapPin, FiCheckCircle, FiXCircle, FiLoader, FiCalendar, FiChevronRight, FiShoppingBag, FiBox } from 'react-icons/fi';
+import { FiArrowLeft, FiSearch, FiSliders, FiShoppingCart, FiStar, FiPackage, FiZap, FiChevronLeft, FiShare2, FiHeart, FiPhone, FiMessageCircle, FiFilter } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
-import { themeColors } from '../../../../theme';
-import NotificationBell from '../../components/common/NotificationBell';
 import { motion, AnimatePresence } from 'framer-motion';
-import { bookingService } from '../../../../services/bookingService';
+import NotificationBell from '../../components/common/NotificationBell';
+import { publicCatalogService } from '../../../../services/catalogService';
+import { useCart } from '../../../../context/CartContext';
+import { useCity } from '../../../../context/CityContext';
+import LogoLoader from '../../../../components/common/LogoLoader';
+
+const toAssetUrl = (url) => {
+  if (!url) return '';
+  const clean = url.replace('/api/upload', '/upload');
+  if (clean.startsWith('http')) return clean;
+  const base = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000').replace(/\/api$/, '');
+  return `${base}${clean.startsWith('/') ? '' : '/'}${clean}`;
+};
+
+const DUMMY_PRODUCTS = [
+  { id: 'p1', title: 'Premium Wall Paint', category: 'Painting', price: 1200, rating: '4.9', icon: 'https://img.freepik.com/free-photo/paint-buckets-with-brushes-renovation_23-2148814234.jpg?w=740' },
+  { id: 'p2', title: 'Copper Wiring Bundle', category: 'Electrical', price: 850, rating: '4.8', icon: 'https://img.freepik.com/free-photo/electrician-builder-at-work-with-cables-in-hands_169016-16164.jpg?w=740' },
+];
+
+const ProductCard = ({ product, onAdd, onClick }) => (
+  <motion.div
+    layout
+    initial={{ opacity: 0, y: 10 }}
+    animate={{ opacity: 1, y: 0 }}
+    onClick={() => onClick(product)}
+    className="bg-white rounded-[24px] p-2.5 shadow-sm border border-gray-50 flex flex-col group active:scale-[0.98] transition-all cursor-pointer"
+  >
+    <div className="relative aspect-square rounded-[18px] overflow-hidden bg-gray-50 mb-2.5">
+      <img src={product.icon} alt={product.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+      <div className="absolute top-1.5 right-1.5 bg-white/90 backdrop-blur-md px-1.5 py-0.5 rounded-md flex items-center gap-0.5 shadow-sm">
+        <FiStar className="w-2 h-2 text-orange-400 fill-orange-400" />
+        <span className="text-[7px] font-black text-gray-700">{product.rating}</span>
+      </div>
+    </div>
+    <div className="px-1 flex-1 flex flex-col">
+      <h3 className="font-black text-gray-900 text-[10px] line-clamp-1 mb-0.5">{product.title}</h3>
+      <p className="text-[7px] text-teal-600 font-black uppercase tracking-wider mb-2">{product.category}</p>
+      <div className="mt-auto flex items-center justify-between">
+        <span className="text-[12px] font-black text-gray-900">₹{product.price}</span>
+        <button onClick={(e) => { e.stopPropagation(); onAdd(product); }} className="w-7 h-7 bg-[#0D9488] text-white rounded-lg flex items-center justify-center shadow-md active:scale-90 transition-all">
+          <FiShoppingCart className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
+  </motion.div>
+);
 
 const UserShopPage = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('active'); // 'active' or 'history'
-  const [bookings, setBookings] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { cartCount } = useCart();
+  const { currentCity } = useCity();
+  
+  const [categories, setCategories] = useState([]);
+  const [products, setProducts] = useState(DUMMY_PRODUCTS);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedProduct, setSelectedProduct] = useState(null);
 
   useEffect(() => {
-    fetchBookings();
+    if (currentCity) fetchData();
+  }, [currentCity?._id]);
 
-    // Listen for real-time updates
-    window.addEventListener('userBookingsUpdated', fetchBookings);
-    return () => {
-      window.removeEventListener('userBookingsUpdated', fetchBookings);
-    };
-  }, []);
-
-  const fetchBookings = async () => {
+  const fetchData = async () => {
     try {
-      setLoading(true);
-      const response = await bookingService.getUserBookings({});
-      if (response.success) {
-        setBookings(response.data || []);
+      const cityId = currentCity?._id || currentCity?.id;
+      if (!cityId) return;
+      const res = await publicCatalogService.getHomeContent(cityId);
+      if (res.success && res.categories?.length > 0) setCategories(res.categories);
+      const brandsRes = await publicCatalogService.getBrands({ type: 'product', cityId });
+      if (brandsRes.success && brandsRes.brands?.length > 0) {
+        setProducts(brandsRes.brands.map(p => ({
+          id: p._id || p.id,
+          title: p.title,
+          category: p.categoryName || 'General',
+          price: p.price || 0,
+          rating: '4.8',
+          icon: toAssetUrl(p.icon || p.images?.[0]),
+          categoryId: p.categoryId
+        })));
       }
-    } catch (err) {
-      console.error(err);
-      toast.error('Failed to load services');
-    } finally {
-      setLoading(false);
-    }
+    } catch (err) { console.error(err); }
   };
 
-  const activeStatuses = ['pending', 'confirmed', 'in_progress', 'in-progress', 'journey_started', 'visited', 'awaiting_payment'];
-  const historyStatuses = ['completed', 'cancelled', 'rejected', 'work_done'];
-
-  const activeServices = bookings.filter(b => activeStatuses.includes(b.status));
-  const historyServices = bookings.filter(b => historyStatuses.includes(b.status));
-
-  const displayedServices = activeTab === 'active' ? activeServices : historyServices;
-
-  const getStatusColor = (status) => {
-    if (activeStatuses.includes(status)) return 'bg-blue-50 text-blue-600 border-blue-100';
-    if (status === 'completed' || status === 'work_done') return 'bg-green-50 text-green-600 border-green-100';
-    if (status === 'cancelled' || status === 'rejected') return 'bg-red-50 text-red-600 border-red-100';
-    return 'bg-gray-50 text-gray-600 border-gray-100';
-  };
-
-  const getStatusLabel = (status) => {
-    if (!status) return 'Unknown';
-    switch (status) {
-      case 'in_progress':
-      case 'in-progress':
-        return 'In Progress';
-      case 'journey_started': return 'On The Way';
-      case 'visited': return 'Arrived';
-      case 'awaiting_payment': return 'Request Accepted';
-      case 'work_done': return 'Work Completed';
-      default: return status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ');
-    }
-  };
-
-  const formatDate = (dateString) => {
-    if (!dateString) return 'N/A';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
-  };
+  const filteredProducts = useMemo(() => {
+    return products.filter(p => {
+      const matchesSearch = p.title.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory = selectedCategory === 'all' || p.categoryId === selectedCategory;
+      return matchesSearch && matchesCategory;
+    });
+  }, [products, searchQuery, selectedCategory]);
 
   return (
-    <div className="min-h-screen pb-24 relative bg-white">
-      {/* Refined Brand Mesh Gradient Background */}
-      <div className="fixed inset-0 z-0 pointer-events-none">
-        <div className="absolute inset-0"
-          style={{
-            background: `
-              radial-gradient(at 0% 0%, ${themeColors?.brand?.teal || '#347989'}25 0%, transparent 70%),
-              radial-gradient(at 100% 0%, ${themeColors?.brand?.yellow || '#D68F35'}20 0%, transparent 70%),
-              radial-gradient(at 100% 100%, ${themeColors?.brand?.orange || '#BB5F36'}15 0%, transparent 75%),
-              radial-gradient(at 0% 100%, ${themeColors?.brand?.teal || '#347989'}10 0%, transparent 70%),
-              radial-gradient(at 50% 50%, ${themeColors?.brand?.teal || '#347989'}03 0%, transparent 100%),
-              #FFFFFF
-            `
-          }}
-        />
-        {/* Elegant Dot Grid Pattern */}
-        <div className="absolute inset-0 opacity-[0.04]"
-          style={{
-            backgroundImage: `radial-gradient(${themeColors?.brand?.teal || '#347989'} 0.8px, transparent 0.8px)`,
-            backgroundSize: '32px 32px'
-          }}
-        />
-      </div>
-
+    <div className="min-h-screen bg-gray-50 pb-24 overflow-x-hidden relative">
       <div className="relative z-10">
-        {/* Modern Glassmorphism Header */}
-        <header className="sticky top-0 z-40 backdrop-blur-xl bg-white/40 border-b border-black/[0.03] px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => navigate(-1)}
-              className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm border border-black/[0.02]"
-            >
-              <FiArrowLeft className="w-5 h-5 text-gray-800" />
-            </button>
-            <div className="flex items-center gap-2">
-              <FiShoppingBag className="w-5 h-5 text-purple-500" />
-              <h1 className="text-xl font-extrabold text-gray-900">My Shop</h1>
+        <header className="bg-[#0D9488] px-6 pt-10 pb-5 rounded-b-[32px] shadow-lg shadow-teal-900/20">
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-3">
+              <button onClick={() => navigate(-1)} className="w-8 h-8 bg-white/10 backdrop-blur-xl rounded-xl flex items-center justify-center text-white border border-white/10 active:scale-90 transition-all">
+                <FiArrowLeft className="w-4 h-4" />
+              </button>
+              <div>
+                <h1 className="text-lg font-black text-white tracking-tight leading-tight uppercase">Marketplace</h1>
+                <p className="text-[8px] font-bold text-teal-100 uppercase tracking-[0.2em] opacity-80 leading-none mt-0.5">Premium Materials</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2.5">
+              <div onClick={() => navigate('/user/cart')} className="w-8 h-8 bg-white/10 backdrop-blur-xl rounded-xl flex items-center justify-center text-white border border-white/10 cursor-pointer relative">
+                <FiShoppingCart className="w-4 h-4" />
+                {cartCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-[7px] font-black w-3.5 h-3.5 rounded-full flex items-center justify-center border-2 border-[#0D9488]">
+                    {cartCount}
+                  </span>
+                )}
+              </div>
+              <NotificationBell light />
             </div>
           </div>
-          <NotificationBell />
+          <div className="relative">
+            <FiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-teal-600 w-3.5 h-3.5" />
+            <input type="text" placeholder="Search materials..." className="w-full pl-10 pr-4 py-2 bg-white rounded-xl border-none text-[11px] font-bold text-gray-700 h-[40px]" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+          </div>
         </header>
 
-        {/* Tabs */}
-        <div className="flex bg-white border-b border-gray-200 sticky top-[73px] z-30">
-          <button
-            onClick={() => setActiveTab('active')}
-            className={`flex-1 py-3.5 text-sm font-bold border-b-2 transition-all duration-200 ${activeTab === 'active'
-              ? 'border-purple-500 text-purple-600 bg-purple-50/50'
-              : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-              }`}
-          >
-            Active Services
-          </button>
-          <button
-            onClick={() => setActiveTab('history')}
-            className={`flex-1 py-3.5 text-sm font-bold border-b-2 transition-all duration-200 ${activeTab === 'history'
-              ? 'border-purple-500 text-purple-600 bg-purple-50/50'
-              : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-              }`}
-          >
-            History
-          </button>
+        <div className="px-6 py-3 flex gap-1.5 overflow-x-auto no-scrollbar">
+          <button onClick={() => setSelectedCategory('all')} className={`px-4 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${selectedCategory === 'all' ? 'bg-[#0D9488] text-white shadow-md' : 'bg-white text-gray-400 border border-gray-100'}`}>All Products</button>
+          {categories.filter(c => c.categoryType === 'product').map(cat => (
+            <button key={cat._id || cat.id} onClick={() => setSelectedCategory(cat._id || cat.id)} className={`px-4 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${selectedCategory === (cat._id || cat.id) ? 'bg-[#0D9488] text-white shadow-md' : 'bg-white text-gray-400 border border-gray-100'}`}>{cat.title}</button>
+          ))}
         </div>
 
-        {/* Content */}
-        <div className="p-4 space-y-4 max-w-lg mx-auto w-full">
-          {loading ? (
-            <div className="space-y-4">
-              {[1, 2, 3].map(i => (
-                <div key={i} className="bg-white rounded-xl shadow-sm p-5 border border-gray-100 animate-pulse">
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="space-y-2">
-                      <div className="h-3 w-20 bg-gray-200 rounded"></div>
-                      <div className="h-5 w-40 bg-gray-200 rounded"></div>
-                    </div>
-                    <div className="h-6 w-24 bg-gray-200 rounded-full"></div>
-                  </div>
-                  <div className="pt-4 border-t border-gray-50">
-                    <div className="h-4 w-32 bg-gray-200 rounded"></div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : displayedServices.length === 0 ? (
-            <div className="text-center py-20 px-6">
-              <div className="bg-purple-50 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-5 border border-purple-100 shadow-sm">
-                <FiBox className="w-8 h-8 text-purple-300" />
-              </div>
-              <p className="text-gray-900 font-bold text-lg mb-2">No {activeTab === 'active' ? 'Active' : 'Past'} Services</p>
-              <p className="text-sm text-gray-500 max-w-[250px] mx-auto leading-relaxed">
-                {activeTab === 'active' 
-                  ? "You don't have any ongoing services at the moment."
-                  : "You haven't completed any services yet."}
-              </p>
-            </div>
-          ) : (
-            <AnimatePresence mode="popLayout">
-              {displayedServices.map((service, index) => (
-                <motion.div
-                  key={service._id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  className="bg-white rounded-[20px] shadow-sm p-5 border border-gray-100 active:scale-[0.98] transition-all cursor-pointer overflow-hidden relative group hover:shadow-md hover:border-purple-200"
-                  onClick={() => navigate(`/user/booking/${service._id}`)}
-                >
-                  <div className="flex justify-between items-start mb-3">
-                    <div className="flex-1 pr-4">
-                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-purple-300"></span>
-                        #{service.bookingNumber || service._id.substring(0, 8)}
-                      </p>
-                      <h3 className="font-extrabold text-gray-900 leading-tight text-[15px] group-hover:text-purple-600 transition-colors">
-                        {service.serviceName || 'Service Request'}
-                      </h3>
-                      {service.bookedItems && service.bookedItems.length > 0 && (
-                        <p className="text-xs font-medium text-gray-500 mt-1 line-clamp-1">
-                          {service.bookedItems.map(item => item.card?.title || item.title).join(', ')}
-                        </p>
-                      )}
-                    </div>
-                    <div className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border shadow-sm ${getStatusColor(service.status)}`}>
-                      {getStatusLabel(service.status)}
-                    </div>
-                  </div>
-
-                  <div className="mt-4 pt-4 border-t border-gray-50 flex items-center justify-between text-xs font-bold text-gray-500">
-                    <div className="flex items-center gap-1.5 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">
-                      <FiCalendar className="w-3.5 h-3.5 text-purple-500" />
-                      <span>{formatDate(service.scheduledDate)}</span>
-                    </div>
-                    <div className="flex items-center gap-1 text-purple-600 hover:text-purple-700">
-                      <span>View Details</span>
-                      <FiChevronRight className="w-4 h-4" />
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          )}
-        </div>
+        <main className="px-6 py-4 pb-12">
+          <div className="grid grid-cols-2 gap-3.5">
+            {filteredProducts.map(product => (
+              <ProductCard key={product.id} product={product} onAdd={() => toast.success('Added!')} onClick={(p) => setSelectedProduct(p)} />
+            ))}
+          </div>
+        </main>
       </div>
     </div>
   );

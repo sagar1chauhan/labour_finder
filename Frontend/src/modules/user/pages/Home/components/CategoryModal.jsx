@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createPortal } from 'react-dom';
-import { FiX, FiLayers, FiArrowLeft, FiPlus, FiCheck, FiInfo, FiShield, FiMapPin, FiStar, FiUser, FiCheckCircle } from 'react-icons/fi';
+import { FiX, FiLayers, FiArrowLeft, FiPlus, FiCheck, FiInfo, FiShield, FiMapPin, FiStar, FiUser, FiCheckCircle, FiZap } from 'react-icons/fi';
 import { AnimatePresence, motion } from 'framer-motion';
 import { themeColors } from '../../../../../theme';
 import { publicCatalogService } from '../../../../../services/catalogService';
@@ -32,11 +32,10 @@ const VendorInfoModal = ({ isOpen, onClose, vendor }) => {
           initial={{ scale: 0.9, y: 20, opacity: 0 }}
           animate={{ scale: 1, y: 0, opacity: 1 }}
           exit={{ scale: 0.9, y: 20, opacity: 0 }}
-          className="bg-white w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl"
+          className="bg-white w-full max-w-sm rounded-[32px] overflow-hidden shadow-2xl"
           onClick={e => e.stopPropagation()}
         >
-          {/* Header Image/Background */}
-          <div className="h-24 bg-gradient-to-r from-blue-600 to-indigo-600 relative">
+          <div className="h-24 bg-gradient-to-r from-amber-400 to-orange-500 relative">
              <button 
               onClick={onClose}
               className="absolute top-4 right-4 w-8 h-8 bg-white/20 hover:bg-white/40 backdrop-blur-md rounded-full flex items-center justify-center text-white transition-colors"
@@ -46,14 +45,13 @@ const VendorInfoModal = ({ isOpen, onClose, vendor }) => {
           </div>
 
           <div className="px-6 pb-8 -mt-12 relative text-center">
-            {/* Profile Photo */}
             <div className="inline-block p-1.5 bg-white rounded-full shadow-lg mb-4">
               <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-100 border-2 border-white">
                 {vendor.profilePhoto ? (
                   <img src={toAssetUrl(vendor.profilePhoto)} alt={vendor.businessName} className="w-full h-full object-cover" />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-blue-50">
-                    <FiUser className="w-10 h-10 text-blue-300" />
+                  <div className="w-full h-full flex items-center justify-center bg-amber-50">
+                    <FiUser className="w-10 h-10 text-amber-300" />
                   </div>
                 )}
               </div>
@@ -61,66 +59,32 @@ const VendorInfoModal = ({ isOpen, onClose, vendor }) => {
 
             <h3 className="text-xl font-black text-gray-900 mb-1">{vendor.businessName || vendor.name}</h3>
             
-            {/* Verification Badge */}
             <div className="flex justify-center mb-4">
-              {vendor.policeVerification?.status === 'approved' ? (
-                <div className="flex items-center gap-1.5 px-3 py-1 bg-green-50 text-green-600 rounded-full border border-green-100 text-[11px] font-bold uppercase tracking-wider">
-                  <FiShield className="w-3.5 h-3.5" />
-                  POLICE VERIFIED VENDOR
-                </div>
-              ) : (
-                <div className="flex items-center gap-1.5 px-3 py-1 bg-gray-50 text-gray-400 rounded-full border border-gray-100 text-[11px] font-bold uppercase tracking-wider">
-                  <FiShield className="w-3.5 h-3.5" />
-                  IDENTITY VERIFIED
-                </div>
-              )}
+              <div className="flex items-center gap-1.5 px-3 py-1 bg-amber-50 text-amber-600 rounded-full border border-amber-100 text-[10px] font-black uppercase tracking-wider">
+                <FiShield className="w-3.5 h-3.5" />
+                VERIFIED PROFESSIONAL
+              </div>
             </div>
 
-            {/* Stats Row */}
             <div className="grid grid-cols-2 gap-4 mb-6">
               <div className="bg-gray-50 p-3 rounded-2xl border border-gray-100">
                 <div className="flex items-center justify-center gap-1 text-amber-500 mb-0.5">
                   <FiStar className="w-4 h-4 fill-current" />
                   <span className="font-black text-lg">{vendor.rating || '4.8'}</span>
                 </div>
-                <p className="text-[10px] text-gray-400 font-bold uppercase">Rating</p>
+                <p className="text-[9px] text-gray-400 font-black uppercase">Rating</p>
               </div>
               <div className="bg-gray-50 p-3 rounded-2xl border border-gray-100">
-                <div className="font-black text-lg text-blue-600 mb-0.5">{vendor.totalJobs || '50'}+</div>
-                <p className="text-[10px] text-gray-400 font-bold uppercase">Jobs Done</p>
-              </div>
-            </div>
-
-            {/* Info List */}
-            <div className="space-y-3 text-left">
-              <div className="flex items-start gap-3">
-                <div className="mt-1 w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center flex-shrink-0">
-                  <FiMapPin className="w-4 h-4 text-red-500" />
-                </div>
-                <div>
-                  <p className="text-[10px] text-gray-400 font-bold uppercase">Location</p>
-                  <p className="text-sm font-bold text-gray-700 line-clamp-2">
-                    {vendor.address?.city || 'Indore'}, {vendor.address?.state || 'MP'}
-                  </p>
-                </div>
-              </div>
-              
-              <div className="flex items-start gap-3">
-                <div className="mt-1 w-8 h-8 rounded-lg bg-teal-50 flex items-center justify-center flex-shrink-0">
-                  <FiCheckCircle className="w-4 h-4 text-teal-500" />
-                </div>
-                <div>
-                  <p className="text-[10px] text-gray-400 font-bold uppercase">Service Level</p>
-                  <p className="text-sm font-bold text-gray-700">Premium Professional</p>
-                </div>
+                <div className="font-black text-lg text-orange-600 mb-0.5">{vendor.totalJobs || '50'}+</div>
+                <p className="text-[9px] text-gray-400 font-black uppercase">Jobs Done</p>
               </div>
             </div>
 
             <button 
               onClick={onClose}
-              className="w-full mt-8 py-3.5 bg-gray-900 text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-gray-800 active:scale-95 transition-all"
+              className="w-full mt-4 py-4 bg-gray-900 text-white rounded-2xl font-black text-[11px] uppercase tracking-widest shadow-lg shadow-gray-200 active:scale-95 transition-all"
             >
-              Got it
+              Close Info
             </button>
           </div>
         </motion.div>
@@ -129,93 +93,44 @@ const VendorInfoModal = ({ isOpen, onClose, vendor }) => {
   );
 };
 
-const BrandCard = ({ brand, onClick, onInfoClick }) => (
+const BrandCard = ({ brand, onClick }) => (
   <div
     onClick={() => onClick(brand)}
-    className="flex flex-col items-center cursor-pointer group active:scale-95 transition-all relative"
+    className="flex flex-col items-center cursor-pointer group active:scale-95 transition-all"
   >
-    <div className="w-20 h-20 bg-gray-50 rounded-2xl flex items-center justify-center mb-2 group-hover:bg-gray-100 transition-colors shadow-sm overflow-hidden border border-gray-100 relative">
+    <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mb-2 shadow-sm border border-gray-50 group-hover:border-amber-200 overflow-hidden p-3 transition-all">
       {brand.icon ? (
         <img
           src={toAssetUrl(brand.icon)}
           alt={brand.title}
-          className="w-14 h-14 object-contain group-hover:scale-110 transition-transform"
-          loading="lazy"
+          className="w-full h-full object-contain group-hover:scale-110 transition-transform"
         />
       ) : (
-        <FiLayers className="w-8 h-8 text-gray-300" />
-      )}
-      {brand.badge && (
-        <span className="absolute top-0 right-0 bg-purple-100 text-purple-700 text-[9px] font-bold px-1.5 py-0.5 rounded-bl-lg">
-          {brand.badge}
-        </span>
+        <FiZap className="w-6 h-6 text-amber-300 fill-current" />
       )}
     </div>
-    <p className="text-[11px] font-black text-gray-900 text-center leading-tight line-clamp-1 px-1">
+    <p className="text-[9px] font-black text-gray-800 text-center leading-tight line-clamp-1 px-1 uppercase tracking-tighter">
       {brand.title}
     </p>
-    <div className="flex flex-col items-center mt-0.5">
-      <span className="text-[10px] font-bold text-emerald-600">₹{brand.price || 0}</span>
-      <div className="flex items-center gap-1">
-        <span className="text-[8px] font-medium text-gray-400 truncate max-w-[70px]">
-          by {brand.vendor?.businessName || brand.vendor?.name || 'Pro'}
-        </span>
-        <button 
-          onClick={(e) => {
-            e.stopPropagation();
-            onInfoClick(brand.vendor);
-          }}
-          className="text-blue-500 hover:text-blue-600 transition-colors"
-        >
-          <FiInfo className="w-2.5 h-2.5" />
-        </button>
-      </div>
-    </div>
+    <span className="text-[8px] font-black text-amber-600 mt-1">₹{brand.price || 0}+</span>
   </div>
 );
 
-const CategoryModal = React.memo(({ isOpen, onClose, category, location, cartCount, currentCity }) => {
+const CategoryModal = React.memo(({ isOpen, onClose, category, currentCity }) => {
   const navigate = useNavigate();
   const { addToCart } = useCart();
-  const [isClosing, setIsClosing] = useState(false);
-  const [isRedirecting, setIsRedirecting] = useState(false);
-
-  const [view, setView] = useState('brands'); // 'brands' | 'services'
+  const [view, setView] = useState('brands');
   const [brands, setBrands] = useState([]);
   const [selectedBrand, setSelectedBrand] = useState(null);
-  const [services, setServices] = useState([]); // Sub-services
+  const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [mounted, setMounted] = useState(false);
-  
   const [isVendorModalOpen, setIsVendorModalOpen] = useState(false);
   const [selectedVendor, setSelectedVendor] = useState(null);
 
   const cityId = currentCity?._id || currentCity?.id;
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (!isOpen) {
-      setIsClosing(false);
-      // Reset state on close
-      setTimeout(() => {
-        setView('brands');
-        setSelectedBrand(null);
-        setBrands([]);
-        setServices([]);
-        setIsRedirecting(false);
-      }, 300);
-    } else if (category?.id) {
-      if (category.initialBrand) {
-        // Direct to brand services if initialBrand is provided (from search)
-        const brand = category.initialBrand;
-        setSelectedBrand(brand);
-        setView('services');
-        fetchServices(brand.id || brand._id);
-      }
-      // Always fetch brands for this category to populate the background/back-navigation
+    if (isOpen && category?.id) {
       fetchBrands();
     }
   }, [isOpen, category?.id, cityId]);
@@ -223,36 +138,17 @@ const CategoryModal = React.memo(({ isOpen, onClose, category, location, cartCou
   const fetchBrands = async () => {
     try {
       setLoading(true);
-      const response = await publicCatalogService.getBrands({
-        categoryId: category.id,
-        cityId: cityId
-      });
-      if (response.success) {
-        setBrands(response.brands || []);
-      }
-    } catch (error) {
-      console.error("Failed to load brands:", error);
-    } finally {
-      setLoading(false);
-    }
+      const response = await publicCatalogService.getBrands({ categoryId: category.id, cityId });
+      if (response.success) setBrands(response.brands || []);
+    } catch (err) { console.error(err); } finally { setLoading(false); }
   };
 
   const fetchServices = async (brandId) => {
     try {
       setLoading(true);
-      const response = await publicCatalogService.getServices({
-        brandId: brandId,
-        cityId: cityId,
-        categoryId: category?.id
-      });
-      if (response.success) {
-        setServices(response.services || []);
-      }
-    } catch (error) {
-      console.error("Failed to load services:", error);
-    } finally {
-      setLoading(false);
-    }
+      const response = await publicCatalogService.getServices({ brandId, cityId, categoryId: category?.id });
+      if (response.success) setServices(response.services || []);
+    } catch (err) { console.error(err); } finally { setLoading(false); }
   };
 
   const handleBrandClick = (brand) => {
@@ -260,311 +156,121 @@ const CategoryModal = React.memo(({ isOpen, onClose, category, location, cartCou
     setView('services');
     fetchServices(brand.id || brand._id);
   };
-  
-  const handleVendorInfo = (vendor) => {
-    if (vendor) {
-      setSelectedVendor(vendor);
-      setIsVendorModalOpen(true);
-    } else {
-      toast.error('Vendor details not available');
-    }
-  };
-
-  const handleBackToBrands = () => {
-    setView('brands');
-    setSelectedBrand(null);
-    setServices([]);
-  };
 
   const handleServiceClick = async (service) => {
-    // Add to cart logic
     try {
-      const cartItemData = {
+      const res = await addToCart({
         serviceId: service.id || service._id,
         categoryId: category?.id,
         title: service.title,
-        description: service.description || '',
-        icon: toAssetUrl(service.icon || ''),
-        category: category?.title,
-        categoryTitle: category?.title || '', // Explicit field
-        categoryIcon: toAssetUrl(category?.homeIconUrl || category?.iconUrl || ''), // Explicit field
-        // Brand info — stored as sectionTitle/sectionIcon for booking flow
-        sectionId: selectedBrand?.id || selectedBrand?._id || null, // VITAL: Added for plan benefits
-        sectionTitle: selectedBrand?.title || '',
-        sectionIcon: toAssetUrl(selectedBrand?.iconUrl || selectedBrand?.icon || ''),
         price: service.discountPrice || service.basePrice,
-        originalPrice: service.discountPrice ? service.basePrice : null,
-        unitPrice: service.discountPrice || service.basePrice,
         serviceCount: 1,
-        rating: "4.8",
-        reviews: "1k+",
-        vendorId: service.vendorId || selectedBrand?.vendorId || null,
-        isPriceDisclosed: service.isPriceDisclosed !== false,
-        card: {
-          title: service.title,
-          subtitle: service.description || '',
-          price: service.discountPrice || service.basePrice,
-          originalPrice: service.discountPrice ? service.basePrice : null,
-          duration: service.duration || '',
-          description: service.description || '',
-          imageUrl: toAssetUrl(service.icon || ''),
-          features: service.features || []
-        }
-      };
-
-      const response = await addToCart(cartItemData);
-      if (response.success) {
-        setIsRedirecting(true);
-        setTimeout(() => {
-          navigate('/user/cart');
-        }, 1200);
-      } else {
-        toast.error(response.message || 'Failed to add to cart');
+        icon: toAssetUrl(service.icon || ''),
+      });
+      if (res.success) {
+        toast.success('Added to cart!');
+        navigate('/user/cart');
       }
-    } catch (error) {
-      toast.error('Failed to add to cart');
-    }
+    } catch (err) { toast.error('Failed to add'); }
   };
 
-  if (!isOpen && !isClosing) return null;
-  if (!mounted) return null;
+  if (!isOpen) return null;
 
-  const modalContent = (
-    <>
-      <AnimatePresence>
-        {isOpen && (
-          <>
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[9998]"
-              onClick={onClose}
-              style={{
-                position: 'fixed',
-                willChange: 'opacity',
-                transform: 'translateZ(0)',
-                backfaceVisibility: 'hidden',
-                WebkitBackfaceVisibility: 'hidden',
-              }}
-            />
-
-            {/* Modal Container */}
-            <motion.div
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              exit={{ y: "100%" }}
-              transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="fixed bottom-0 left-0 right-0 z-[9999]"
-              style={{
-                position: 'fixed',
-                willChange: 'transform',
-                backfaceVisibility: 'hidden',
-                WebkitBackfaceVisibility: 'hidden',
-              }}
-            >
-              {/* Close Button */}
-              <div className="absolute -top-12 right-4 z-[60]">
-                <button
-                  onClick={onClose}
-                  className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg hover:bg-gray-50 transition-colors"
-                >
-                  <FiX className="w-6 h-6 text-gray-800" />
+  return createPortal(
+    <AnimatePresence>
+      <div className="fixed inset-0 z-[9998] flex flex-col justify-end">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+          onClick={onClose}
+        />
+        
+        <motion.div
+          initial={{ y: "100%" }}
+          animate={{ y: 0 }}
+          exit={{ y: "100%" }}
+          transition={{ type: "spring", damping: 25, stiffness: 300 }}
+          className="relative bg-white rounded-t-[40px] max-h-[85vh] overflow-hidden flex flex-col"
+        >
+          {/* Header */}
+          <div className="px-6 pt-8 pb-4 flex items-center justify-between border-b border-gray-50">
+            <div className="flex items-center gap-4">
+              {view === 'services' && (
+                <button onClick={() => setView('brands')} className="w-8 h-8 bg-gray-50 rounded-xl flex items-center justify-center">
+                  <FiArrowLeft className="w-4 h-4 text-gray-800" />
                 </button>
+              )}
+              <div>
+                <h2 className="text-lg font-black text-gray-900 tracking-tight">
+                  {view === 'brands' ? category?.title : selectedBrand?.title}
+                </h2>
+                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">
+                  {view === 'brands' ? 'Choose a sub-category' : 'Select Service'}
+                </p>
               </div>
+            </div>
+            <button onClick={onClose} className="w-10 h-10 bg-gray-50 rounded-2xl flex items-center justify-center">
+              <FiX className="w-5 h-5 text-gray-400" />
+            </button>
+          </div>
 
-              <div className="bg-white rounded-t-3xl max-h-[90vh] overflow-y-auto min-h-[50vh]">
-                {isRedirecting ? (
-                  <div className="flex flex-col items-center justify-center min-h-[40vh] py-12">
-                    <motion.div
-                      initial={{ scale: 0, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                      className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mb-6"
-                    >
-                      <FiCheck className="w-10 h-10 text-green-500" />
-                    </motion.div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">Service Added!</h3>
-                    <p className="text-gray-500 text-sm">Proceeding to checkout...</p>
-                  </div>
-                ) : (
-                  <div className="px-4 py-6">
-                    {/* Header */}
-                    <div className="flex items-center gap-3 mb-6">
-                      {view === 'services' && (
-                        <button
-                          onClick={handleBackToBrands}
-                          className="p-1 rounded-full hover:bg-gray-100"
-                        >
-                          <FiArrowLeft className="w-6 h-6 text-gray-800" />
-                        </button>
-                      )}
-                      <div>
-                        <h1 className="text-xl font-bold text-gray-900">
-                          {view === 'brands' ? (category?.title || 'Brands') : (selectedBrand?.title || 'Services')}
-                        </h1>
-                        {view === 'services' && <p className="text-xs text-gray-500">Select a service to add</p>}
-                      </div>
-                      {loading && <div className="w-5 h-5 border-2 border-primary-500 border-t-transparent rounded-full animate-spin ml-auto"></div>}
+          {/* Body */}
+          <div className="flex-1 overflow-y-auto px-6 py-6 no-scrollbar">
+            {loading ? (
+              <div className="grid grid-cols-4 gap-4 animate-pulse">
+                {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
+                  <div key={i} className="aspect-square bg-gray-100 rounded-2xl" />
+                ))}
+              </div>
+            ) : (
+              view === 'brands' ? (
+                <div className="grid grid-cols-4 gap-y-6 gap-x-4">
+                  {brands.map(brand => (
+                    <BrandCard key={brand.id || brand._id} brand={brand} onClick={handleBrandClick} />
+                  ))}
+                  {brands.length === 0 && (
+                    <div className="col-span-4 py-20 text-center opacity-30">
+                      <FiZap className="w-12 h-12 mx-auto mb-2" />
+                      <p className="text-xs font-black uppercase">No items found</p>
                     </div>
-
-                    {/* Content */}
-                    {loading && (view === 'brands' ? brands.length === 0 : services.length === 0) ? (
-                      <div className="grid grid-cols-3 sm:grid-cols-4 gap-4 animate-pulse">
-                        {[1, 2, 3, 4, 5, 6].map((i) => (
-                          <div key={i} className="flex flex-col items-center">
-                            <div className="w-20 h-20 bg-gray-200 rounded-2xl mb-2"></div>
-                            <div className="h-3 w-16 bg-gray-200 rounded"></div>
-                          </div>
-                        ))}
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {services.map(svc => (
+                    <div key={svc.id || svc._id} className="bg-white rounded-3xl p-4 border border-gray-100 flex justify-between items-center group active:scale-[0.98] transition-all">
+                      <div className="flex-1">
+                        <h3 className="text-sm font-black text-gray-900 mb-1">{svc.title}</h3>
+                        <div className="flex items-center gap-2">
+                          <span className="text-base font-black text-amber-600">₹{svc.discountPrice || svc.basePrice}</span>
+                          {svc.discountPrice && <span className="text-[10px] text-gray-300 line-through">₹{svc.basePrice}</span>}
+                        </div>
                       </div>
-                    ) : (
-                      <>
-                        {view === 'brands' ? (
-                          // Brands Grid
-                          brands.length > 0 ? (
-                            <div className="space-y-8">
-                              {/* Services Section */}
-                              {brands.filter(b => b.type === 'service').length > 0 && (
-                                <div>
-                                  <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-teal-500" />
-                                    Available Services
-                                  </h3>
-                                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-4">
-                                    {brands.filter(b => b.type === 'service').map((brand) => (
-                                      <BrandCard 
-                                        key={brand.id || brand._id} 
-                                        brand={brand} 
-                                        onClick={handleBrandClick} 
-                                        onInfoClick={handleVendorInfo}
-                                      />
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-
-                              {/* Products Section */}
-                              {brands.filter(b => b.type === 'product').length > 0 && (
-                                <div>
-                                  <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                                    Products & Materials
-                                  </h3>
-                                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-4">
-                                    {brands.filter(b => b.type === 'product').map((brand) => (
-                                      <BrandCard 
-                                        key={brand.id || brand._id} 
-                                        brand={brand} 
-                                        onClick={handleBrandClick} 
-                                        onInfoClick={handleVendorInfo}
-                                      />
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          ) : (
-                            <div className="text-center py-16 px-4">
-                              <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <FiMapPin className="w-8 h-8 text-gray-300" />
-                              </div>
-                              <h3 className="text-lg font-black text-gray-900 mb-1">No Vendors Available</h3>
-                              <p className="text-sm text-gray-500 max-w-[200px] mx-auto leading-tight">
-                                There are no active vendors in your area right now.
-                              </p>
-                            </div>
-                          )
-                        ) : (
-                          // Services List
-                          services.length > 0 ? (
-                            <div className="space-y-4">
-                              {services.map((svc) => (
-                                <div key={svc.id || svc._id} className="flex justify-between items-center p-3 border border-gray-100 rounded-xl hover:shadow-md transition-shadow">
-                                  <div className="flex-1 pr-4">
-                                    <div className="flex items-center gap-2 mb-0.5">
-                                      <h3 className="font-black text-gray-900 text-[15px] leading-snug">{svc.title}</h3>
-                                      <div className="flex items-center gap-2">
-                                        <span className="text-[10px] font-bold text-gray-400 uppercase">by {svc.vendor?.businessName || svc.vendor?.name || 'Pro'}</span>
-                                        <button 
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleVendorInfo(svc.vendor);
-                                          }}
-                                          className="text-blue-500 hover:text-blue-600 transition-colors"
-                                        >
-                                          <FiInfo className="w-3.5 h-3.5" />
-                                        </button>
-                                      </div>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                      {svc.isPriceDisclosed !== false ? (
-                                        <>
-                                          <span className="text-lg font-black text-emerald-600">₹{svc.discountPrice || svc.basePrice}</span>
-                                          {(svc.discountPrice > 0 && svc.discountPrice < svc.basePrice) && (
-                                            <span className="text-xs text-gray-400 line-through font-bold opacity-60">₹{svc.basePrice}</span>
-                                          )}
-                                        </>
-                                      ) : (
-                                        <span className="text-sm font-black text-gray-400 uppercase tracking-tighter bg-gray-50 px-2 py-1 rounded-lg border border-gray-100">Not Disclosed</span>
-                                      )}
-                                    </div>
-                                  </div>
-                                  <button
-                                    onClick={() => handleServiceClick(svc)}
-                                    className="px-4 py-2 bg-green-50 text-green-700 rounded-lg text-sm font-bold flex items-center gap-1 hover:bg-green-100"
-                                  >
-                                    <FiPlus /> Add
-                                  </button>
-                                </div>
-                              ))}
-                              
-                              {/* Bottom Disclaimer */}
-                              <div className="mt-8 pt-4 border-t border-gray-50 flex items-start gap-3 bg-gray-50/50 p-4 rounded-2xl">
-                                <div className="mt-0.5 text-gray-400">
-                                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                  </svg>
-                                </div>
-                                <p className="text-[11px] text-rose-500 font-normal italic leading-snug">
-                                  * It is a base price only, additional charges may be applicable after service
-                                </p>
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="text-center py-16 px-4">
-                              <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <FiShield className="w-8 h-8 text-gray-300" />
-                              </div>
-                              <h3 className="text-lg font-black text-gray-900 mb-1">Service Unavailable</h3>
-                              <p className="text-sm text-gray-500 max-w-[200px] mx-auto leading-tight">
-                                This service is currently not available due to no online vendors.
-                              </p>
-                            </div>
-                          )
-                        )}
-                      </>
-                    )}
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+                      <button
+                        onClick={() => handleServiceClick(svc)}
+                        className="w-10 h-10 bg-amber-500 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-amber-200 active:scale-90 transition-all"
+                      >
+                        <FiPlus className="w-5 h-5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )
+            )}
+          </div>
+        </motion.div>
+      </div>
 
       <VendorInfoModal 
         isOpen={isVendorModalOpen} 
         onClose={() => setIsVendorModalOpen(false)} 
         vendor={selectedVendor} 
       />
-    </>
+    </AnimatePresence>,
+    document.body
   );
-
-  return createPortal(modalContent, document.body);
 });
 
-CategoryModal.displayName = 'CategoryModal';
 export default CategoryModal;

@@ -126,6 +126,10 @@ const userSchema = new mongoose.Schema({
   loginSessionId: {
     type: String,
     default: null
+  },
+  usageRole: {
+    type: String,
+    default: null
   }
 
 }, {

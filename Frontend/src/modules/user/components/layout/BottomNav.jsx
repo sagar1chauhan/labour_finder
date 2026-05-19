@@ -1,74 +1,44 @@
 import React, { useRef, useEffect, useState, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { FiHome, FiGift, FiShoppingCart, FiUser, FiTrash2, FiCalendar, FiShoppingBag } from 'react-icons/fi';
-import { HiHome, HiGift, HiShoppingCart, HiUser, HiTrash, HiCalendar } from 'react-icons/hi';
-import { FaHardHat } from 'react-icons/fa';
+import { FiHome, FiUser, FiCalendar, FiShoppingCart, FiGrid } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '../../../../context/CartContext';
-
-// Colorful theme for each nav item
-const navItemColors = {
-  home: {
-    primary: '#3B82F6', // Blue
-    gradient: 'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)',
-    bg: 'rgba(59, 130, 246, 0.1)',
-    shadow: 'rgba(59, 130, 246, 0.4)'
-  },
-  bookings: {
-    primary: '#10B981', // Emerald
-    gradient: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
-    bg: 'rgba(16, 185, 129, 0.1)',
-    shadow: 'rgba(16, 185, 129, 0.4)'
-  },
-  scrap: {
-    primary: '#A855F7', // Purple
-    gradient: 'linear-gradient(135deg, #A855F7 0%, #7C3AED 100%)',
-    bg: 'rgba(168, 85, 247, 0.1)',
-    shadow: 'rgba(168, 85, 247, 0.4)'
-  },
-  cart: {
-    primary: '#EC4899', // Pink
-    gradient: 'linear-gradient(135deg, #EC4899 0%, #DB2777 100%)',
-    bg: 'rgba(236, 72, 153, 0.1)',
-    shadow: 'rgba(236, 72, 153, 0.4)'
-  },
-  account: {
-    primary: '#8B5CF6', // Violet
-    gradient: 'linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)',
-    bg: 'rgba(139, 92, 246, 0.1)',
-    shadow: 'rgba(139, 92, 246, 0.4)'
-  },
-};
 
 const BottomNav = React.memo(() => {
   const navigate = useNavigate();
   const location = useLocation();
   const navRef = useRef(null);
   const { cartCount } = useCart();
-  const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, width: 0 });
+  const [indicatorStyle, setIndicatorStyle] = useState({ left: 0 });
+  const [isVisible, setIsVisible] = useState(true);
+
+  useEffect(() => {
+    const handleToggle = (e) => setIsVisible(e.detail !== false);
+    window.addEventListener('toggle-bottom-nav', handleToggle);
+    return () => window.removeEventListener('toggle-bottom-nav', handleToggle);
+  }, []);
 
   const navItems = useMemo(() => [
-    { id: 'home', label: 'Home', icon: FiHome, filledIcon: HiHome, path: '/user' },
-    { id: 'bookings', label: 'Bookings', icon: FiCalendar, filledIcon: HiCalendar, path: '/user/my-bookings' },
-    { id: 'cart', label: 'Cart', icon: FiShoppingCart, filledIcon: HiShoppingCart, path: '/user/cart', isCart: true },
-    { id: 'account', label: 'Account', icon: FiUser, filledIcon: HiUser, path: '/user/account' },
+    { id: 'home', label: 'Home', icon: FiHome, path: '/user' },
+    { id: 'shop', label: 'Shop', icon: FiGrid, path: '/user/shop' },
+    { id: 'bookings', label: 'Bookings', icon: FiCalendar, path: '/user/my-bookings' },
+    { id: 'cart', label: 'Cart', icon: FiShoppingCart, path: '/user/cart', isCart: true },
+    { id: 'account', label: 'Account', icon: FiUser, path: '/user/account' },
   ], []);
 
   const getActiveTab = () => {
-    if (location.pathname === '/user' || location.pathname === '/user/') return 'home';
-    if (location.pathname === '/user/my-bookings') return 'bookings';
-    if (location.pathname === '/user/cart') return 'cart';
-    if (location.pathname === '/user/account') return 'account';
+    const path = location.pathname;
+    if (path === '/user' || path === '/user/') return 'home';
+    if (path === '/user/shop') return 'shop';
+    if (path === '/user/my-bookings') return 'bookings';
+    if (path === '/user/cart') return 'cart';
+    if (path === '/user/account') return 'account';
     return 'home';
   };
 
   const activeTab = getActiveTab();
   const activeIndex = navItems.findIndex(item => item.id === activeTab);
-  const activeColor = navItemColors[activeTab];
 
-
-
-  // Update indicator position when active tab changes
   useEffect(() => {
     if (navRef.current) {
       const buttons = navRef.current.querySelectorAll('button');
@@ -78,126 +48,64 @@ const BottomNav = React.memo(() => {
         const buttonRect = button.getBoundingClientRect();
 
         setIndicatorStyle({
-          left: buttonRect.left - navRect.left + (buttonRect.width / 2) - 16, // Center the 32px indicator
-          width: 32
+          left: (buttonRect.left - navRect.left) + (buttonRect.width / 2) - 22,
         });
       }
     }
-  }, [activeIndex, activeTab]);
-
-  const handleTabClick = (path) => {
-    navigate(path);
-  };
+  }, [activeIndex]);
 
   return (
-    <nav
-      className="fixed bottom-0 left-0 right-0 z-40 w-full lg:hidden"
-      style={{
-        WebkitBackfaceVisibility: 'hidden',
-      }}
-    >
-      <div
-        className="w-full pb-4 pt-3 px-2"
-        style={{
-          background: 'rgba(255, 255, 255, 0.98)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
-          boxShadow: '0 -4px 30px rgba(0, 0, 0, 0.08)',
-          borderTop: '1px solid rgba(229, 231, 235, 0.6)',
-        }}
-      >
-        <div ref={navRef} className="flex items-center justify-around max-w-md mx-auto relative">
+    <AnimatePresence>
+      {isVisible && (
+        <motion.div 
+          initial={{ y: 100, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: 100, opacity: 0 }}
+          className="fixed bottom-6 left-0 right-0 z-50 flex justify-center px-6 pointer-events-none"
+        >
+          <nav 
+            ref={navRef}
+            className="w-full max-w-sm h-[64px] bg-[#111111]/95 backdrop-blur-2xl rounded-full shadow-[0_20px_50px_rgba(0,0,0,0.3)] border border-white/5 flex items-center justify-between px-3 pointer-events-auto relative"
+          >
+            {/* Active Circle Indicator */}
+            <motion.div
+              className="absolute w-[44px] h-[44px] bg-white rounded-full z-0 shadow-lg"
+              animate={{
+                left: indicatorStyle.left,
+              }}
+              transition={{ type: "spring", stiffness: 400, damping: 35 }}
+            />
 
-          {/* Animated Sliding Indicator */}
-          <motion.div
-            className="absolute -top-3 h-1 rounded-full"
-            animate={{
-              left: indicatorStyle.left,
-              width: indicatorStyle.width,
-              background: activeColor?.gradient || navItemColors.home.gradient,
-            }}
-            transition={{
-              type: "spring",
-              stiffness: 380,
-              damping: 30
-            }}
-            style={{
-              boxShadow: `0 2px 12px ${activeColor?.shadow || navItemColors.home.shadow}`,
-            }}
-          />
-
-          {navItems.map((item) => {
-            const IconComponent = activeTab === item.id ? item.filledIcon : item.icon;
-            const isActive = activeTab === item.id;
-            const itemColor = navItemColors[item.id];
-
-            return (
-              <motion.button
-                key={item.id}
-                onClick={() => handleTabClick(item.path)}
-                whileTap={{ scale: 0.9 }}
-                className="flex flex-col items-center justify-center w-16 h-14 rounded-2xl transition-all duration-200 relative"
-              >
-                {/* Active Background Glow */}
-                <AnimatePresence>
-                  {isActive && (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.8 }}
-                      transition={{ duration: 0.2 }}
-                      className="absolute inset-1 rounded-xl"
-                      style={{
-                        background: itemColor.bg,
-                      }}
+            {navItems.map((item, idx) => {
+              const isActive = activeTab === item.id;
+              const Icon = item.icon;
+              
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => navigate(item.path)}
+                  className="relative z-10 flex items-center justify-center w-[52px] h-full group outline-none"
+                >
+                  <div className="relative">
+                    <Icon 
+                      className={`w-5 h-5 transition-all duration-300 ${isActive ? 'text-[#0D9488] scale-110' : 'text-gray-500 group-hover:text-gray-300'}`} 
                     />
-                  )}
-                </AnimatePresence>
-
-                <div className="relative z-10 flex flex-col items-center justify-center">
-                  <motion.div
-                    className="relative mb-1"
-                    animate={{
-                      scale: isActive ? 1.1 : 1,
-                      y: isActive ? -2 : 0
-                    }}
-                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                  >
-                    <IconComponent
-                      className="w-6 h-6 transition-colors duration-200"
-                      style={{
-                        color: isActive ? itemColor.primary : '#9CA3AF',
-                      }}
-                    />
+                    
                     {item.isCart && cartCount > 0 && (
-                      <motion.span
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        className="absolute -top-1.5 -right-2.5 bg-gradient-to-br from-red-500 to-red-600 text-white text-[9px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center border-2 border-white shadow-lg"
-                      >
+                      <span className={`absolute -top-2 -right-2 bg-orange-500 text-white text-[8px] font-black w-4 h-4 rounded-full flex items-center justify-center border-2 ${isActive ? 'border-white' : 'border-[#111111]'} transition-colors`}>
                         {cartCount > 9 ? '9+' : cartCount}
-                      </motion.span>
+                      </span>
                     )}
-                  </motion.div>
-                  <motion.span
-                    animate={{
-                      color: isActive ? itemColor.primary : '#6B7280',
-                      fontWeight: isActive ? 600 : 500
-                    }}
-                    className="text-[10px]"
-                  >
-                    {item.label}
-                  </motion.span>
-                </div>
-              </motion.button>
-            );
-          })}
-        </div>
-      </div>
-    </nav>
+                  </div>
+                </button>
+              );
+            })}
+          </nav>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 });
 
 BottomNav.displayName = 'BottomNav';
-
 export default BottomNav;

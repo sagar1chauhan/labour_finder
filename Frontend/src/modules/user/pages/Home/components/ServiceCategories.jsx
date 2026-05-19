@@ -20,7 +20,8 @@ const ServiceCategories = React.memo(({
   onCategoryClick, 
   onSeeAllClick,
   title = "Service Categories",
-  subtitle = "Premium Home Services"
+  subtitle = "Premium Home Services",
+  hideHeader = false
 }) => {
 
 
@@ -36,16 +37,17 @@ const ServiceCategories = React.memo(({
   return (
     <div className="px-5">
       {/* Section Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex flex-col">
-          <h2 className="text-[20px] font-black text-gray-900 tracking-tight flex items-center gap-2">
-            {title}
-            <div className="w-2 h-2 bg-primary-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(40,116,240,0.5)]"></div>
-          </h2>
-          <p className="text-[11px] text-gray-400 font-bold uppercase tracking-[0.15em] -mt-0.5">{subtitle}</p>
+      {!hideHeader && (
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex flex-col">
+            <h2 className="text-[20px] font-black text-gray-900 tracking-tight flex items-center gap-2">
+              {title}
+              <div className="w-2 h-2 bg-primary-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(40,116,240,0.5)]"></div>
+            </h2>
+            <p className="text-[11px] text-gray-400 font-bold uppercase tracking-[0.15em] -mt-0.5">{subtitle}</p>
+          </div>
         </div>
-
-      </div>
+      )}
 
       {/* Professional Grid Layout */}
       <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-y-7 gap-x-3">

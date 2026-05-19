@@ -3,6 +3,27 @@ const Brand = require('../../models/Brand');
 const Service = require('../../models/UserService');
 const HomeContent = require('../../models/HomeContent');
 const { calculateDistance } = require('../../services/locationService');
+const Vendor = require('../../models/Vendor');
+const City = require('../../models/City');
+
+/**
+ * Helper to get vendor match query for catalog filtering
+ */
+const getVendorMatchQuery = async (cityId) => {
+  const match = { 
+    isOnline: true, 
+    availability: 'AVAILABLE',
+    approvalStatus: 'approved'
+  };
+
+  if (cityId) {
+    const city = await City.findById(cityId);
+    if (city) {
+      match['address.city'] = { $regex: new RegExp(`^${city.name.trim()}$`, 'i') };
+    }
+  }
+  return match;
+};
 
 /**
  * Public Catalog Controllers
@@ -27,52 +48,37 @@ const getPublicCategories = async (req, res) => {
       ];
     }
 
-    // Find all online and available vendors
-    const onlineVendors = await require('../../models/Vendor').find({ 
-      isOnline: true, 
-      availability: 'AVAILABLE' 
-    }).select('_id');
-    const onlineVendorIds = onlineVendors.map(v => v._id);
-
-    // Find categories that have at least one active brand/service with an online vendor
-    const [activeCategoryIdsFromBrands, activeCategoryIdsFromServices] = await Promise.all([
-      Brand.distinct('categoryIds', { 
-        status: 'active', 
-        vendorId: { $in: onlineVendorIds } 
-      }),
-      Service.distinct('categoryId', { 
-        status: 'active', 
-        vendorId: { $in: onlineVendorIds } 
-      })
-    ]);
-
-    const activeCategoryIds = new Set([
-      ...activeCategoryIdsFromBrands.map(id => id.toString()),
-      ...activeCategoryIdsFromServices.map(id => id.toString())
-    ]);
-
     const categories = await Category.find(query)
       .select('title slug homeIconUrl homeBadge hasSaleBadge homeOrder showOnHome categoryType')
       .sort({ homeOrder: 1, createdAt: -1 })
       .lean();
 
-    // Filter and map
-    const initialCategories = categories
-      .filter(cat => activeCategoryIds.has(cat._id.toString()))
-      .map(cat => ({
-        id: cat._id.toString(),
-        title: cat.title,
-        slug: cat.slug,
-        icon: cat.homeIconUrl || '',
-        badge: cat.homeBadge || '',
-        hasSaleBadge: cat.hasSaleBadge || false,
-        showOnHome: cat.showOnHome || false,
-        categoryType: cat.categoryType || 'service'
-      }));
+    // Map categories
+    const initialCategories = categories.map(cat => ({
+      id: cat._id.toString(),
+      title: cat.title,
+      slug: cat.slug,
+      icon: cat.homeIconUrl || '',
+      badge: cat.homeBadge || '',
+      hasSaleBadge: cat.hasSaleBadge || false,
+      showOnHome: cat.showOnHome || false,
+      categoryType: cat.categoryType || 'service'
+    }));
+
+    // Deduplicate by title to prevent duplicate categories on the UI
+    const uniqueCategories = [];
+    const seenTitles = new Set();
+    initialCategories.forEach(cat => {
+      const lowerTitle = cat.title.toLowerCase().trim();
+      if (!seenTitles.has(lowerTitle)) {
+        seenTitles.add(lowerTitle);
+        uniqueCategories.push(cat);
+      }
+    });
 
     res.status(200).json({
       success: true,
-      categories: initialCategories
+      categories: uniqueCategories
     });
   } catch (error) {
     console.error('Get public categories error:', error);
@@ -116,11 +122,13 @@ const getPublicBrands = async (req, res) => {
       query.title = { $regex: escapedSearch, $options: 'i' };
     }
 
+    const vendorMatch = await getVendorMatchQuery(cityId);
+
     let brands = await Brand.find(query)
       .select('title slug iconUrl logo imageUrl badge categoryIds basePrice discountPrice sections type vendorId isPriceDisclosed')
       .populate({
         path: 'vendorId',
-        match: { isOnline: true, availability: 'AVAILABLE' },
+        match: vendorMatch,
         select: 'name businessName policeVerification address rating totalJobs profilePhoto isOnline availability geoLocation location'
       })
       .sort({ createdAt: -1 })
@@ -252,9 +260,12 @@ const getPublicBrandBySlug = async (req, res) => {
   try {
     const { slug } = req.params;
 
+    const { cityId } = req.query;
+    const vendorMatch = await getVendorMatchQuery(cityId);
+
     const brand = await Brand.findOne({ slug, status: 'active' })
       .populate('categoryIds', 'title slug')
-      .populate('vendorId', 'name businessName isOnline availability')
+      .populate('vendorId', 'name businessName isOnline availability address')
       .lean();
 
     if (!brand) {
@@ -328,7 +339,11 @@ const getPublicBrandBySlug = async (req, res) => {
       title: { $in: serviceTitles.map(t => new RegExp(`${t}`, 'i')) },
       status: 'active'
     })
-      .populate('vendorId', 'name businessName isOnline availability location address geoLocation')
+      .populate({
+        path: 'vendorId',
+        match: vendorMatch,
+        select: 'name businessName isOnline availability location address geoLocation'
+      })
       .lean();
 
     // Deduplicate services by title, picking the one from the closest/best vendor
@@ -449,7 +464,8 @@ const getPublicBrandBySlug = async (req, res) => {
 
 const getPublicServices = async (req, res) => {
   try {
-    const { brandId, brandSlug, categoryId, lat, lng } = req.query;
+    const { brandId, brandSlug, categoryId, lat, lng, cityId } = req.query;
+    const vendorMatch = await getVendorMatchQuery(cityId);
 
     const query = { status: 'active' };
 
@@ -474,7 +490,7 @@ const getPublicServices = async (req, res) => {
     const services = await Service.find(query)
       .populate({
         path: 'vendorId',
-        match: { isOnline: true, availability: 'AVAILABLE' }, // Only populate if online
+        match: vendorMatch, // Only populate if online and in city
         select: 'name businessName policeVerification address rating totalJobs profilePhoto isOnline availability geoLocation location'
       })
       .sort({ createdAt: 1 })
@@ -579,11 +595,47 @@ const getPublicServices = async (req, res) => {
 const getPublicHomeContent = async (req, res) => {
   try {
     const { cityId } = req.query;
+
+    // Fetch active categories
+    const categoriesRes = await Category.find({ 
+      status: 'active', 
+      $or: cityId ? [
+        { cityIds: cityId },
+        { cityIds: { $exists: false } },
+        { cityIds: { $size: 0 } }
+      ] : [{ status: 'active' }]
+    })
+      .select('title slug homeIconUrl homeBadge hasSaleBadge categoryType')
+      .sort({ homeOrder: 1 })
+      .lean();
+
+    const formattedCategories = categoriesRes.map(cat => ({
+      id: cat._id.toString(),
+      title: cat.title,
+      slug: cat.slug,
+      icon: cat.homeIconUrl || '',
+      badge: cat.homeBadge || '',
+      hasSaleBadge: cat.hasSaleBadge || false,
+      categoryType: cat.categoryType || 'service'
+    }));
+
+    // Deduplicate by title to prevent duplicate categories on the UI
+    const uniqueCategories = [];
+    const seenTitles = new Set();
+    formattedCategories.forEach(cat => {
+      const lowerTitle = cat.title.toLowerCase().trim();
+      if (!seenTitles.has(lowerTitle)) {
+        seenTitles.add(lowerTitle);
+        uniqueCategories.push(cat);
+      }
+    });
+
     const homeContent = await HomeContent.getHomeContent(cityId);
 
     if (!homeContent) {
       return res.status(200).json({
         success: true,
+        categories: uniqueCategories,
         homeContent: {
           banners: [],
           promos: [],
@@ -654,6 +706,7 @@ const getPublicHomeContent = async (req, res) => {
 
     res.status(200).json({
       success: true,
+      categories: uniqueCategories,
       homeContent: formattedContent
     });
 
@@ -673,15 +726,13 @@ const getPublicHomeData = async (req, res) => {
   try {
     const { cityId } = req.query;
 
-    // 1. Find all online and available vendors
-    const onlineVendors = await require('../../models/Vendor').find({ 
-      isOnline: true, 
-      availability: 'AVAILABLE' 
-    }).select('_id');
+    // 1. Find all online and available vendors in the selected city
+    const vendorQuery = await getVendorMatchQuery(cityId);
+    const onlineVendors = await Vendor.find(vendorQuery).select('_id');
     const onlineVendorIds = onlineVendors.map(v => v._id);
 
-    // 2. Find categories that have at least one active brand/service with an online vendor
-    const [categoriesRes, homeContent, activeCategoryIdsFromBrands, activeCategoryIdsFromServices] = await Promise.all([
+    // 2. Find active categories and home content
+    const [categoriesRes, homeContent] = await Promise.all([
       Category.find({ 
         status: 'active', 
         $or: cityId ? [
@@ -693,34 +744,18 @@ const getPublicHomeData = async (req, res) => {
         .select('title slug homeIconUrl homeBadge hasSaleBadge categoryType')
         .sort({ homeOrder: 1 })
         .lean(),
-      HomeContent.getHomeContent(cityId),
-      Brand.distinct('categoryIds', { 
-        status: 'active', 
-        vendorId: { $in: onlineVendorIds } 
-      }),
-      Service.distinct('categoryId', { 
-        status: 'active', 
-        vendorId: { $in: onlineVendorIds } 
-      })
+      HomeContent.getHomeContent(cityId)
     ]);
 
-    // Combine active category IDs
-    const activeCategoryIds = new Set([
-      ...activeCategoryIdsFromBrands.map(id => id.toString()),
-      ...activeCategoryIdsFromServices.map(id => id.toString())
-    ]);
-
-    const formattedCategories = categoriesRes
-      .filter(cat => activeCategoryIds.has(cat._id.toString())) // Filter by availability
-      .map(cat => ({
-        id: cat._id.toString(),
-        title: cat.title,
-        slug: cat.slug,
-        icon: cat.homeIconUrl || '',
-        badge: cat.homeBadge || '',
-        hasSaleBadge: cat.hasSaleBadge || false,
-        categoryType: cat.categoryType || 'service'
-      }));
+    const formattedCategories = categoriesRes.map(cat => ({
+      id: cat._id.toString(),
+      title: cat.title,
+      slug: cat.slug,
+      icon: cat.homeIconUrl || '',
+      badge: cat.homeBadge || '',
+      hasSaleBadge: cat.hasSaleBadge || false,
+      categoryType: cat.categoryType || 'service'
+    }));
 
     // Deduplicate by title to prevent duplicate icons on home page
     const uniqueCategories = [];
@@ -746,7 +781,7 @@ const getPublicHomeData = async (req, res) => {
         .populate({
           path: 'vendorId',
           select: 'name businessName isOnline availability location address geoLocation',
-          match: { isOnline: true, availability: 'AVAILABLE' }
+          match: vendorQuery // Uses the city-filtered query from above
         })
         .lean();
       
@@ -754,7 +789,7 @@ const getPublicHomeData = async (req, res) => {
         .populate({
           path: 'vendorId',
           select: 'name businessName isOnline availability location address geoLocation',
-          match: { isOnline: true, availability: 'AVAILABLE' }
+          match: vendorQuery // Uses the city-filtered query from above
         })
         .lean();
 

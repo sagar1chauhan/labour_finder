@@ -42,6 +42,7 @@ const getProfile = async (req, res) => {
         plans: user.plans || {},
         settings: user.settings || {},
         wallet: user.wallet || { balance: 0 },
+        usageRole: user.usageRole || null,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt
       }
@@ -70,7 +71,7 @@ const updateProfile = async (req, res) => {
     }
 
     const userId = req.user.id;
-    const { name, email, addresses, profilePhoto, settings } = req.body;
+    const { name, email, addresses, profilePhoto, settings, usageRole } = req.body;
 
     console.log('[Profile Update] Request for user:', userId);
     console.log('[Profile Update] Data received:', { name, email, profilePhoto: profilePhoto ? 'provided' : 'not provided' });
@@ -136,6 +137,10 @@ const updateProfile = async (req, res) => {
       }
     }
 
+    if (usageRole !== undefined) {
+      updateData.usageRole = usageRole;
+    }
+
     console.log('[Profile Update] Updating with:', updateData);
 
     // Use findByIdAndUpdate for atomic update
@@ -161,7 +166,8 @@ const updateProfile = async (req, res) => {
         addresses: updatedUser.addresses || [],
         plans: updatedUser.plans || {},
         settings: updatedUser.settings || {},
-        wallet: updatedUser.wallet || { balance: 0 }
+        wallet: updatedUser.wallet || { balance: 0 },
+        usageRole: updatedUser.usageRole || null
       }
     });
   } catch (error) {

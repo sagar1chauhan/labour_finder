@@ -243,9 +243,9 @@ const BookingDetails = () => {
         return 'bg-green-50 text-green-700 border-green-200';
       case 'in_progress':
       case 'journey_started':
-        return 'bg-blue-50 text-blue-700 border-blue-200';
+        return 'bg-amber-50 text-amber-700 border-amber-200';
       case 'visited':
-        return 'bg-teal-50 text-teal-700 border-teal-200';
+        return 'bg-orange-50 text-orange-700 border-orange-200';
       case 'completed':
         return 'bg-gray-50 text-gray-700 border-gray-200';
       case 'cancelled':
@@ -582,28 +582,10 @@ const BookingDetails = () => {
   // --------------------------------------
 
   return (
-    <div className="min-h-screen pb-32 relative bg-white">
+    <div className="min-h-screen pb-32 relative bg-[#FFFBEB]">
       {/* Refined Brand Mesh Gradient Background */}
       <div className="fixed inset-0 z-0 pointer-events-none">
-        <div className="absolute inset-0"
-          style={{
-            background: `
-              radial-gradient(at 0% 0%, ${themeColors?.brand?.teal || '#347989'}25 0%, transparent 70%),
-              radial-gradient(at 100% 0%, ${themeColors?.brand?.yellow || '#D68F35'}20 0%, transparent 70%),
-              radial-gradient(at 100% 100%, ${themeColors?.brand?.orange || '#BB5F36'}15 0%, transparent 75%),
-              radial-gradient(at 0% 100%, ${themeColors?.brand?.teal || '#347989'}10 0%, transparent 70%),
-              radial-gradient(at 50% 50%, ${themeColors?.brand?.teal || '#347989'}03 0%, transparent 100%),
-              #FFFFFF
-            `
-          }}
-        />
-        {/* Elegant Dot Grid Pattern */}
-        <div className="absolute inset-0 opacity-[0.04]"
-          style={{
-            backgroundImage: `radial-gradient(${themeColors?.brand?.teal || '#347989'} 0.8px, transparent 0.8px)`,
-            backgroundSize: '32px 32px'
-          }}
-        />
+        <div className="absolute inset-0 bg-gradient-to-b from-orange-100/30 via-white to-white" />
       </div>
 
       <div className="relative z-10">
@@ -643,7 +625,7 @@ const BookingDetails = () => {
                 {/* Step 1: Booked */}
                 <div className="flex flex-col items-center gap-2 w-1/4">
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${['pending', 'requested', 'searching', 'bidding', 'accepted', 'confirmed', 'assigned', 'journey_started', 'visited', 'in_progress', 'work_done', 'completed'].includes(booking.status?.toLowerCase())
-                    ? 'bg-teal-600 text-white shadow-lg shadow-teal-200' : 'bg-gray-100 text-gray-400'
+                    ? 'bg-amber-600 text-white shadow-lg shadow-amber-200' : 'bg-gray-100 text-gray-400'
                     }`}>
                     <FiCheckCircle className="w-4 h-4" />
                   </div>
@@ -653,7 +635,7 @@ const BookingDetails = () => {
                 {/* Step 2: Assigned */}
                 <div className="flex flex-col items-center gap-2 w-1/4">
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${['accepted', 'confirmed', 'assigned', 'journey_started', 'visited', 'in_progress', 'work_done', 'completed'].includes(booking.status?.toLowerCase())
-                    ? 'bg-teal-600 text-white shadow-lg shadow-teal-200' : 'bg-gray-100 text-gray-400'
+                    ? 'bg-amber-600 text-white shadow-lg shadow-amber-200' : 'bg-gray-100 text-gray-400'
                     }`}>
                     2
                   </div>
@@ -663,7 +645,7 @@ const BookingDetails = () => {
                 {/* Step 3: In Progress */}
                 <div className="flex flex-col items-center gap-2 w-1/4">
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${['journey_started', 'visited', 'in_progress', 'work_done', 'completed'].includes(booking.status?.toLowerCase())
-                    ? 'bg-teal-600 text-white shadow-lg shadow-teal-200' : 'bg-gray-100 text-gray-400'
+                    ? 'bg-amber-600 text-white shadow-lg shadow-amber-200' : 'bg-gray-100 text-gray-400'
                     }`}>
                     3
                   </div>
@@ -673,7 +655,7 @@ const BookingDetails = () => {
                 {/* Step 4: Done */}
                 <div className="flex flex-col items-center gap-2 w-1/4">
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${['work_done', 'completed'].includes(booking.status?.toLowerCase())
-                    ? 'bg-teal-600 text-white shadow-lg shadow-teal-200' : 'bg-gray-100 text-gray-400'
+                    ? 'bg-amber-600 text-white shadow-lg shadow-amber-200' : 'bg-gray-100 text-gray-400'
                     }`}>
                     4
                   </div>
@@ -682,7 +664,7 @@ const BookingDetails = () => {
               </div>
               {/* Connect lines */}
               <div className="absolute top-[4.5rem] left-[15%] right-[15%] h-0.5 bg-gray-100 -z-0">
-                <div className="h-full bg-teal-500 transition-all duration-1000" style={{
+                <div className="h-full bg-amber-500 transition-all duration-1000" style={{
                   width:
                     ['work_done', 'completed'].includes(booking.status?.toLowerCase()) ? '100%' :
                       ['journey_started', 'visited', 'in_progress'].includes(booking.status?.toLowerCase()) ? '66%' :

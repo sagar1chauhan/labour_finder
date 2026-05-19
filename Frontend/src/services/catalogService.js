@@ -291,6 +291,7 @@ export const publicCatalogService = {
     if (params.brandId) queryParams.append('brandId', params.brandId);
     if (params.brandSlug) queryParams.append('brandSlug', params.brandSlug);
     if (params.categoryId) queryParams.append('categoryId', params.categoryId);
+    if (params.cityId) queryParams.append('cityId', params.cityId);
     
     // Add user location if available for proximity-based filtering
     const lat = localStorage.getItem('user_lat');

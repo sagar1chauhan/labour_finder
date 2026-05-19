@@ -496,8 +496,8 @@ const logout = async (req, res) => {
     // Clear FCM tokens based on platform and reset Session ID
     if (req.user && req.user.id) {
       const updateQuery = platform === 'mobile'
-        ? { $set: { fcmTokenMobile: [], loginSessionId: null } }
-        : { $set: { fcmTokens: [], loginSessionId: null } };
+        ? { $set: { fcmTokenMobile: [], loginSessionId: null, isOnline: false, availability: 'OFFLINE', lastSeenAt: new Date() } }
+        : { $set: { fcmTokens: [], loginSessionId: null, isOnline: false, availability: 'OFFLINE', lastSeenAt: new Date() } };
 
       await Vendor.findByIdAndUpdate(req.user.id, updateQuery);
       console.log(`[AUTH] ✅ ${platform} session & tokens cleared for vendor: ${req.user.id}`);
