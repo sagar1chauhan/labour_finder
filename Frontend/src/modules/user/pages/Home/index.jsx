@@ -49,6 +49,7 @@ const Header = ({ city, onLocationClick, cartCount, navigate }) => {
           
           <div className="flex items-center gap-2 mt-1.5 shrink-0">
             <div 
+              id="cart-icon"
               onClick={() => navigate('/user/cart')}
               className="w-8.5 h-8.5 bg-white/40 hover:bg-white/60 backdrop-blur-md rounded-full flex items-center justify-center border border-white/20 cursor-pointer relative active:scale-90 transition-all shadow-sm"
             >
@@ -96,6 +97,43 @@ const FilterPills = ({ active, onChange }) => {
       ))}
     </div>
   );
+};
+
+const FlyingImage = ({ img }) => {
+  const [style, setStyle] = useState({
+    position: 'fixed',
+    zIndex: 9999,
+    left: img.startX,
+    top: img.startY,
+    width: img.width,
+    height: img.height,
+    pointerEvents: 'none',
+    transition: 'all 0.8s cubic-bezier(0.25, 1, 0.5, 1)',
+    transform: 'scale(1)',
+    opacity: 1,
+    borderRadius: '12px',
+    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+    objectFit: 'contain',
+    backgroundColor: '#fff',
+    border: '1px solid rgba(0, 0, 0, 0.05)'
+  });
+
+  useEffect(() => {
+    const frameId = requestAnimationFrame(() => {
+      setStyle(prev => ({
+        ...prev,
+        left: img.endX,
+        top: img.endY,
+        width: 30,
+        height: 30,
+        transform: 'scale(0.2) rotate(360deg)',
+        opacity: 0.2
+      }));
+    });
+    return () => cancelAnimationFrame(frameId);
+  }, [img]);
+
+  return <img src={img.src} style={style} alt="flying-product" />;
 };
 
 const HeroCard = ({ onAction }) => (
@@ -511,8 +549,9 @@ const Home = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { currentCity } = useCity();
-  const { cartCount } = useCart();
+  const { cartCount, addToCart } = useCart();
 
+  const [flyingImages, setFlyingImages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState([]);
   const [banners, setBanners] = useState([]);
@@ -527,6 +566,66 @@ const Home = () => {
   const [selectedWorker, setSelectedWorker] = useState(null);
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
   const [activeCategoryType, setActiveCategoryType] = useState('product'); // 'product' or 'service'
+
+  const handleAddToCart = (product, e) => {
+    const cardEl = e?.currentTarget?.closest('.group');
+    const imgEl = cardEl?.querySelector('img');
+    const cartEl = document.getElementById('cart-icon');
+
+    if (imgEl && cartEl) {
+      const imgRect = imgEl.getBoundingClientRect();
+      const cartRect = cartEl.getBoundingClientRect();
+      
+      const id = Date.now() + Math.random();
+      const imageSrc = product.iconUrl || 'https://res.cloudinary.com/deorxby43/image/upload/v1779274407/products/pn4b1tmtdcma9mppi7z0.png';
+
+      setFlyingImages(prev => [...prev, {
+        id,
+        src: imageSrc,
+        startX: imgRect.left,
+        startY: imgRect.top,
+        width: imgRect.width,
+        height: imgRect.height,
+        endX: cartRect.left + (cartRect.width / 2) - 15,
+        endY: cartRect.top + (cartRect.height / 2) - 15
+      }]);
+
+      setTimeout(() => {
+        addToCart({
+          id: product.id,
+          serviceId: product.id,
+          categoryId: null,
+          title: product.title,
+          price: product.basePrice,
+          image: product.iconUrl,
+          icon: product.iconUrl,
+          category: 'Product',
+          vendorId: null
+        });
+        
+        cartEl.classList.add('cart-bounce');
+        setTimeout(() => {
+          cartEl.classList.remove('cart-bounce');
+        }, 400);
+
+        setFlyingImages(prev => prev.filter(item => item.id !== id));
+        toast.success(`${product.title} added to cart!`);
+      }, 800);
+    } else {
+      addToCart({
+        id: product.id,
+        serviceId: product.id,
+        categoryId: null,
+        title: product.title,
+        price: product.basePrice,
+        image: product.iconUrl,
+        icon: product.iconUrl,
+        category: 'Product',
+        vendorId: null
+      });
+      toast.success(`${product.title} added to cart!`);
+    }
+  };
 
   useEffect(() => {
     const isAnyModalOpen = !!selectedWorker || isCategoryModalOpen || isSearchOpen || isAddressModalOpen || !!selectedBrand;
@@ -609,6 +708,119 @@ const Home = () => {
     }
     setIsAddressModalOpen(false);
   };
+
+  const DUMMY_PRODUCTS_BY_CATEGORY = [
+    {
+      categoryName: "Cement & Plaster",
+      products: [
+        {
+          id: "p1",
+          title: "UltraTech PPC Cement (50 kg)",
+          basePrice: 385,
+          discountPrice: 390,
+          unit: "bag",
+          stockWarning: "Only 5 left",
+          iconUrl: "https://res.cloudinary.com/deorxby43/image/upload/v1779274407/products/pn4b1tmtdcma9mppi7z0.png"
+        },
+        {
+          id: "p2",
+          title: "Birla White Cement (50 kg)",
+          basePrice: 1155,
+          discountPrice: 1250,
+          unit: "bag",
+          stockWarning: "Limited stock",
+          iconUrl: "https://res.cloudinary.com/deorxby43/image/upload/v1779274407/products/pn4b1tmtdcma9mppi7z0.png"
+        },
+        {
+          id: "p3",
+          title: "Saint Gobain Gyproc Xpert+ Gypsum Plaster (20 kg)",
+          basePrice: 270,
+          discountPrice: 350,
+          unit: "bag",
+          stockWarning: "Only 5 left",
+          iconUrl: "https://res.cloudinary.com/deorxby43/image/upload/v1779274407/products/pn4b1tmtdcma9mppi7z0.png"
+        },
+        {
+          id: "p4",
+          title: "Saint Gobain Gyproc Plain Gypsum Board (12.5 mm, 4 x 6 feet)",
+          basePrice: 580,
+          discountPrice: 580,
+          unit: "piece",
+          iconUrl: "https://res.cloudinary.com/deorxby43/image/upload/v1779274407/products/pn4b1tmtdcma9mppi7z0.png"
+        },
+        {
+          id: "p5",
+          title: "JK Super Strong Cement (50 kg)",
+          basePrice: 375,
+          discountPrice: 395,
+          unit: "bag",
+          iconUrl: "https://res.cloudinary.com/deorxby43/image/upload/v1779274407/products/pn4b1tmtdcma9mppi7z0.png"
+        },
+        {
+          id: "p6",
+          title: "Ambuja Kawach Waterproof Cement (50 kg)",
+          basePrice: 440,
+          discountPrice: 480,
+          unit: "bag",
+          iconUrl: "https://res.cloudinary.com/deorxby43/image/upload/v1779274407/products/pn4b1tmtdcma9mppi7z0.png"
+        }
+      ]
+    },
+    {
+      categoryName: "Tiling",
+      products: [
+        {
+          id: "p7",
+          title: "MYK Laticrete 305 Tiles Adhesive Grey (20 kg)",
+          basePrice: 335,
+          discountPrice: 506,
+          unit: "bag",
+          stockWarning: "Only 5 left",
+          iconUrl: "https://res.cloudinary.com/deorxby43/image/upload/v1779274407/products/pn4b1tmtdcma9mppi7z0.png"
+        },
+        {
+          id: "p8",
+          title: "MYK Laticrete 335 Super Flex Tile Adhesive (20 kg, White)",
+          basePrice: 1460,
+          discountPrice: 1810,
+          unit: "bag",
+          iconUrl: "https://res.cloudinary.com/deorxby43/image/upload/v1779274407/products/pn4b1tmtdcma9mppi7z0.png"
+        },
+        {
+          id: "p9",
+          title: "MYK Laticrete 325 High Flex Polymer Modified Tile Adhesive (20 kg)",
+          basePrice: 1060,
+          discountPrice: 1290,
+          unit: "bag",
+          iconUrl: "https://res.cloudinary.com/deorxby43/image/upload/v1779274407/products/pn4b1tmtdcma9mppi7z0.png"
+        },
+        {
+          id: "p10",
+          title: "Pidilite Roff Tile Grout (1 kg, Ivory)",
+          basePrice: 140,
+          discountPrice: 160,
+          unit: "bag",
+          iconUrl: "https://res.cloudinary.com/deorxby43/image/upload/v1779274407/products/pn4b1tmtdcma9mppi7z0.png"
+        },
+        {
+          id: "p11",
+          title: "Bal Endura Tile Adhesive (20 kg)",
+          basePrice: 290,
+          discountPrice: 340,
+          unit: "bag",
+          iconUrl: "https://res.cloudinary.com/deorxby43/image/upload/v1779274407/products/pn4b1tmtdcma9mppi7z0.png"
+        },
+        {
+          id: "p12",
+          title: "Dr. Fixit Pidiproof LW+ (1 Litre)",
+          basePrice: 165,
+          discountPrice: 195,
+          unit: "piece",
+          iconUrl: "https://res.cloudinary.com/deorxby43/image/upload/v1779274407/products/pn4b1tmtdcma9mppi7z0.png"
+        }
+      ]
+    }
+  ];
 
   const DUMMY_WORKERS = [
     { id: 1, name: "James Carter", rating: "4.9 (200)", experience: "8 years", type: "Electricians", tab: "Repairing", image: "https://img.freepik.com/free-photo/portrait-smiley-man-working-as-delivery-person_23-2148911520.jpg?w=740" },
@@ -773,6 +985,102 @@ const Home = () => {
           </div>
         )}
 
+        {/* Category Products Showcase Section */}
+        {DUMMY_PRODUCTS_BY_CATEGORY.map((catGroup) => (
+          <div key={catGroup.categoryName} className="px-6 py-4 border-t border-black/[0.03] mt-2">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2 border-l-[3px] border-[#a2ad02] pl-2">
+                <h3 className="text-[13px] font-black text-gray-900 tracking-tight uppercase">
+                  {catGroup.categoryName}
+                </h3>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              {catGroup.products.slice(0, 4).map((product) => {
+                const base = product.basePrice || 0;
+                const discount = product.discountPrice || 0;
+                const hasDiscount = discount > base;
+                const discountPercent = hasDiscount 
+                  ? Math.round(((discount - base) / discount) * 100)
+                  : 0;
+
+                return (
+                  <div 
+                    key={product.id}
+                    onClick={() => navigate('/user/categories')}
+                    className="bg-white rounded-2xl p-2 border border-gray-100 shadow-sm flex flex-col hover:shadow-md transition-all duration-300 relative group cursor-pointer"
+                  >
+                    {/* Image Box */}
+                    <div className="aspect-square bg-gray-50 rounded-xl overflow-hidden mb-2 flex items-center justify-center p-1.5 relative">
+                      <img 
+                        src={product.iconUrl} 
+                        alt={product.title} 
+                        className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500" 
+                      />
+                      
+                      {/* ADD Button */}
+                      <button 
+                        onClick={(e) => { 
+                          e.stopPropagation(); 
+                          handleAddToCart(product, e);
+                        }}
+                        className="absolute bottom-1 right-1 px-2.5 py-0.5 bg-white border border-[#a2ad02] text-[#a2ad02] hover:bg-[#a2ad02] hover:text-white rounded-lg text-[8px] font-black uppercase tracking-wider transition-all shadow-sm active:scale-95"
+                      >
+                        ADD
+                      </button>
+                    </div>
+
+                    {/* Details */}
+                    <div className="flex-1 flex flex-col">
+                      <h3 className="text-[10px] font-semibold text-gray-800 leading-tight mb-1 line-clamp-2">
+                        {product.title}
+                      </h3>
+                      
+                      {/* Stock warning */}
+                      {product.stockWarning && (
+                        <p className="text-[8px] font-bold text-amber-600 mb-1">
+                          {product.stockWarning}
+                        </p>
+                      )}
+
+                      {/* Pricing row */}
+                      <div className="flex items-center gap-1.5 flex-wrap mt-auto">
+                        <span className="text-[11px] font-black text-gray-900">
+                          ₹{base}{product.unit ? <span className="text-[8px] font-semibold text-gray-500">/{product.unit}</span> : ''}
+                        </span>
+                        {hasDiscount && (
+                          <span className="text-[9px] font-semibold text-gray-400 line-through">
+                            ₹{discount}
+                          </span>
+                        )}
+                      </div>
+                      
+                      {/* Discount Text */}
+                      {hasDiscount && (
+                        <p className="text-[9px] font-bold text-green-700 mt-0.5">
+                          {discountPercent}% OFF
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* See All Button directly below the 4 products */}
+            <div className="flex justify-center mt-4">
+              <button
+                onClick={() => navigate('/user/categories')}
+                className="w-full py-3 bg-white border border-[#a2ad02]/30 text-[#a2ad02] rounded-xl text-[10px] font-black uppercase tracking-[0.2em] shadow-sm hover:bg-[#a2ad02] hover:text-white transition-all active:scale-95 text-center"
+              >
+                See All {catGroup.categoryName}
+              </button>
+            </div>
+          </div>
+        ))}
+
+
 
         <ServiceDetail
           worker={selectedWorker}
@@ -810,6 +1118,11 @@ const Home = () => {
           currentCity={currentCity}
           navigate={navigate}
         />
+
+        {/* Fly-to-Cart Flying Previews */}
+        {flyingImages.map(img => (
+          <FlyingImage key={img.id} img={img} />
+        ))}
       </div>
     </div>
   );
