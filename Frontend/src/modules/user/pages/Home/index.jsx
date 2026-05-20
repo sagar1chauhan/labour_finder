@@ -512,6 +512,7 @@ const Home = () => {
   const [categories, setCategories] = useState([]);
   const [banners, setBanners] = useState([]);
   const [brands, setBrands] = useState([]);
+  const [subCategories, setSubCategories] = useState([]);
   const [selectedBrand, setSelectedBrand] = useState(null);
   const [activeFilter, setActiveFilter] = useState('All');
   const [activeServiceTab, setActiveServiceTab] = useState('Repairing');
@@ -520,6 +521,7 @@ const Home = () => {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedWorker, setSelectedWorker] = useState(null);
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
+  const [activeCategoryType, setActiveCategoryType] = useState('product'); // 'product' or 'service'
 
   useEffect(() => {
     const isAnyModalOpen = !!selectedWorker || isCategoryModalOpen || isSearchOpen || isAddressModalOpen || !!selectedBrand;
@@ -572,6 +574,13 @@ const Home = () => {
       } else {
         setBrands([]);
       }
+
+      // SubCategories returned separately from brands
+      if (brandRes?.success && brandRes.subCategories?.length > 0) {
+        setSubCategories(brandRes.subCategories);
+      } else {
+        setSubCategories([]);
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -580,8 +589,12 @@ const Home = () => {
   };
 
   const handleCategoryClick = (category) => {
-    setSelectedCategory(category);
-    setIsCategoryModalOpen(true);
+    if (category.categoryType === 'product') {
+      navigate('/user/categories');
+    } else {
+      setSelectedCategory(category);
+      setIsCategoryModalOpen(true);
+    }
   };
 
   const handleLocationSave = (houseNo, loc) => {
@@ -607,7 +620,12 @@ const Home = () => {
 
   const displayWorkers = filteredWorkers.length > 0 ? filteredWorkers : DUMMY_WORKERS;
 
-  const displayCategories = categories;
+  const displayCategories = useMemo(() => {
+    return categories.filter(cat => {
+      const type = cat.categoryType || 'service';
+      return type === activeCategoryType;
+    });
+  }, [categories, activeCategoryType]);
 
   const categoryWorkers = useMemo(() => {
     if (!selectedCategory) return [];
@@ -633,8 +651,42 @@ const Home = () => {
         
         {/* Categories Section */}
         <div className="px-6 py-4">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-bold text-gray-900 tracking-tight">Shop by Categories</h3>
+          <div className="flex items-center justify-between mb-5">
+            <h3 className="text-[13px] font-black text-gray-900 tracking-tight uppercase">Shop by Categories</h3>
+            
+            {/* Dynamic sliding segment switch */}
+            <div className="flex bg-gray-200/60 p-0.5 rounded-xl border border-gray-300/20 w-[160px] relative shadow-inner shrink-0">
+              <button
+                onClick={() => setActiveCategoryType('product')}
+                className={`flex-1 py-1.5 px-1 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all duration-300 relative ${
+                  activeCategoryType === 'product' ? 'text-white' : 'text-gray-500 hover:text-gray-800'
+                }`}
+              >
+                {activeCategoryType === 'product' && (
+                  <motion.div
+                    layoutId="activeCategoryTypeTab"
+                    className="absolute inset-0 bg-[#a2ad02] rounded-lg z-0 shadow-sm"
+                    transition={{ type: "spring", stiffness: 380, damping: 25 }}
+                  />
+                )}
+                <span className="relative z-10">Products</span>
+              </button>
+              <button
+                onClick={() => setActiveCategoryType('service')}
+                className={`flex-1 py-1.5 px-1 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all duration-300 relative ${
+                  activeCategoryType === 'service' ? 'text-white' : 'text-gray-500 hover:text-gray-800'
+                }`}
+              >
+                {activeCategoryType === 'service' && (
+                  <motion.div
+                    layoutId="activeCategoryTypeTab"
+                    className="absolute inset-0 bg-[#a2ad02] rounded-lg z-0 shadow-sm"
+                    transition={{ type: "spring", stiffness: 380, damping: 25 }}
+                  />
+                )}
+                <span className="relative z-10">Services</span>
+              </button>
+            </div>
           </div>
 
           {/* Skeleton while loading */}
@@ -674,47 +726,48 @@ const Home = () => {
         <DynamicBanners 
           banners={banners} 
           navigate={navigate} 
-          defaultHero={<HeroCard onAction={() => navigate('/user/shop')} />} 
+          defaultHero={<HeroCard onAction={() => navigate('/user/categories')} />} 
         />
 
         {/* Shop by Brands Section */}
-        <div className="px-6 py-3 mb-0">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-bold text-gray-900 tracking-tight">Shop by Brands</h2>
-          </div>
+        {brands.length > 0 && (
+          <div className="px-6 py-3 mb-0">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-base font-bold text-gray-900 tracking-tight">Shop by Brands</h2>
+            </div>
 
-          {loading ? (
-            <div className="grid grid-cols-4 gap-x-2 gap-y-4 py-2">
-              {[1, 2, 3, 4].map(i => (
-                <div key={i} className="flex flex-col items-center animate-pulse">
-                  <div className="w-16 h-16 bg-gray-200 rounded-2xl" />
-                  <div className="h-2 w-10 bg-gray-200 rounded-full mt-2" />
-                </div>
-              ))}
-            </div>
-          ) : brands.length > 0 ? (
-            <div className="grid grid-cols-4 gap-x-2 gap-y-4 pb-2">
-              {brands.map(brand => (
-                <div 
-                  key={brand._id}
-                  onClick={() => setSelectedBrand(brand)}
-                  className="flex flex-col items-center cursor-pointer active:scale-95 transition-all group"
-                >
-                  <div className="w-16 h-16 bg-sky-100 rounded-2xl border border-sky-200/50 flex items-center justify-center p-3 shadow-sm group-hover:border-[#cfdc01] group-hover:shadow-md transition-all overflow-hidden">
-                    {brand.iconUrl || brand.logo ? (
-                      <img src={toAssetUrl(brand.iconUrl || brand.logo)} alt={brand.title} className="w-full h-full object-contain group-hover:scale-105 transition-transform" />
-                    ) : (
-                      <span className="text-xl font-bold text-gray-400">{brand.title.charAt(0)}</span>
-                    )}
+            {loading ? (
+              <div className="grid grid-cols-4 gap-x-2 gap-y-4 py-2">
+                {[1, 2, 3, 4].map(i => (
+                  <div key={i} className="flex flex-col items-center animate-pulse">
+                    <div className="w-16 h-16 bg-gray-200 rounded-2xl" />
+                    <div className="h-2 w-10 bg-gray-200 rounded-full mt-2" />
                   </div>
-                  <span className="text-[9px] font-bold text-gray-800 mt-2 text-center max-w-[70px] truncate uppercase tracking-tight">{brand.title}</span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-xs text-gray-400 text-center py-4">No brands available</p>
-          )}
-        </div>
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-4 gap-x-2 gap-y-4 pb-2">
+                {brands.map(brand => (
+                  <div 
+                    key={brand.id || brand._id}
+                    onClick={() => setSelectedBrand(brand)}
+                    className="flex flex-col items-center cursor-pointer active:scale-95 transition-all group"
+                  >
+                    <div className="w-16 h-16 bg-sky-100 rounded-2xl border border-sky-200/50 flex items-center justify-center p-3 shadow-sm group-hover:border-[#cfdc01] group-hover:shadow-md transition-all overflow-hidden">
+                      {brand.icon || brand.logo ? (
+                        <img src={brand.icon || brand.logo} alt={brand.title} className="w-full h-full object-contain group-hover:scale-105 transition-transform" />
+                      ) : (
+                        <span className="text-xl font-bold text-gray-400">{brand.title.charAt(0)}</span>
+                      )}
+                    </div>
+                    <span className="text-[9px] font-bold text-gray-800 mt-2 text-center max-w-[70px] truncate uppercase tracking-tight">{brand.title}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
 
         <ServiceDetail
           worker={selectedWorker}

@@ -88,6 +88,7 @@ const getChildRoute = (parentRoute, childName) => {
     "/admin/user-categories": {
       "Home": "/admin/user-categories/home",
       "Manage Categories": "/admin/user-categories/categories",
+      "Manage Sub Categories": "/admin/user-categories/sub-categories",
       "Manage Brands": "/admin/user-categories/brands",
       "Manage Services": "/admin/user-categories/sections",
     },

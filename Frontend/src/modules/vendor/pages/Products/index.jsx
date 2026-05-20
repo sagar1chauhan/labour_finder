@@ -10,7 +10,8 @@ import { uploadToCloudinary } from '../../../../utils/cloudinaryUpload';
 const ServicesPage = () => {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [brands, setBrands] = useState([]);
+  const [brandsList, setBrandsList] = useState([]);
+  const [subCategoriesList, setSubCategoriesList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -21,6 +22,7 @@ const ServicesPage = () => {
     title: '',
     categoryId: '',
     brandId: '',
+    subCategoryId: '',
     basePrice: '',
     discountPrice: '',
     description: '',
@@ -29,19 +31,50 @@ const ServicesPage = () => {
   });
 
   const handleCategoryChange = async (catId) => {
-    setForm(prev => ({ ...prev, categoryId: catId, brandId: '' }));
+    setForm(prev => ({ ...prev, categoryId: catId, brandId: '', subCategoryId: '' }));
     if (!catId) {
-      setBrands([]);
+      setBrandsList([]);
+      setSubCategoriesList([]);
       return;
     }
     try {
-      const res = await api.get(`/public/brands?categoryId=${catId}&all=true`);
-      if (res.data.success) {
-        setBrands(res.data.brands || []);
+      // Fetch ALL brands and sub-categories separately
+      const [brandsRes, subCatRes] = await Promise.all([
+        api.get(`/public/brands?all=true`),
+        api.get(`/vendors/sub-categories`)
+      ]);
+
+      // Set brands list
+      if (brandsRes.data.success && brandsRes.data.brands?.length > 0) {
+        const seen = new Set();
+        const uniqueBrands = brandsRes.data.brands.filter(b => {
+          const key = b.title.toLowerCase().trim();
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        }).map(b => ({ id: b.id || b._id, title: b.title }));
+        setBrandsList(uniqueBrands);
+      } else {
+        setBrandsList([]);
+      }
+
+      // Set sub-categories list
+      if (subCatRes.data.success && subCatRes.data.subCategories?.length > 0) {
+        const seen = new Set();
+        const uniqueSubCats = subCatRes.data.subCategories.filter(s => {
+          const key = s.title.toLowerCase().trim();
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        }).map(s => ({ id: s._id || s.id, title: s.title }));
+        setSubCategoriesList(uniqueSubCats);
+      } else {
+        setSubCategoriesList([]);
       }
     } catch (error) {
-      console.error('Error fetching brands for category:', error);
-      setBrands([]);
+      console.error('Error fetching categories data:', error);
+      setBrandsList([]);
+      setSubCategoriesList([]);
     }
   };
 
@@ -115,15 +148,18 @@ const ServicesPage = () => {
         toast.dismiss('upload');
       }
 
-      const res = await api.post('/vendors/products', {
+      const payload = {
         ...form,
+        brandId: form.brandId || form.subCategoryId,
         iconUrl
-      });
+      };
+
+      const res = await api.post('/vendors/products', payload);
 
       if (res.data.success) {
         toast.success(`${form.type === 'service' ? 'Service' : 'Product'} created successfully!`);
         setIsModalOpen(false);
-        setForm({ title: '', categoryId: '', brandId: '', basePrice: '', discountPrice: '', description: '', type: 'service', isPriceDisclosed: true });
+        setForm({ title: '', categoryId: '', brandId: '', subCategoryId: '', basePrice: '', discountPrice: '', description: '', type: 'service', isPriceDisclosed: true });
         setImageFile(null);
         setImagePreview('');
         fetchData();
@@ -258,20 +294,37 @@ const ServicesPage = () => {
                 </div>
 
                 {form.categoryId && (
-                  <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 block">Brand Name / Sub-category *</label>
-                    <select 
-                      required 
-                      value={form.brandId} 
-                      onChange={e => setForm({...form, brandId: e.target.value})} 
-                      className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-inner appearance-none"
-                    >
-                      <option value="">Select Brand</option>
-                      {brands.map(b => (
-                        <option key={b.id || b._id} value={b.id || b._id}>{b.title}</option>
-                      ))}
-                    </select>
-                  </div>
+                  <>
+                    {/* Brand Dropdown */}
+                    <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 block">Brand Name</label>
+                      <select 
+                        value={form.brandId} 
+                        onChange={e => setForm({...form, brandId: e.target.value})} 
+                        className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-inner appearance-none"
+                      >
+                        <option value="">Select Brand</option>
+                        {brandsList.map(b => (
+                          <option key={b.id} value={b.id}>{b.title}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Sub-Category Dropdown */}
+                    <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 block">Sub-Category</label>
+                      <select 
+                        value={form.subCategoryId} 
+                        onChange={e => setForm({...form, subCategoryId: e.target.value})} 
+                        className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-inner appearance-none"
+                      >
+                        <option value="">Select Sub-Category</option>
+                        {subCategoriesList.map(s => (
+                          <option key={s.id} value={s.id}>{s.title}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </>
                 )}
 
                 {/* Price Disclosure Toggle - Only for Products */}

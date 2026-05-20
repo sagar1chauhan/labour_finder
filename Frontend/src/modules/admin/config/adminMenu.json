@@ -116,6 +116,7 @@
     "children": [
       "Home",
       "Manage Categories",
+      "Manage Sub Categories",
       "Manage Brands",
       "Manage Services"
     ]

@@ -6,6 +6,7 @@ import HomePage from "./pages/HomePage";
 import CategoriesPage from "./pages/CategoriesPage";
 import ServicesPage from "./pages/ServicesPage";
 import BrandsPage from "./pages/BrandsPage";
+import SubCategoriesPage from "./pages/SubCategoriesPage";
 import VendorServicesPage from "./pages/VendorServicesPage";
 import VendorPartsPage from "./pages/VendorPartsPage";
 
@@ -94,6 +95,7 @@ const UserCategories = () => {
           <Route path="categories" element={<CategoriesPage catalog={catalog} setCatalog={setCatalog} selectedCity={selectedCity} />} />
           <Route path="sections" element={<ServicesPage catalog={catalog} setCatalog={setCatalog} selectedCity={selectedCity} />} />
           <Route path="brands" element={<BrandsPage catalog={catalog} setCatalog={setCatalog} selectedCity={selectedCity} />} />
+          <Route path="sub-categories" element={<SubCategoriesPage />} />
           <Route path="vendor-services" element={<VendorServicesPage />} />
           <Route path="vendor-parts" element={<VendorPartsPage />} />
           <Route path="*" element={<Navigate to="home" replace />} />

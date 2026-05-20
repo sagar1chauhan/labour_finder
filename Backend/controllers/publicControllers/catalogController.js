@@ -1,5 +1,6 @@
 const Category = require('../../models/Category');
 const Brand = require('../../models/Brand');
+const SubCategory = require('../../models/SubCategory');
 const Service = require('../../models/UserService');
 const HomeContent = require('../../models/HomeContent');
 const { calculateDistance } = require('../../services/locationService');
@@ -162,6 +163,57 @@ const getPublicBrands = async (req, res) => {
       brands = [...adminBrands, ...activeVendorBrands];
     }
 
+    // --- NEW: FETCH AND MERGE SUBCATEGORIES ---
+    // Fetch subcategories matching the same category criteria
+    const subCatQuery = { status: 'active' };
+    if (query.categoryIds) {
+      subCatQuery.categoryId = query.categoryIds; // SubCategory has 'categoryId'
+    }
+    
+    const rawSubCategories = await SubCategory.find(subCatQuery)
+      .select('title slug iconUrl vendorId categoryId')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const adminSubCategories = rawSubCategories.filter(s => !s.vendorId);
+    const vendorSubCategoryIds = rawSubCategories.filter(s => s.vendorId).map(s => s._id);
+
+    let activeVendorSubCats = [];
+    if (vendorSubCategoryIds.length > 0 && all !== 'true') {
+      const vendorMatch = await getVendorMatchQuery(cityId);
+      activeVendorSubCats = await SubCategory.find({ _id: { $in: vendorSubCategoryIds } })
+        .select('title slug iconUrl vendorId categoryId')
+        .populate({
+          path: 'vendorId',
+          match: vendorMatch,
+          select: 'name businessName policeVerification address rating totalJobs profilePhoto isOnline availability geoLocation location'
+        })
+        .sort({ createdAt: -1 })
+        .lean();
+      
+      activeVendorSubCats = activeVendorSubCats.filter(s => s.vendorId);
+    } else if (all === 'true') {
+       activeVendorSubCats = rawSubCategories.filter(s => s.vendorId);
+    }
+
+    const mergedSubCats = [...adminSubCategories, ...activeVendorSubCats].map(sub => ({
+      _id: sub._id,
+      title: sub.title,
+      slug: sub.slug,
+      iconUrl: sub.iconUrl,
+      logo: sub.iconUrl, // fallback
+      imageUrl: sub.iconUrl, // fallback
+      categoryIds: sub.categoryId ? [sub.categoryId] : [],
+      vendorId: sub.vendorId,
+      isSubCategory: true
+    }));
+
+    // SubCategories are returned separately - NOT merged into brands
+    const finalSubCats = [...adminSubCategories, ...activeVendorSubCats];
+
+    brands = [...brands]; // keep brands pure
+    // --- END SUBCATEGORIES ---
+
     // Deduplicate by title to ensure a clean catalog
     const groupedBrands = new Map();
     const userLoc = (lat && lng) ? { lat: parseFloat(lat), lng: parseFloat(lng) } : null;
@@ -186,10 +238,6 @@ const getPublicBrands = async (req, res) => {
       const titleKey = brand.title.toLowerCase().trim();
       const existing = groupedBrands.get(titleKey);
       
-      // LOGIC: 
-      // 1. If brand doesn't exist in map yet, add it.
-      // 2. If it exists and we have location, pick the NEAREST.
-      // 3. If distances are equal (or no location), pick the CHEAPEST (basePrice).
       if (!existing) {
         groupedBrands.set(titleKey, brand);
       } else {
@@ -237,6 +285,14 @@ const getPublicBrands = async (req, res) => {
       }
     }
 
+    // Build a map of categoryId -> categoryTitle for the response
+    const allCatIds = [...new Set(brands.flatMap(b => (b.categoryIds || []).map(id => id.toString())))];
+    const catDocs = allCatIds.length > 0
+      ? await Category.find({ _id: { $in: allCatIds } }).select('title').lean()
+      : [];
+    const catTitleMap = {};
+    catDocs.forEach(c => { catTitleMap[c._id.toString()] = c.title; });
+
     res.status(200).json({
       success: true,
       brands: brands.map(brand => ({
@@ -247,13 +303,17 @@ const getPublicBrands = async (req, res) => {
         logo: brand.logo || brand.iconUrl || '',
         imageUrl: brand.imageUrl || brand.iconUrl || '',
         badge: brand.badge || '',
-        price: brand.basePrice || 0, // Legacy support
+        price: brand.basePrice || 0,
         originalPrice: brand.discountPrice ? (brand.basePrice + brand.discountPrice) : (brand.basePrice || 0),
         categoryId: brand.categoryIds && brand.categoryIds.length > 0 ? brand.categoryIds[0].toString() : null,
+        categoryTitle: brand.categoryIds && brand.categoryIds.length > 0
+          ? (catTitleMap[brand.categoryIds[0].toString()] || 'Other Services')
+          : 'Other Services',
         categoryIds: (brand.categoryIds || []).map(id => id.toString()),
         sections: brand.sections || [],
         type: brand.type || 'service',
         isPriceDisclosed: brand.isPriceDisclosed ?? true,
+        isSubCategory: false,
         vendor: brand.vendorId ? {
           id: brand.vendorId._id,
           name: brand.vendorId.name,
@@ -266,6 +326,15 @@ const getPublicBrands = async (req, res) => {
           isOnline: brand.vendorId.isOnline,
           availability: brand.vendorId.availability
         } : null
+      })),
+      // SubCategories returned SEPARATELY so UI can render them in a distinct section
+      subCategories: finalSubCats.map(sub => ({
+        id: sub._id.toString(),
+        title: sub.title,
+        slug: sub.slug,
+        icon: sub.iconUrl || '',
+        categoryId: sub.categoryId ? sub.categoryId.toString() : null,
+        isSubCategory: true
       }))
     });
   } catch (error) {
@@ -288,15 +357,40 @@ const getPublicBrandBySlug = async (req, res) => {
     const { cityId } = req.query;
     const vendorMatch = await getVendorMatchQuery(cityId);
 
-    const brand = await Brand.findOne({ slug, status: 'active' })
+    let brand = await Brand.findOne({ slug, status: 'active' })
       .populate('categoryIds', 'title slug')
       .populate('vendorId', 'name businessName isOnline availability address')
       .lean();
 
+    let isSubCategoryData = false;
+    if (!brand) {
+      // Fallback to SubCategory
+      const subCat = await SubCategory.findOne({ slug, status: 'active' })
+        .populate('categoryId', 'title slug')
+        .populate('vendorId', 'name businessName isOnline availability address')
+        .lean();
+      
+      if (subCat) {
+        brand = {
+          _id: subCat._id,
+          title: subCat.title,
+          slug: subCat.slug,
+          iconUrl: subCat.iconUrl,
+          logo: subCat.iconUrl,
+          categoryIds: subCat.categoryId ? [subCat.categoryId] : [],
+          vendorId: subCat.vendorId,
+          type: 'service',
+          isPriceDisclosed: true,
+          sections: []
+        };
+        isSubCategoryData = true;
+      }
+    }
+
     if (!brand) {
       return res.status(404).json({
         success: false,
-        message: 'Brand not found'
+        message: 'Brand/SubCategory not found'
       });
     }
 
@@ -350,9 +444,12 @@ const getPublicBrandBySlug = async (req, res) => {
       });
     }
 
-    // Fetch ALL services in the same category that have the same title as any service in this brand
+    // Fetch ALL services in the same category that have the same title as any service in this brand/subcategory
     // This is more robust than just looking at brand IDs
-    const initialServices = await Service.find({ brandId: brand._id, status: 'active' }).select('title categoryId');
+    const initialServices = await Service.find({ 
+      $or: [{ brandId: brand._id }, { subCategoryId: brand._id }],
+      status: 'active' 
+    }).select('title categoryId');
     const serviceTitles = [...new Set(initialServices.map(s => s.title.toLowerCase().trim()))];
     
     // Fallback to brand title if no services found yet
@@ -495,7 +592,11 @@ const getPublicServices = async (req, res) => {
     const query = { status: 'active' };
 
     if (brandId || brandSlug) {
-      const brand = brandId ? await Brand.findById(brandId) : await Brand.findOne({ slug: brandSlug });
+      let brand = brandId ? await Brand.findById(brandId) : await Brand.findOne({ slug: brandSlug });
+      if (!brand) {
+         brand = brandId ? await SubCategory.findById(brandId) : await SubCategory.findOne({ slug: brandSlug });
+      }
+
       if (brand) {
         // Search by title globally to allow ALL available vendors to show up
         const escapedTitle = brand.title.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -954,18 +1055,52 @@ const getPublicProductsCatalog = async (req, res) => {
   try {
     const { cityId } = req.query;
 
-    // Fetch active product categories
-    const query = { status: 'active', categoryType: 'product' };
+    // Step 1: Fetch all active sub-categories from DB
+    const rawSubCategories = await SubCategory.find({ status: 'active' })
+      .populate('categoryId', 'title slug homeOrder categoryType status cityIds')
+      .lean();
+
+    // Step 2: Collect the unique parent category IDs from sub-categories
+    const subCatParentIds = [...new Set(
+      rawSubCategories
+        .filter(s => s.categoryId)
+        .map(s => s.categoryId._id.toString())
+    )];
+
+    // Step 3: Fetch product-type categories (legacy brands)
+    const productCatQuery = { status: 'active', categoryType: 'product' };
     if (cityId) {
-      query.$or = [
+      productCatQuery.$or = [
         { cityIds: cityId },
         { cityIds: { $exists: false } },
         { cityIds: { $size: 0 } }
       ];
     }
-    const categories = await Category.find(query).sort({ homeOrder: 1, createdAt: -1 }).lean();
+    const productCategories = await Category.find(productCatQuery)
+      .sort({ homeOrder: 1, createdAt: -1 })
+      .lean();
 
-    // Fetch all active product brands
+    // Step 4: Fetch parent categories of sub-categories (may not be 'product' type)
+    const subCatParentCategories = subCatParentIds.length > 0
+      ? await Category.find({
+          _id: { $in: subCatParentIds },
+          status: 'active'
+        }).sort({ homeOrder: 1, createdAt: -1 }).lean()
+      : [];
+
+    // Step 5: Merge both category lists (deduplicate by _id)
+    const allCategoryIds = new Set(productCategories.map(c => c._id.toString()));
+    const mergedCategories = [...productCategories];
+    subCatParentCategories.forEach(cat => {
+      if (!allCategoryIds.has(cat._id.toString())) {
+        mergedCategories.push(cat);
+        allCategoryIds.add(cat._id.toString());
+      }
+    });
+    // Sort merged list by homeOrder
+    mergedCategories.sort((a, b) => (a.homeOrder || 999) - (b.homeOrder || 999));
+
+    // Step 6: Fetch product brands (legacy)
     const brandQuery = { status: 'active', type: 'product' };
     if (cityId) {
       brandQuery.$or = [
@@ -976,7 +1111,6 @@ const getPublicProductsCatalog = async (req, res) => {
     }
 
     const vendorMatch = await getVendorMatchQuery(cityId);
-
     const rawBrands = await Brand.find(brandQuery)
       .select('title slug iconUrl logo imageUrl badge categoryIds basePrice discountPrice type vendorId')
       .sort({ createdAt: -1 })
@@ -1000,25 +1134,46 @@ const getPublicProductsCatalog = async (req, res) => {
 
     const allBrands = [...adminBrands, ...activeVendorBrands];
 
-    // Group brands under categories
-    const categoriesWithBrands = categories.map(cat => {
+    // Step 7: Group brands and subcategories under their parent categories
+    const categoriesWithBrands = mergedCategories.map(cat => {
+      const catId = cat._id.toString();
+
+      // Legacy product brands for this category
       const catBrands = allBrands.filter(brand =>
         Array.isArray(brand.categoryIds) &&
-        brand.categoryIds.some(id => id.toString() === cat._id.toString())
+        brand.categoryIds.some(id => id.toString() === catId)
       );
 
-      return {
-        id: cat._id.toString(),
-        title: cat.title,
-        slug: cat.slug,
-        brands: catBrands.map(b => ({
+      // Dynamic sub-categories for this category
+      const catSubCategories = rawSubCategories.filter(sub =>
+        sub.categoryId && sub.categoryId._id.toString() === catId
+      );
+
+      // Merge into a single array for the UI
+      const mergedBrandsAndSubCategories = [
+        ...catBrands.map(b => ({
           id: b._id.toString(),
           title: b.title,
           slug: b.slug,
-          icon: b.iconUrl || b.logo || b.imageUrl || ''
+          icon: b.iconUrl || b.logo || b.imageUrl || '',
+          type: 'brand'
+        })),
+        ...catSubCategories.map(s => ({
+          id: s._id.toString(),
+          title: s.title,
+          slug: s.slug,
+          icon: s.iconUrl || '',
+          type: 'subcategory'
         }))
+      ];
+
+      return {
+        id: catId,
+        title: cat.title,
+        slug: cat.slug,
+        brands: mergedBrandsAndSubCategories
       };
-    }).filter(cat => cat.brands.length > 0);
+    }).filter(cat => cat.brands.length > 0); // Only return categories that have items
 
     res.status(200).json({
       success: true,
@@ -1035,14 +1190,21 @@ const getPublicProductsByBrand = async (req, res) => {
     const { brandId } = req.params;
     const { cityId } = req.query;
 
-    const brand = await Brand.findById(brandId).lean();
+    const mongoose = require('mongoose');
+    if (!mongoose.Types.ObjectId.isValid(brandId)) {
+      return res.status(400).json({ success: false, message: 'Invalid Brand/SubCategory ID' });
+    }
+
+    let brand = await Brand.findById(brandId).lean();
     if (!brand) {
-      return res.status(404).json({ success: false, message: 'Brand not found' });
+      brand = await SubCategory.findById(brandId).lean();
+      if (!brand) {
+        return res.status(404).json({ success: false, message: 'Brand/SubCategory not found' });
+      }
     }
 
     const products = await Service.find({
-      brandId,
-      type: 'product',
+      $or: [{ brandId }, { subCategoryId: brandId }],
       status: 'active'
     })
     .populate({

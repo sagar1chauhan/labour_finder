@@ -51,9 +51,19 @@ const createVendorProduct = async (req, res) => {
 
     const { title, description, basePrice, discountPrice, iconUrl, categoryId, type, isPriceDisclosed, brandId } = req.body;
 
-    let finalBrandId = brandId;
+    let finalBrandId = null;
+    let finalSubCategoryId = null;
 
-    if (!finalBrandId) {
+    if (brandId) {
+      // Check if it's a Brand or SubCategory
+      const isBrand = await Brand.exists({ _id: brandId });
+      if (isBrand) {
+        finalBrandId = brandId;
+      } else {
+        // Must be a SubCategory
+        finalSubCategoryId = brandId;
+      }
+    } else {
       const slug = title.trim().toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-');
       const uniqueSlug = `${slug}-${Date.now().toString().slice(-4)}`; // ensure uniqueness
 
@@ -76,9 +86,10 @@ const createVendorProduct = async (req, res) => {
       finalBrandId = brand._id;
     }
 
-    // Create a default Service under this Brand so it can be booked
+    // Create a default Service under this Brand or SubCategory so it can be booked
     const service = await UserService.create({
       brandId: finalBrandId,
+      subCategoryId: finalSubCategoryId,
       categoryId: categoryId,
       vendorId: req.user.id,
       title: title.trim(),

@@ -157,6 +157,7 @@ const UserRoutes = () => {
               <Route path="/shop/add-scrap" element={<ProtectedRoute userType="user"><AddScrap /></ProtectedRoute>} />
               <Route path="/categories" element={<ProtectedRoute userType="user"><Categories /></ProtectedRoute>} />
               <Route path="/categories/:categoryId/brand/:brandId" element={<ProtectedRoute userType="user"><BrandProducts /></ProtectedRoute>} />
+              <Route path="/catalog/brand/:brandId" element={<ProtectedRoute userType="user"><BrandProducts /></ProtectedRoute>} />
             </Routes>
           </PageTransition>
         </Suspense>

@@ -72,6 +72,7 @@ const SupportList = lazyLoad(() => import('../pages/Support/index'));
 const TicketDetails = lazyLoad(() => import('../pages/Support/TicketDetails'));
 const MyServices = lazyLoad(() => import('../pages/MyServices'));
 const Categories = lazyLoad(() => import('../pages/Categories'));
+const SubCategories = lazyLoad(() => import('../pages/SubCategories'));
 const Products = lazyLoad(() => import('../pages/Products'));
 const StockManagement = lazyLoad(() => import('../pages/Stock'));
 
@@ -139,6 +140,7 @@ const VendorRoutes = () => {
               <Route path="/about-cleaning-expert" element={<ProtectedRoute userType="vendor"><AboutCleaningExpert /></ProtectedRoute>} />
               <Route path="/my-services" element={<ProtectedRoute userType="vendor"><MyServices /></ProtectedRoute>} />
               <Route path="/categories" element={<ProtectedRoute userType="vendor"><Categories /></ProtectedRoute>} />
+              <Route path="/sub-categories" element={<ProtectedRoute userType="vendor"><SubCategories /></ProtectedRoute>} />
               <Route path="/products" element={<ProtectedRoute userType="vendor"><Products /></ProtectedRoute>} />
               <Route path="/support" element={<ProtectedRoute userType="vendor"><SupportList /></ProtectedRoute>} />
               <Route path="/support/:id" element={<ProtectedRoute userType="vendor"><TicketDetails /></ProtectedRoute>} />

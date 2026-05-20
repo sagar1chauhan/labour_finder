@@ -6,18 +6,13 @@ import { useCart } from '../../../../context/CartContext';
 import NotificationBell from '../../components/common/NotificationBell';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const DUMMY_CART_ITEMS = [
-  { id: 'c1', title: 'Deep Cleaning (Kitchen)', category: 'Cleaning', price: 899, serviceCount: 1, icon: 'https://img.freepik.com/free-photo/cleaner-washing-sink-with-sponge_23-2148130983.jpg?w=740' },
-  { id: 'c2', title: 'Wall Painting', category: 'Painting', price: 4500, serviceCount: 1, icon: 'https://img.freepik.com/free-photo/painter-with-roller-painting-wall_23-2148814234.jpg?w=740' },
-];
-
 const Cart = () => {
   const navigate = useNavigate();
   const { cartItems, removeItem } = useCart();
-  const [items, setItems] = useState(cartItems.length > 0 ? cartItems : DUMMY_CART_ITEMS);
+  const [items, setItems] = useState(cartItems || []);
 
   useEffect(() => {
-    if (cartItems.length > 0) setItems(cartItems);
+    setItems(cartItems || []);
   }, [cartItems]);
 
   const total = items.reduce((sum, item) => sum + (item.price * (item.serviceCount || 1)), 0);
@@ -91,7 +86,7 @@ const Cart = () => {
           {items.length === 0 && (
             <div className="flex flex-col items-center justify-center py-20 opacity-20">
               <FiShoppingCart className="w-12 h-12 mb-3" />
-              <p className="text-[9px] font-black uppercase tracking-widest">Cart is empty</p>
+              <p className="text-[9px] font-black uppercase tracking-widest">Your cart is empty</p>
             </div>
           )}
         </main>

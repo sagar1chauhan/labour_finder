@@ -15,6 +15,98 @@ const toAssetUrl = (url) => {
   return `${base}${clean.startsWith('/') ? '' : '/'}${clean}`;
 };
 
+const DUMMY_SIBLINGS = [
+  { id: 'all', title: 'All', icon: 'https://res.cloudinary.com/deorxby43/image/upload/v1779274407/products/pn4b1tmtdcma9mppi7z0.png' },
+  { id: 'ppc', title: 'Ppc', icon: 'https://res.cloudinary.com/deorxby43/image/upload/v1779274407/products/pn4b1tmtdcma9mppi7z0.png' },
+  { id: 'white-cement', title: 'White Cement', icon: 'https://res.cloudinary.com/deorxby43/image/upload/v1779274407/products/pn4b1tmtdcma9mppi7z0.png' },
+  { id: 'punning-plaster', title: 'Punning Plaster', icon: 'https://res.cloudinary.com/deorxby43/image/upload/v1779274407/products/pn4b1tmtdcma9mppi7z0.png' },
+  { id: 'gypsum-sheets', title: 'Gypsum Sheets', icon: 'https://res.cloudinary.com/deorxby43/image/upload/v1779274407/products/pn4b1tmtdcma9mppi7z0.png' },
+  { id: 'gypsum-screw', title: 'Gypsum Screw', icon: 'https://res.cloudinary.com/deorxby43/image/upload/v1779274407/products/pn4b1tmtdcma9mppi7z0.png' },
+];
+
+const DUMMY_PRODUCTS = [
+  {
+    id: 'prod_1',
+    title: 'UltraTech PPC Cement (50 kg)',
+    basePrice: 385,
+    discountPrice: 390,
+    iconUrl: 'https://res.cloudinary.com/deorxby43/image/upload/v1779274407/products/pn4b1tmtdcma9mppi7z0.png',
+    unit: 'bag'
+  },
+  {
+    id: 'prod_2',
+    title: 'Birla White Cement (50 kg)',
+    basePrice: 1155,
+    discountPrice: 1155,
+    iconUrl: 'https://res.cloudinary.com/deorxby43/image/upload/v1779274407/products/pn4b1tmtdcma9mppi7z0.png',
+    stockWarning: 'Only 5 left',
+    unit: 'bag'
+  },
+  {
+    id: 'prod_3',
+    title: 'Saint Gobain Gyproc Xpert+ Gypsum Plaster of Paris POP Punning Powder (20 kg)',
+    basePrice: 270,
+    discountPrice: 350,
+    iconUrl: 'https://res.cloudinary.com/deorxby43/image/upload/v1779274407/products/pn4b1tmtdcma9mppi7z0.png',
+    stockWarning: 'Only 5 left',
+    unit: 'bag'
+  },
+  {
+    id: 'prod_4',
+    title: 'Saint Gobain Gyproc Plain Gypsum Board / Wall & Ceiling Drywall Sheet (12.5 mm, 4 x 6 feet)',
+    basePrice: 580,
+    discountPrice: 580,
+    iconUrl: 'https://res.cloudinary.com/deorxby43/image/upload/v1779274407/products/pn4b1tmtdcma9mppi7z0.png',
+    unit: 'piece'
+  },
+  {
+    id: 'prod_5',
+    title: 'Drywall Screws (Pack of 100)',
+    basePrice: 120,
+    discountPrice: 150,
+    iconUrl: 'https://res.cloudinary.com/deorxby43/image/upload/v1779274407/products/pn4b1tmtdcma9mppi7z0.png',
+    unit: 'pack'
+  }
+];
+
+const FlyingImage = ({ img }) => {
+  const [style, setStyle] = React.useState({
+    position: 'fixed',
+    zIndex: 9999,
+    left: img.startX,
+    top: img.startY,
+    width: img.width,
+    height: img.height,
+    pointerEvents: 'none',
+    transition: 'all 0.8s cubic-bezier(0.25, 1, 0.5, 1)',
+    transform: 'scale(1)',
+    opacity: 1,
+    borderRadius: '12px',
+    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+    objectFit: 'contain',
+    backgroundColor: '#fff',
+    border: '1px solid rgba(0, 0, 0, 0.05)'
+  });
+
+  React.useEffect(() => {
+    // Delay slightly to ensure transition triggers after mount
+    const frameId = requestAnimationFrame(() => {
+      setStyle(prev => ({
+        ...prev,
+        left: img.endX,
+        top: img.endY,
+        width: 30,
+        height: 30,
+        transform: 'scale(0.2) rotate(360deg)',
+        opacity: 0.2
+      }));
+    });
+    return () => cancelAnimationFrame(frameId);
+  }, [img]);
+
+  return <img src={img.src} style={style} alt="flying-product" />;
+};
+
 const UserBrandProductsPage = () => {
   const navigate = useNavigate();
   const { categoryId, brandId } = useParams();
@@ -44,27 +136,90 @@ const UserBrandProductsPage = () => {
       const cityId = currentCity?._id || currentCity?.id;
       const res = await publicCatalogService.getProductsByBrand(activeBrandId, cityId);
       if (res.success) {
-        setProducts(res.products);
-        setActiveBrandTitle(res.brand.title);
-        // Map sibling list (add "All" option if needed or display siblings directly)
-        setSiblings(res.siblings || []);
+        // Fallback to dummy data if empty
+        const fetchedProducts = res.products?.length > 0 ? res.products : DUMMY_PRODUCTS;
+        const fetchedSiblings = res.siblings?.length > 0 ? res.siblings : DUMMY_SIBLINGS;
+        
+        setProducts(fetchedProducts);
+        setActiveBrandTitle(res.brand.title || 'Cement & Plaster');
+        setSiblings(fetchedSiblings);
       }
     } catch (err) {
       console.error('Error fetching brand products:', err);
+      // Fallback on error
+      setProducts(DUMMY_PRODUCTS);
+      setActiveBrandTitle('Cement & Plaster');
+      setSiblings(DUMMY_SIBLINGS);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleAddToCart = (product) => {
-    addToCart({
-      id: product.id,
-      title: product.title,
-      price: product.basePrice,
-      image: product.iconUrl,
-      vendorId: product.vendor?.id || null
-    });
-    toast.success(`${product.title} added to cart!`);
+  const [flyingImages, setFlyingImages] = useState([]);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+
+  const handleAddToCart = (product, e) => {
+    // Find the nearest card/container image to clone and fly
+    const cardEl = e?.currentTarget?.closest('.group');
+    const imgEl = cardEl?.querySelector('img');
+    const cartEl = document.getElementById('cart-icon');
+
+    if (imgEl && cartEl) {
+      const imgRect = imgEl.getBoundingClientRect();
+      const cartRect = cartEl.getBoundingClientRect();
+      
+      const id = Date.now() + Math.random();
+      const imageSrc = product.iconUrl ? toAssetUrl(product.iconUrl) : '';
+
+      setFlyingImages(prev => [...prev, {
+        id,
+        src: imageSrc,
+        startX: imgRect.left,
+        startY: imgRect.top,
+        width: imgRect.width,
+        height: imgRect.height,
+        endX: cartRect.left + (cartRect.width / 2) - 15,
+        endY: cartRect.top + (cartRect.height / 2) - 15
+      }]);
+
+      // Delay actual cart state addition and trigger bounce after flight completes (800ms)
+      setTimeout(() => {
+        addToCart({
+          id: product.id,
+          serviceId: product.id,
+          categoryId: categoryId || null,
+          title: product.title,
+          price: product.basePrice,
+          image: product.iconUrl,
+          icon: product.iconUrl,
+          category: 'Product',
+          vendorId: product.vendor?.id || null
+        });
+        
+        // Bounce animation on cart
+        cartEl.classList.add('cart-bounce');
+        setTimeout(() => {
+          cartEl.classList.remove('cart-bounce');
+        }, 400);
+
+        setFlyingImages(prev => prev.filter(item => item.id !== id));
+        toast.success(`${product.title} added to cart!`);
+      }, 800);
+    } else {
+      // Fallback
+      addToCart({
+        id: product.id,
+        serviceId: product.id,
+        categoryId: categoryId || null,
+        title: product.title,
+        price: product.basePrice,
+        image: product.iconUrl,
+        icon: product.iconUrl,
+        category: 'Product',
+        vendorId: product.vendor?.id || null
+      });
+      toast.success(`${product.title} added to cart!`);
+    }
   };
 
   const filteredProducts = products.filter(p => 
@@ -98,6 +253,7 @@ const UserBrandProductsPage = () => {
           
           <div className="flex items-center gap-2">
             <div 
+              id="cart-icon"
               onClick={() => navigate('/user/cart')} 
               className="w-8 h-8 bg-white/30 backdrop-blur-md rounded-xl flex items-center justify-center text-gray-900 border border-white/20 cursor-pointer relative active:scale-90 transition-all shadow-sm"
             >
@@ -192,17 +348,11 @@ const UserBrandProductsPage = () => {
                 return (
                   <div 
                     key={product.id}
-                    className="bg-white rounded-2xl p-2 border border-gray-100 shadow-sm flex flex-col hover:shadow-md transition-all duration-300 relative group"
+                    onClick={() => setSelectedProduct(product)}
+                    className="bg-white rounded-2xl p-2.5 border border-gray-100 shadow-sm flex flex-col hover:shadow-md transition-all duration-300 relative group cursor-pointer"
                   >
-                    {/* Discount Badge */}
-                    {hasDiscount && (
-                      <div className="absolute top-2 left-2 z-10 bg-yellow-400 text-gray-900 text-[6.5px] font-black px-1.5 py-0.5 rounded shadow-sm">
-                        {discountPercent}% OFF
-                      </div>
-                    )}
-                    
                     {/* Image Box */}
-                    <div className="aspect-square bg-gray-50 rounded-xl overflow-hidden mb-2 flex items-center justify-center p-2 relative">
+                    <div className="aspect-square bg-gray-50 rounded-xl overflow-hidden mb-3 flex items-center justify-center p-2 relative">
                       {product.iconUrl ? (
                         <img 
                           src={toAssetUrl(product.iconUrl)} 
@@ -212,40 +362,47 @@ const UserBrandProductsPage = () => {
                       ) : (
                         <span className="text-xl font-bold text-gray-300">{product.title.charAt(0)}</span>
                       )}
+                      
+                      {/* ADD Button hovering over image bottom-right */}
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); handleAddToCart(product, e); }}
+                        className="absolute bottom-1 right-1 px-3 py-1 bg-white border border-[#a2ad02] text-[#a2ad02] hover:bg-[#a2ad02] hover:text-white rounded-lg text-[9px] font-black uppercase tracking-wider transition-all shadow-sm active:scale-95"
+                      >
+                        ADD
+                      </button>
                     </div>
 
                     {/* Details */}
                     <div className="flex-1 flex flex-col">
-                      <h3 className="text-[9px] font-black text-gray-900 leading-tight mb-1 line-clamp-2">
+                      <h3 className="text-[11px] font-semibold text-gray-800 leading-tight mb-1.5 line-clamp-2">
                         {product.title}
                       </h3>
                       
                       {/* Sub-label e.g. stock warning */}
-                      <p className="text-[7px] font-bold text-amber-600 mb-2 mt-auto">
-                        Only 5 left
-                      </p>
+                      {(product.stockWarning || product.stock) && (
+                        <p className="text-[9px] font-bold text-amber-600 mb-1.5">
+                          {product.stockWarning || 'Limited stock'}
+                        </p>
+                      )}
 
-                      {/* Pricing and Action row */}
-                      <div className="flex items-center justify-between pt-1 border-t border-gray-50 mt-auto">
-                        <div className="flex flex-col">
-                          <span className="text-[11px] font-black text-gray-900">
-                            ₹{base}
+                      {/* Pricing row */}
+                      <div className="flex items-center gap-1.5 flex-wrap mt-auto">
+                        <span className="text-[12px] font-black text-gray-900">
+                          ₹{base}{product.unit ? <span className="text-[9px] font-semibold text-gray-500">/{product.unit}</span> : ''}
+                        </span>
+                        {hasDiscount && (
+                          <span className="text-[10px] font-semibold text-gray-400 line-through">
+                            ₹{discount}
                           </span>
-                          {hasDiscount && (
-                            <span className="text-[7.5px] font-bold text-gray-400 line-through">
-                              ₹{discount}
-                            </span>
-                          )}
-                        </div>
-                        
-                        {/* Dynamic Add to Cart Action */}
-                        <button 
-                          onClick={() => handleAddToCart(product)}
-                          className="px-2.5 py-1 bg-white hover:bg-[#a2ad02] border border-[#a2ad02]/30 hover:border-[#a2ad02] text-[#a2ad02] hover:text-white rounded-md text-[8px] font-black uppercase tracking-wider transition-all shadow-sm active:scale-95"
-                        >
-                          ADD
-                        </button>
+                        )}
                       </div>
+                      
+                      {/* Discount Text */}
+                      {hasDiscount && (
+                        <p className="text-[10px] font-bold text-green-700 mt-1">
+                          {discountPercent}% OFF
+                        </p>
+                      )}
                     </div>
                   </div>
                 );
@@ -259,6 +416,153 @@ const UserBrandProductsPage = () => {
           )}
         </main>
       </div>
+
+      {/* Fly-to-Cart Flying Previews */}
+      {flyingImages.map(img => (
+        <FlyingImage key={img.id} img={img} />
+      ))}
+
+      {/* Product Detail Overlay */}
+      {selectedProduct && (
+        <div className="fixed inset-0 z-[10000] flex flex-col justify-end">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300"
+            onClick={() => setSelectedProduct(null)}
+          />
+          
+          {/* Sheet */}
+          <div 
+            className="relative bg-white rounded-t-[32px] max-h-[92vh] overflow-hidden flex flex-col z-10 slide-up shadow-2xl"
+            style={{ minHeight: '70vh' }}
+          >
+            {/* Round floating Back Button */}
+            <div className="absolute top-4 left-4 z-20">
+              <button 
+                onClick={() => setSelectedProduct(null)}
+                className="w-8 h-8 bg-white/90 backdrop-blur-md rounded-full flex items-center justify-center text-gray-800 border border-gray-100 shadow-md active:scale-90 transition-all"
+              >
+                <FiArrowLeft className="w-4 h-4 text-green-950" />
+              </button>
+            </div>
+
+            {/* Content Container */}
+            <div className="flex-1 overflow-y-auto pb-28">
+              {/* Centered Large Image */}
+              <div className="aspect-[4/3] w-full bg-gray-50 flex items-center justify-center p-6 relative">
+                {selectedProduct.iconUrl ? (
+                  <img 
+                    src={toAssetUrl(selectedProduct.iconUrl)} 
+                    alt={selectedProduct.title} 
+                    className="max-w-[70%] max-h-[85%] object-contain"
+                  />
+                ) : (
+                  <span className="text-5xl font-black text-gray-300">{selectedProduct.title.charAt(0)}</span>
+                )}
+                
+                {/* Carousel Indicator dot */}
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1">
+                  <span className="w-2.5 h-2.5 bg-blue-600 rounded-full"></span>
+                </div>
+              </div>
+
+              {/* Product Info Section */}
+              <div className="px-6 pt-6">
+                <h2 className="text-[17px] font-black text-gray-900 leading-snug">
+                  {selectedProduct.title}
+                </h2>
+                
+                {/* Pricing row matching exact screenshot layout */}
+                {(() => {
+                  const base = selectedProduct.basePrice || 0;
+                  const discount = selectedProduct.discountPrice || 0;
+                  const hasDiscount = discount > base;
+                  const discountPercent = hasDiscount 
+                    ? Math.round(((discount - base) / discount) * 100)
+                    : 0;
+                  
+                  return (
+                    <div className="flex items-baseline gap-2 mt-4 mb-4">
+                      <span className="text-[19px] font-black text-gray-900">
+                        ₹{base}
+                        <span className="text-xs font-bold text-gray-500">/{selectedProduct.unit || 'bag'}</span>
+                      </span>
+                      {hasDiscount && (
+                        <>
+                          <span className="text-xs font-semibold text-gray-400 line-through">
+                            ₹{discount}
+                          </span>
+                          <span className="text-xs font-black text-green-700">
+                            {discountPercent}% OFF
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  );
+                })()}
+
+                <hr className="border-gray-100 my-4" />
+
+                {/* Multiline Description matching exact screenshot */}
+                <div className="space-y-3 text-[11px] text-gray-500 leading-relaxed font-bold">
+                  {selectedProduct.description ? (
+                    <p>{selectedProduct.description}</p>
+                  ) : (
+                    <>
+                      <p>High-quality {selectedProduct.title.toLowerCase()} for concrete, masonry and general construction work.</p>
+                      <p>Ideal for residential, commercial and repair applications.</p>
+                      <p>Provides strong bonding, better workability and long-lasting durability.</p>
+                      <p>Better than ordinary alternatives due to improved finish and consistent strength.</p>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Sticky Bottom Bar */}
+            <div className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-6 py-4 flex items-center justify-between z-20 shadow-xl">
+              <div>
+                <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Pack Weight</p>
+                <p className="text-[11px] font-black text-gray-900 leading-none">
+                  {selectedProduct.unit === 'bag' ? '50 kg' : `1 ${selectedProduct.unit || 'piece'}`}
+                </p>
+                <p className="text-[13px] font-black text-[#a2ad02] mt-1.5 leading-none">
+                  ₹{selectedProduct.basePrice}<span className="text-[10px] font-semibold text-gray-500">/{selectedProduct.unit || 'bag'}</span>
+                </p>
+              </div>
+
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleAddToCart(selectedProduct, e);
+                  setSelectedProduct(null);
+                }}
+                className="px-6 py-3 bg-[#d5de23] hover:bg-[#a2ad02] text-gray-950 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-md active:scale-95 border border-[#b2bf05]"
+              >
+                Add to cart
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Stylesheet for smooth bounce/scale animations */}
+      <style>{`
+        @keyframes cartBounce {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.3); }
+        }
+        @keyframes slideUp {
+          from { transform: translateY(100%); }
+          to { transform: translateY(0); }
+        }
+        .cart-bounce {
+          animation: cartBounce 0.4s cubic-bezier(0.25, 1, 0.5, 1) !important;
+        }
+        .slide-up {
+          animation: slideUp 0.3s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+      `}</style>
     </div>
   );
 };

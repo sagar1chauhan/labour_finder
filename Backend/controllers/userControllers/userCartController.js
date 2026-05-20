@@ -66,9 +66,10 @@ const addToCart = async (req, res) => {
 
     console.log(`[AddToCart] Request details - Title: ${title}, Section: ${sectionTitle}`);
 
-    // Verify service exists (only if serviceId is provided)
+    // Verify service exists (only if serviceId is provided and is a valid ObjectId)
+    const mongoose = require('mongoose');
     let service = null;
-    if (serviceId) {
+    if (serviceId && mongoose.Types.ObjectId.isValid(serviceId)) {
       service = await Service.findById(serviceId);
       if (!service) {
         return res.status(404).json({
@@ -107,23 +108,23 @@ const addToCart = async (req, res) => {
         title,
         description: description || '',
         icon: icon || '',
-        category,
+        category: category || 'Product', // Safe default fallback
         price: price || unitPrice || 0,
         originalPrice: originalPrice || null,
         unitPrice: unitPrice || price || 0,
         serviceCount: serviceCount || 1,
         rating: rating || '4.8',
         reviews: reviews || '10k+',
-        vendorId: vendorId || null,
+        vendorId: vendorId && mongoose.Types.ObjectId.isValid(vendorId) ? vendorId : null,
         sectionTitle: sectionTitle || '',
         sectionIcon: sectionIcon || null,
         card: card || null,
         isPriceDisclosed: isPriceDisclosed !== undefined ? isPriceDisclosed : true
       };
 
-      // Only add serviceId and categoryId if they are provided
-      if (serviceId) newItem.serviceId = serviceId;
-      if (categoryId) newItem.categoryId = categoryId;
+      // Only add serviceId and categoryId if they are valid ObjectIds
+      if (serviceId && mongoose.Types.ObjectId.isValid(serviceId)) newItem.serviceId = serviceId;
+      if (categoryId && mongoose.Types.ObjectId.isValid(categoryId)) newItem.categoryId = categoryId;
 
       console.log(`[AddToCart] Adding new item: ${title}`);
       cart.items.push(newItem);

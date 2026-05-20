@@ -118,6 +118,57 @@ export const brandService = {
 };
 
 /**
+ * Sub-Category API calls
+ */
+export const subCategoryService = {
+  // Get all sub-categories
+  getAll: async (params = {}) => {
+    const queryParams = new URLSearchParams();
+    if (params.categoryId) queryParams.append('categoryId', params.categoryId);
+
+    const response = await api.get(`/admin/sub-categories${queryParams.toString() ? `?${queryParams.toString()}` : ''}`);
+    return response.data;
+  },
+
+  // Create new sub-category
+  create: async (data) => {
+    const response = await api.post('/admin/sub-categories', data);
+    return response.data;
+  },
+
+  // Update sub-category
+  update: async (id, data) => {
+    const response = await api.put(`/admin/sub-categories/${id}`, data);
+    return response.data;
+  },
+
+  // Delete sub-category
+  delete: async (id) => {
+    const response = await api.delete(`/admin/sub-categories/${id}`);
+    return response.data;
+  },
+
+  // Upload image directly to Cloudinary
+  uploadImage: async (file, folder = 'subcategories', onProgress) => {
+    try {
+      const url = await uploadToCloudinary(file, folder, onProgress);
+      return {
+        success: true,
+        imageUrl: url,
+        message: 'File uploaded successfully'
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Failed to upload file',
+        error: error.message
+      };
+    }
+  }
+};
+
+
+/**
  * Service API calls (New Service Model - Child of Brand)
  */
 export const serviceService = {
