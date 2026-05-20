@@ -164,10 +164,10 @@ const ManageAddresses = () => {
   };
 
   return (
-    <div className="min-h-screen pb-24 overflow-x-hidden relative" style={{ backgroundColor: '#fbfde8' }}>
+    <div className="min-h-screen pb-24 relative" style={{ backgroundColor: '#fbfde8' }}>
       {/* Header */}
       <header 
-        className="px-6 pt-10 pb-5 rounded-b-[32px] shadow-md shadow-gray-200/50 sticky top-0 z-30"
+        className="px-6 pt-5 pb-4 rounded-b-[24px] shadow-md shadow-gray-200/50 sticky top-0 z-50"
         style={{ background: 'linear-gradient(180deg, rgba(213, 222, 35, 1) 0%, rgba(220, 230, 64, 1) 41%, rgba(227, 236, 114, 1) 69%)' }}
       >
         <div className="flex items-center justify-between">

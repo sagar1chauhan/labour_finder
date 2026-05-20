@@ -181,14 +181,14 @@ const ServicesPage = () => {
           <h2 className="text-lg font-black text-gray-900 tracking-tight">Your Service Catalog</h2>
           <button
             onClick={() => setIsModalOpen(true)}
-            className="flex items-center gap-2 bg-teal-600 text-white px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg hover:bg-teal-700 transition active:scale-95"
+            className="flex items-center gap-2 bg-[#a2ad02] text-white px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg hover:bg-[#889400] transition active:scale-95"
           >
             <FiPlus /> Add Item
           </button>
         </div>
 
         {loading ? (
-          <div className="flex justify-center py-20"><div className="w-10 h-10 border-4 border-teal-500 border-t-transparent rounded-full animate-spin"></div></div>
+          <div className="flex justify-center py-20"><div className="w-10 h-10 border-4 border-[#a2ad02] border-t-transparent rounded-full animate-spin"></div></div>
         ) : products.length === 0 ? (
           <div className="bg-white/60 backdrop-blur-xl rounded-[2.5rem] p-12 text-center border border-white/40 shadow-sm">
             <FiBox className="w-12 h-12 text-gray-300 mx-auto mb-4" />
@@ -201,7 +201,7 @@ const ServicesPage = () => {
               <div key={p.id} className="bg-white/90 backdrop-blur-sm rounded-2xl p-4 flex gap-4 items-center shadow-sm border border-gray-100 hover:shadow-md transition-all">
                 <div className="relative">
                    <img src={p.iconUrl || 'https://via.placeholder.com/100'} alt={p.title} className="w-16 h-16 rounded-2xl object-cover bg-gray-50 shadow-inner border border-gray-100" />
-                   <span className={`absolute -top-1 -right-1 px-1.5 py-0.5 rounded-md text-[8px] font-black uppercase tracking-tighter shadow-sm ${p.type === 'product' ? 'bg-blue-500 text-white' : 'bg-teal-500 text-white'}`}>
+                   <span className={`absolute -top-1 -right-1 px-1.5 py-0.5 rounded-md text-[8px] font-black uppercase tracking-tighter shadow-sm ${p.type === 'product' ? 'bg-[#a2ad02] text-white' : 'bg-green-700 text-white'}`}>
                      {p.type || 'Service'}
                    </span>
                 </div>
@@ -211,7 +211,7 @@ const ServicesPage = () => {
                   <div className="mt-1 flex gap-2 items-center">
                     {p.isPriceDisclosed !== false ? (
                       <>
-                        <span className="text-teal-600 font-black">₹{p.basePrice}</span>
+                        <span className="text-green-800 font-black">₹{p.basePrice}</span>
                         {p.discountPrice > 0 && <span className="text-xs text-red-500 line-through">₹{p.basePrice + p.discountPrice}</span>}
                       </>
                     ) : (
@@ -255,7 +255,7 @@ const ServicesPage = () => {
                     onClick={() => {
                       setForm({...form, type: 'service', categoryId: '', isPriceDisclosed: true});
                     }}
-                    className={`flex-1 py-2 text-xs font-black uppercase tracking-widest rounded-lg transition-all ${form.type === 'service' ? 'bg-white text-teal-600 shadow-sm' : 'text-gray-400'}`}
+                    className={`flex-1 py-2 text-xs font-black uppercase tracking-widest rounded-lg transition-all ${form.type === 'service' ? 'bg-white text-[#a2ad02] shadow-sm' : 'text-gray-400'}`}
                   >
                     Service
                   </button>
@@ -264,7 +264,7 @@ const ServicesPage = () => {
                     onClick={() => {
                       setForm({...form, type: 'product', categoryId: ''});
                     }}
-                    className={`flex-1 py-2 text-xs font-black uppercase tracking-widest rounded-lg transition-all ${form.type === 'product' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-400'}`}
+                    className={`flex-1 py-2 text-xs font-black uppercase tracking-widest rounded-lg transition-all ${form.type === 'product' ? 'bg-white text-[#a2ad02] shadow-sm' : 'text-gray-400'}`}
                   >
                     Product / Material
                   </button>
@@ -272,7 +272,7 @@ const ServicesPage = () => {
 
                 <div>
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 block">Item Name / Title *</label>
-                  <input type="text" required value={form.title} onChange={e => setForm({...form, title: e.target.value})} className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-inner" placeholder={form.type === 'service' ? "e.g. AC Deep Cleaning" : "e.g. Reti (1 Tractor)"} />
+                  <input type="text" required value={form.title} onChange={e => setForm({...form, title: e.target.value})} className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#a2ad02]/20 focus:border-[#a2ad02] transition-all shadow-inner" placeholder={form.type === 'service' ? "e.g. AC Deep Cleaning" : "e.g. Reti (1 Tractor)"} />
                 </div>
 
                 <div>
@@ -281,7 +281,7 @@ const ServicesPage = () => {
                     required 
                     value={form.categoryId} 
                     onChange={e => handleCategoryChange(e.target.value)} 
-                    className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-inner appearance-none"
+                    className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#a2ad02]/20 focus:border-[#a2ad02] transition-all shadow-inner appearance-none"
                   >
                     <option value="">Select Category</option>
                     {categories
@@ -301,7 +301,7 @@ const ServicesPage = () => {
                       <select 
                         value={form.brandId} 
                         onChange={e => setForm({...form, brandId: e.target.value})} 
-                        className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-inner appearance-none"
+                        className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#a2ad02]/20 focus:border-[#a2ad02] transition-all shadow-inner appearance-none"
                       >
                         <option value="">Select Brand</option>
                         {brandsList.map(b => (
@@ -316,7 +316,7 @@ const ServicesPage = () => {
                       <select 
                         value={form.subCategoryId} 
                         onChange={e => setForm({...form, subCategoryId: e.target.value})} 
-                        className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-inner appearance-none"
+                        className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#a2ad02]/20 focus:border-[#a2ad02] transition-all shadow-inner appearance-none"
                       >
                         <option value="">Select Sub-Category</option>
                         {subCategoriesList.map(s => (
@@ -351,24 +351,24 @@ const ServicesPage = () => {
                   <div className="grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
                     <div>
                       <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 block">Selling Price (₹)</label>
-                      <input type="number" value={form.basePrice} onChange={e => setForm({...form, basePrice: e.target.value})} className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 text-sm font-bold shadow-inner focus:ring-2 focus:ring-teal-500/20 outline-none" placeholder="0" />
+                      <input type="number" value={form.basePrice} onChange={e => setForm({...form, basePrice: e.target.value})} className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 text-sm font-bold shadow-inner focus:ring-2 focus:ring-[#a2ad02]/20 outline-none" placeholder="0" />
                     </div>
                     <div>
                       <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 block">Original Price (₹)</label>
-                      <input type="number" value={form.discountPrice} onChange={e => setForm({...form, discountPrice: e.target.value})} className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 text-sm font-bold shadow-inner focus:ring-2 focus:ring-teal-500/20 outline-none" placeholder="For discount" />
+                      <input type="number" value={form.discountPrice} onChange={e => setForm({...form, discountPrice: e.target.value})} className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 text-sm font-bold shadow-inner focus:ring-2 focus:ring-[#a2ad02]/20 outline-none" placeholder="For discount" />
                     </div>
                   </div>
                 )}
 
                 <div>
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 block">Display Image</label>
-                  <div className="border-2 border-dashed border-gray-200 rounded-[2rem] p-6 flex flex-col items-center justify-center relative bg-gray-50 overflow-hidden group hover:border-teal-500/50 transition-all">
+                  <div className="border-2 border-dashed border-gray-200 rounded-[2rem] p-6 flex flex-col items-center justify-center relative bg-gray-50 overflow-hidden group hover:border-[#a2ad02]/50 transition-all">
                     {imagePreview ? (
                       <img src={imagePreview} alt="Preview" className="h-40 w-full object-cover rounded-2xl shadow-lg" />
                     ) : (
                       <div className="text-center py-6">
                         <div className="w-12 h-12 bg-white rounded-2xl shadow-sm flex items-center justify-center mx-auto mb-3">
-                          <FiImage className="h-6 w-6 text-teal-500" />
+                          <FiImage className="h-6 w-6 text-[#a2ad02]" />
                         </div>
                         <span className="text-[10px] text-gray-500 font-black uppercase tracking-widest">Tap to upload photo</span>
                       </div>
@@ -377,7 +377,7 @@ const ServicesPage = () => {
                   </div>
                 </div>
 
-                <button type="submit" disabled={isSubmitting} className="w-full bg-teal-600 text-white font-black py-5 rounded-2xl shadow-xl hover:bg-teal-700 transition active:scale-95 mt-6 disabled:opacity-50 disabled:scale-100">
+                <button type="submit" disabled={isSubmitting} className="w-full bg-[#a2ad02] text-white font-black py-5 rounded-2xl shadow-xl hover:bg-[#889400] transition active:scale-95 mt-6 disabled:opacity-50 disabled:scale-100">
                   {isSubmitting ? (
                     <div className="flex items-center justify-center gap-3">
                       <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>

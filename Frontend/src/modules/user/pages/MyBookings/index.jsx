@@ -64,10 +64,10 @@ const MyBookings = () => {
   };
 
   return (
-    <div className="min-h-screen pb-32 overflow-x-hidden relative" style={{ backgroundColor: '#fbfde8' }}>
+    <div className="min-h-screen pb-32 relative" style={{ backgroundColor: '#fbfde8' }}>
       <div className="relative z-10">
         <header 
-          className="px-6 pt-10 pb-5 rounded-b-[32px] shadow-md shadow-gray-200/50"
+          className="px-6 pt-5 pb-4 rounded-b-[24px] shadow-md shadow-gray-200/50 sticky top-0 z-50"
           style={{ background: 'linear-gradient(180deg, rgba(213, 222, 35, 1) 0%, rgba(220, 230, 64, 1) 41%, rgba(227, 236, 114, 1) 69%)' }}
         >
           <div className="flex items-center justify-between mb-5">

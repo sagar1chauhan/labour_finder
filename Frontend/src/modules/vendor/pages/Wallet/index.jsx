@@ -131,21 +131,21 @@ const Wallet = () => {
 
       <main className="px-4 py-6">
         {/* Earnings Card (Green) */}
-        <div className="rounded-2xl p-6 shadow-xl relative overflow-hidden mb-4 bg-gradient-to-br from-green-600 to-green-800">
-          <div className="relative z-10 text-white">
+        <div className="rounded-[24px] p-6 shadow-sm relative overflow-hidden mb-4 bg-gradient-to-br from-green-50/70 to-green-100/70 border border-green-200/60 backdrop-blur-md">
+          <div className="relative z-10 text-green-950">
             <div className="flex justify-between items-start">
               <div>
-                <p className="text-white/80 text-sm font-medium mb-1">Available Earnings</p>
-                <p className="text-3xl font-bold mb-4">₹{wallet.earnings?.toLocaleString() || 0}</p>
+                <p className="text-green-700/80 text-xs font-bold uppercase tracking-wider mb-1">Available Earnings</p>
+                <p className="text-3xl font-black mb-4">₹{wallet.earnings?.toLocaleString() || 0}</p>
               </div>
-              <div className="bg-white/20 p-2 rounded-lg backdrop-blur-sm">
-                <FiDollarSign className="w-6 h-6 text-white" />
+              <div className="bg-green-500/10 p-2 rounded-xl border border-green-200/50">
+                <FiDollarSign className="w-6 h-6 text-green-600" />
               </div>
             </div>
 
             <button
               onClick={() => navigate('/vendor/wallet/withdraw')}
-              className="w-full bg-white text-green-700 py-3 rounded-xl font-bold text-sm hover:bg-green-50 active:scale-95 transition-all shadow-sm"
+              className="w-full bg-[#0f172a] text-white py-3 rounded-xl font-black text-[10px] uppercase tracking-wider hover:bg-gray-800 active:scale-95 transition-all shadow-sm"
             >
               Request Withdrawal
             </button>
@@ -153,30 +153,30 @@ const Wallet = () => {
         </div>
 
         {/* Dues Card (Red) */}
-        <div className="rounded-2xl p-6 shadow-xl relative overflow-hidden mb-6 bg-gradient-to-br from-red-600 to-red-800">
-          <div className="relative z-10 text-white">
+        <div className="rounded-[24px] p-6 shadow-sm relative overflow-hidden mb-6 bg-gradient-to-br from-red-50/70 to-red-100/70 border border-red-200/60 backdrop-blur-md">
+          <div className="relative z-10 text-red-950">
             <div className="flex justify-between items-start">
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  <p className="text-white/80 text-sm font-medium">Amount Due to Admin</p>
-                  {wallet.dues > 0 && <FiAlertCircle className="w-4 h-4 text-red-200 animate-pulse" />}
+                  <p className="text-red-700/80 text-xs font-bold uppercase tracking-wider">Amount Due to Admin</p>
+                  {wallet.dues > 0 && <FiAlertCircle className="w-4 h-4 text-red-500 animate-pulse" />}
                 </div>
-                <p className="text-3xl font-bold mb-4">₹{wallet.dues?.toLocaleString() || 0}</p>
+                <p className="text-3xl font-black mb-4">₹{wallet.dues?.toLocaleString() || 0}</p>
               </div>
-              <div className="bg-white/20 p-2 rounded-lg backdrop-blur-sm">
-                <FiArrowDown className="w-6 h-6 text-white" />
+              <div className="bg-red-500/10 p-2 rounded-xl border border-red-200/50">
+                <FiArrowDown className="w-6 h-6 text-red-600" />
               </div>
             </div>
 
             {wallet.dues > 0 ? (
               <button
                 onClick={() => navigate('/vendor/wallet/settle')}
-                className="w-full bg-white text-red-700 py-3 rounded-xl font-bold text-sm hover:bg-red-50 active:scale-95 transition-all shadow-sm"
+                className="w-full bg-red-600 text-white py-3 rounded-xl font-black text-[10px] uppercase tracking-wider hover:bg-red-700 active:scale-95 transition-all shadow-sm"
               >
                 Pay Now
               </button>
             ) : (
-              <div className="w-full bg-white/10 text-white py-3 rounded-xl font-medium text-sm text-center border border-white/20">
+              <div className="w-full bg-red-500/10 text-red-700 py-3 rounded-[14px] font-black text-[10px] uppercase tracking-wider text-center border border-red-200/60">
                 No Dues Pending
               </div>
             )}

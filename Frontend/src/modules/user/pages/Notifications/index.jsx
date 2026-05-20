@@ -77,9 +77,9 @@ const Notifications = () => {
   });
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24 overflow-x-hidden relative">
+    <div className="min-h-screen bg-gray-50 pb-24 relative">
       <div className="relative z-10">
-        <header className="bg-[#0D9488] px-6 pt-12 pb-6 rounded-b-[40px] shadow-lg shadow-teal-900/20">
+        <header className="bg-[#0D9488] px-6 pt-5 pb-4 rounded-b-[24px] shadow-lg shadow-teal-900/20 sticky top-0 z-50">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
               <button

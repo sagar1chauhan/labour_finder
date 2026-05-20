@@ -69,7 +69,7 @@ const BottomNav = memo(() => {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 bg-white"
+      className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 shadow-lg"
       style={{
         position: 'fixed',
         bottom: 0,
@@ -77,18 +77,10 @@ const BottomNav = memo(() => {
         right: 0,
         width: '100%',
         zIndex: 40,
-        willChange: 'transform',
-        transform: 'translateZ(0)',
-        backfaceVisibility: 'hidden',
-        WebkitBackfaceVisibility: 'hidden',
-        borderTop: '2px solid rgba(0, 0, 0, 0.35)',
-        borderTopLeftRadius: '20px',
-        borderTopRightRadius: '20px',
-        boxShadow: '0 -8px 24px rgba(0, 0, 0, 0.15), 0 -4px 12px rgba(0, 0, 0, 0.1), 0 -2px 6px rgba(0, 0, 0, 0.08)',
-        background: 'linear-gradient(to top, #FFFFFF 0%, #FAFAFA 100%)',
+        background: '#FFFFFF',
       }}
     >
-      <div className="flex items-center justify-around px-2 py-2">
+      <div className="flex items-center justify-around px-2 py-1">
         {navItems.map((item) => {
           const isActive = location.pathname === item.path ||
             (item.path === '/vendor/dashboard' && location.pathname === '/vendor');
@@ -98,24 +90,15 @@ const BottomNav = memo(() => {
             <button
               key={item.path}
               onClick={() => handleNavClick(item.path)}
-              className="flex flex-col items-center justify-center relative w-16 h-14 rounded-xl transition-all duration-200 group hover:scale-105"
+              className="flex flex-col items-center justify-center relative w-16 h-14 transition-all duration-200 group active:scale-95"
             >
-              {/* Active Indicator Bar - Gradient Accent */}
+              {/* Active Indicator Bar - Clean flat style at the top */}
               {isActive && (
                 <div
-                  className="absolute -top-2 w-10 h-1 rounded-b-full"
+                  className="absolute top-0 w-8 h-1 rounded-full"
                   style={{
-                    background: themeColors.gradient,
-                    boxShadow: `0 2px 8px ${themeColors.brand.teal}4D`,
+                    background: '#a2ad02',
                   }}
-                />
-              )}
-
-              {/* Active Background - Very Subtle Teal Tint */}
-              {isActive && (
-                <div
-                  className="absolute inset-0 rounded-xl scale-90"
-                  style={{ backgroundColor: `${themeColors.brand.teal}0A` }}
                 />
               )}
 

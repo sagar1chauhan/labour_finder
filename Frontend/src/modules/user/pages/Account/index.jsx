@@ -73,15 +73,15 @@ const Account = () => {
   );
 
   return (
-    <div className="min-h-screen pb-32 relative overflow-x-hidden" style={{ backgroundColor: '#fbfde8' }}>
+    <div className="min-h-screen pb-32 relative" style={{ backgroundColor: '#fbfde8' }}>
       <div className="relative z-10">
         <header 
-          className="px-6 pt-10 pb-8 rounded-b-[40px] shadow-md shadow-gray-200/50 relative overflow-hidden"
+          className="px-6 pt-5 pb-5 rounded-b-[24px] shadow-md shadow-gray-200/50 sticky top-0 z-50 overflow-hidden"
           style={{ background: 'linear-gradient(180deg, rgba(213, 222, 35, 1) 0%, rgba(220, 230, 64, 1) 41%, rgba(227, 236, 114, 1) 69%)' }}
         >
           <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full blur-2xl -translate-y-24 translate-x-24" />
           
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center justify-between mb-4">
             <button
               onClick={() => navigate(-1)}
               className="w-8 h-8 bg-white/40 backdrop-blur-md rounded-xl flex items-center justify-center text-gray-900 border border-white/20 active:scale-90 transition-all"

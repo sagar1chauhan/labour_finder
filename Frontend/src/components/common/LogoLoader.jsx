@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import logoImg from '../../assets/images/civilconnectLogo.png';
 
 /**
  * LogoLoader Component
@@ -36,12 +37,17 @@ const LogoLoader = ({ fullScreen = false, overlay = false, inline = false, size 
         }}
         className={`relative ${size} flex items-center justify-center`}
       >
-        <div className="w-full h-full flex items-center justify-center text-2xl font-black text-white bg-teal-600 rounded-full shadow-lg text-center tracking-tighter">
-          CC
+        <div className="w-full h-full flex items-center justify-center bg-white rounded-full shadow-lg border border-gray-100/50 overflow-hidden">
+          <img 
+            src={logoImg} 
+            alt="Loading..." 
+            className="w-[72%] h-[72%] object-contain"
+            style={{ transform: 'translateY(3px)' }}
+          />
         </div>
         {/* Subtle ripple effect */}
         <motion.div
-          className="absolute inset-0 rounded-full border-2 border-teal-200"
+          className="absolute inset-0 rounded-full border-2 border-[#a2ad02]"
           animate={{
             scale: [1, 1.4],
             opacity: [0.6, 0]

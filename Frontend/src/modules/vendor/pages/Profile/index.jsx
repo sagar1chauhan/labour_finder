@@ -172,7 +172,7 @@ const Profile = () => {
         <div
           className="rounded-[2rem] p-4 mb-4 shadow-xl relative overflow-hidden border border-white/60"
           style={{
-            background: 'linear-gradient(90deg, rgba(213, 181, 235, 1) 0%, rgba(240, 203, 242, 1) 90%)',
+            background: 'linear-gradient(135deg, #d5de23 0%, #ecfccb 100%)',
             boxShadow: '0 15px 30px rgba(207, 220, 1, 0.12)',
           }}
         >
@@ -207,36 +207,36 @@ const Profile = () => {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <FiUser className="w-8 h-8 text-purple-600" />
+                    <FiUser className="w-8 h-8 text-green-700" />
                   )}
                 </div>
                 {/* Star Rating Below Photo */}
                 {profile.rating > 0 && (
                   <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/50 backdrop-blur-md border border-white/50">
                     <FiStar className="w-3 h-3 text-amber-500 fill-amber-500" />
-                    <span className="text-[10px] font-black text-purple-900">{profile.rating.toFixed(1)}</span>
+                    <span className="text-[10px] font-black text-green-950">{profile.rating.toFixed(1)}</span>
                   </div>
                 )}
               </div>
 
               {/* Name and Info */}
               <div className="flex-1 min-w-0 flex flex-col">
-                <h2 className="text-xl font-black text-purple-950 mb-0 break-words tracking-tight leading-tight">{profile.name}</h2>
-                <p className="text-purple-900/70 text-[10px] mb-2 font-bold break-words tracking-wide uppercase">{profile.businessName}</p>
+                <h2 className="text-xl font-black text-green-950 mb-0 break-words tracking-tight leading-tight">{profile.name}</h2>
+                <p className="text-green-900/70 text-[10px] mb-2 font-bold break-words tracking-wide uppercase">{profile.businessName}</p>
 
                 {/* Phone and Email */}
                 <div className="space-y-1.5">
                   <div className="flex items-center gap-2">
                     <div className="p-1 rounded-lg bg-white/40 backdrop-blur-sm flex-shrink-0 border border-white/60">
-                      <FiPhone className="w-3 h-3 text-purple-800" />
+                      <FiPhone className="w-3 h-3 text-green-800" />
                     </div>
-                    <span className="text-xs text-purple-950 font-bold tracking-tight">{profile.phone}</span>
+                    <span className="text-xs text-green-950 font-bold tracking-tight">{profile.phone}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="p-1 rounded-lg bg-white/40 backdrop-blur-sm flex-shrink-0 border border-white/60">
-                      <FiMail className="w-3 h-3 text-purple-800" />
+                      <FiMail className="w-3 h-3 text-green-800" />
                     </div>
-                    <span className="text-xs text-purple-950 font-bold tracking-tight truncate max-w-[150px]">{profile.email}</span>
+                    <span className="text-xs text-green-950 font-bold tracking-tight truncate max-w-[150px]">{profile.email}</span>
                   </div>
                 </div>
               </div>
@@ -246,7 +246,7 @@ const Profile = () => {
                 onClick={() => navigate('/vendor/profile/details')}
                 className="p-3.5 rounded-2xl flex-shrink-0 transition-all duration-500 active:scale-90 group bg-white shadow-lg"
               >
-                <FiArrowRight className="w-5 h-5 text-purple-700 group-hover:translate-x-1 transition-transform" />
+                <FiArrowRight className="w-5 h-5 text-green-800 group-hover:translate-x-1 transition-transform" />
               </button>
             </div>
           </div>

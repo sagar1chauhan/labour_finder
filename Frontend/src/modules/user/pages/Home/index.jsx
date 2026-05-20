@@ -20,8 +20,13 @@ const Header = ({ city, onLocationClick, cartCount, navigate }) => {
   
   return (
     <div 
-      className="px-4 pt-4 pb-3 relative overflow-hidden"
-      style={{ background: 'linear-gradient(180deg, rgba(213, 222, 35, 1) 0%, rgba(220, 230, 64, 1) 41%, rgba(227, 236, 114, 1) 69%)' }}
+      className="px-4 pt-4 pb-3 fixed top-0 left-0 right-0 z-50 backdrop-blur-md overflow-hidden"
+      style={{ 
+        background: 'linear-gradient(180deg, rgba(213, 222, 35, 0.95) 0%, rgba(220, 230, 64, 0.95) 41%, rgba(227, 236, 114, 0.95) 69%)',
+        backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)',
+        height: '144px'
+      }}
     >
       <div className="relative z-10 flex flex-col gap-2">
         {/* Top line with title and actions */}
@@ -639,8 +644,8 @@ const Home = () => {
   if (loading && categories.length === 0) return <LogoLoader />;
 
   return (
-    <div className="overflow-x-hidden relative" style={{ backgroundColor: '#fbfde8' }}>
-      <div className="relative z-10">
+    <div className="overflow-x-hidden relative min-h-screen" style={{ backgroundColor: '#fbfde8' }}>
+      <div className="relative z-10 pt-[144px]">
         <Header 
           city={currentCity} 
           onLocationClick={() => setIsAddressModalOpen(true)}

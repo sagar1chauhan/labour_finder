@@ -80,20 +80,20 @@ const UserCategoriesPage = () => {
   if (loading) return <LogoLoader />;
 
   return (
-    <div className="min-h-screen pb-24 overflow-x-hidden relative" style={{ backgroundColor: '#fbfde8' }}>
+    <div className="min-h-screen pb-24 relative" style={{ backgroundColor: '#fbfde8' }}>
 
       {/* Top Gradient Header */}
       <header
-        className="px-6 pt-10 pb-5 rounded-b-[32px] shadow-sm relative overflow-hidden"
+        className="px-4 pt-5 pb-3.5 rounded-b-[24px] shadow-sm relative overflow-hidden sticky top-0 z-50"
         style={{ background: 'linear-gradient(180deg, #d5de23 0%, #dce640 41%, #e3ec72 100%)' }}
       >
         <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-16 -mt-16" />
 
         {/* Nav row */}
-        <div className="flex items-center justify-between mb-5 relative z-10">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-white/30 backdrop-blur-md flex items-center justify-center border border-white/20 shadow-sm">
-              <FiMapPin className="w-4 h-4 text-green-800" />
+        <div className="flex items-center justify-between mb-3.5 relative z-10">
+          <div className="flex items-center gap-1.5">
+            <div className="w-7 h-7 rounded-full bg-white/30 backdrop-blur-md flex items-center justify-center border border-white/20 shadow-sm">
+              <FiMapPin className="w-3.5 h-3.5 text-green-800" />
             </div>
             <div>
               <div className="flex items-center gap-1">
@@ -108,12 +108,12 @@ const UserCategoriesPage = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2">
             <div
               onClick={() => navigate('/user/cart')}
-              className="w-8 h-8 bg-white/30 backdrop-blur-md rounded-xl flex items-center justify-center text-gray-900 border border-white/20 cursor-pointer relative active:scale-90 transition-all shadow-sm"
+              className="w-7.5 h-7.5 bg-white/30 backdrop-blur-md rounded-xl flex items-center justify-center text-gray-900 border border-white/20 cursor-pointer relative active:scale-90 transition-all shadow-sm"
             >
-              <FiShoppingCart className="w-4 h-4 text-green-950" />
+              <FiShoppingCart className="w-3.5 h-3.5 text-green-950" />
               {cartCount > 0 && (
                 <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[7px] font-black w-3.5 h-3.5 rounded-full flex items-center justify-center border border-white shadow-sm">
                   {cartCount}
@@ -125,22 +125,22 @@ const UserCategoriesPage = () => {
         </div>
 
         {/* Search Box */}
-        <div className="relative z-10 mb-4">
-          <FiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-green-800/70 w-3.5 h-3.5 z-20" />
+        <div className="relative z-10 mb-3">
+          <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-green-800/70 w-3.5 h-3.5 z-20" />
           <input
             type="text"
             placeholder="What do you need today?"
-            className="w-full pl-10 pr-4 py-2 bg-white/95 rounded-xl border border-white/20 text-[11px] font-bold text-gray-700 h-[40px] focus:outline-none focus:ring-2 focus:ring-[#a2ad02]/30 transition-all shadow-inner"
+            className="w-full pl-9 pr-4 py-1.5 bg-white/95 rounded-xl border border-white/20 text-[10px] font-bold text-gray-700 h-[36px] focus:outline-none focus:ring-2 focus:ring-[#a2ad02]/30 transition-all shadow-inner"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
 
         {/* Products / Services Toggle */}
-        <div className="relative z-10 flex items-center bg-black/10 rounded-2xl p-1 gap-1">
+        <div className="relative z-10 flex items-center bg-black/10 rounded-xl p-1 gap-1">
           <button
             onClick={() => { setActiveTab('products'); setSearchQuery(''); }}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-[11px] font-black tracking-wide transition-all active:scale-95 ${
+            className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg text-[10px] font-black tracking-wide transition-all active:scale-95 ${
               activeTab === 'products'
                 ? 'bg-[#0f172a] text-[#cfdc01] shadow-md'
                 : 'text-gray-700 hover:bg-white/20'
@@ -151,7 +151,7 @@ const UserCategoriesPage = () => {
           </button>
           <button
             onClick={() => { setActiveTab('services'); setSearchQuery(''); }}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-[11px] font-black tracking-wide transition-all active:scale-95 ${
+            className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg text-[10px] font-black tracking-wide transition-all active:scale-95 ${
               activeTab === 'services'
                 ? 'bg-[#0f172a] text-[#cfdc01] shadow-md'
                 : 'text-gray-700 hover:bg-white/20'

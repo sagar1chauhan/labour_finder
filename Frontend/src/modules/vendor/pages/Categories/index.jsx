@@ -117,7 +117,7 @@ const Categories = () => {
           <h2 className="text-xl font-bold text-gray-800">Your Categories</h2>
           <button
             onClick={() => setIsModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-xl font-semibold shadow-md active:scale-95 transition-transform"
+            className="flex items-center gap-2 px-4 py-2 bg-[#a2ad02] text-white rounded-xl font-semibold shadow-md active:scale-95 transition-transform hover:bg-[#889400]"
           >
             <FiPlus />
             <span>Add New</span>
@@ -128,16 +128,16 @@ const Categories = () => {
         <div className="flex bg-white p-1 rounded-2xl shadow-sm border border-gray-100 mb-6">
           <button
             onClick={() => setActiveTab('service')}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold transition-all ${activeTab === 'service' ? 'bg-teal-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold transition-all ${activeTab === 'service' ? 'bg-[#a2ad02] text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}
           >
-            <FiGrid className={activeTab === 'service' ? 'text-white' : 'text-teal-600'} />
+            <FiGrid className={activeTab === 'service' ? 'text-white' : 'text-[#a2ad02]'} />
             Services
           </button>
           <button
             onClick={() => setActiveTab('product')}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold transition-all ${activeTab === 'product' ? 'bg-indigo-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold transition-all ${activeTab === 'product' ? 'bg-[#a2ad02] text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}
           >
-            <FiBox className={activeTab === 'product' ? 'text-white' : 'text-indigo-600'} />
+            <FiBox className={activeTab === 'product' ? 'text-white' : 'text-[#a2ad02]'} />
             Products
           </button>
         </div>
@@ -158,7 +158,7 @@ const Categories = () => {
                 key={cat.id} 
                 className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex items-start gap-4"
               >
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 overflow-hidden ${cat.categoryType === 'product' ? 'bg-indigo-50 text-indigo-600' : 'bg-teal-50 text-teal-600'}`}>
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 overflow-hidden bg-[#a2ad02]/10 text-[#a2ad02]">
                   {cat.imageUrl ? (
                     <img src={cat.imageUrl} alt={cat.title} className="w-full h-full object-cover" />
                   ) : (
@@ -171,7 +171,7 @@ const Categories = () => {
                     <h3 className="font-bold text-gray-900 truncate">{cat.title}</h3>
                     {cat.isOwnCategory && (
                       <div className="flex items-center gap-2">
-                        <span className="px-2 py-0.5 text-[10px] font-bold bg-purple-100 text-purple-700 rounded uppercase tracking-wider">
+                        <span className="px-2 py-0.5 text-[10px] font-bold bg-[#a2ad02]/10 text-green-800 rounded uppercase tracking-wider">
                           Yours
                         </span>
                         <button 
@@ -185,7 +185,7 @@ const Categories = () => {
                     )}
                   </div>
                   <div className="flex items-center gap-2 text-xs font-semibold">
-                    <span className={`px-2 py-0.5 rounded uppercase tracking-wider ${cat.categoryType === 'product' ? 'bg-indigo-100 text-indigo-700' : 'bg-teal-100 text-teal-700'}`}>
+                    <span className="px-2 py-0.5 rounded uppercase tracking-wider bg-green-100 text-green-800">
                       {cat.categoryType}
                     </span>
                     {cat.status === 'active' ? (
@@ -220,7 +220,7 @@ const Categories = () => {
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   placeholder="e.g. Electrical Materials"
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition-colors"
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#a2ad02] focus:bg-white transition-colors"
                   required
                 />
               </div>
@@ -231,7 +231,7 @@ const Categories = () => {
                   <button
                     type="button"
                     onClick={() => setFormData({ ...formData, categoryType: 'service' })}
-                    className={`py-3 px-4 rounded-xl border flex flex-col items-center gap-2 transition-colors ${formData.categoryType === 'service' ? 'bg-teal-50 border-teal-500 text-teal-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+                    className={`py-3 px-4 rounded-xl border flex flex-col items-center gap-2 transition-colors ${formData.categoryType === 'service' ? 'bg-[#a2ad02]/10 border-[#a2ad02] text-green-800 font-bold' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}
                   >
                     <FiGrid className="w-6 h-6" />
                     <span className="text-sm font-bold">Service</span>
@@ -239,7 +239,7 @@ const Categories = () => {
                   <button
                     type="button"
                     onClick={() => setFormData({ ...formData, categoryType: 'product' })}
-                    className={`py-3 px-4 rounded-xl border flex flex-col items-center gap-2 transition-colors ${formData.categoryType === 'product' ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+                    className={`py-3 px-4 rounded-xl border flex flex-col items-center gap-2 transition-colors ${formData.categoryType === 'product' ? 'bg-[#a2ad02]/10 border-[#a2ad02] text-green-800 font-bold' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}
                   >
                     <FiBox className="w-6 h-6" />
                     <span className="text-sm font-bold">Product</span>
@@ -249,7 +249,7 @@ const Categories = () => {
 
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2 text-center uppercase tracking-widest text-[10px]">Category Icon</label>
-                <div className="border-2 border-dashed border-gray-200 rounded-2xl p-4 flex flex-col items-center justify-center relative bg-gray-50 overflow-hidden group hover:border-teal-500/50 transition-all">
+                <div className="border-2 border-dashed border-gray-200 rounded-2xl p-4 flex flex-col items-center justify-center relative bg-gray-50 overflow-hidden group hover:border-[#a2ad02]/50 transition-all">
                   {imagePreview ? (
                     <div className="relative w-full h-32">
                        <img src={imagePreview} alt="Preview" className="h-full w-full object-contain rounded-xl" />
@@ -264,7 +264,7 @@ const Categories = () => {
                   ) : (
                     <div className="text-center py-2">
                       <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center mx-auto mb-2">
-                        <FiImage className="h-5 w-5 text-teal-500" />
+                        <FiImage className="h-5 w-5 text-[#a2ad02]" />
                       </div>
                       <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Upload Icon</span>
                     </div>
@@ -284,7 +284,7 @@ const Categories = () => {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="flex-1 py-3.5 bg-teal-600 text-white font-bold rounded-xl hover:bg-teal-700 transition-colors disabled:opacity-50"
+                  className="flex-1 py-3.5 bg-[#a2ad02] text-white font-bold rounded-xl hover:bg-[#889400] transition-colors disabled:opacity-50"
                 >
                   {isSubmitting ? 'Creating...' : 'Create Category'}
                 </button>

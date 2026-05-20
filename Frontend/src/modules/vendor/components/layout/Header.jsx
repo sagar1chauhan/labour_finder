@@ -111,9 +111,10 @@ const Header = memo(({
 
   return (
     <header
-      className="w-full bg-[#fbfde8]"
+      className="w-full sticky top-0 z-50 backdrop-blur-md"
       style={{
-        borderBottom: '1.5px solid rgba(207, 220, 1, 0.3)',
+        background: 'linear-gradient(180deg, rgba(213, 222, 35, 0.25) 0%, rgba(220, 230, 64, 0.12) 60%, rgba(251, 253, 232, 1) 100%)',
+        borderBottom: '1.5px solid rgba(207, 220, 1, 0.15)',
       }}
     >
       <div className="px-4 py-3 flex items-center justify-between">
@@ -125,7 +126,7 @@ const Header = memo(({
               className="p-2 rounded-full hover:bg-white/30 transition-colors"
               whileTap={{ scale: 0.95 }}
             >
-              <FiArrowLeft className="w-5 h-5" style={{ color: themeColors.button }} />
+              <FiArrowLeft className="w-5 h-5" style={{ color: '#000000' }} />
             </motion.button>
           ) : (
             <motion.div
