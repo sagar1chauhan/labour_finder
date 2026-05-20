@@ -50,7 +50,7 @@ const HelpSupport = () => {
       id: 'booking',
       title: 'Booking & Services',
       icon: FiBook,
-      color: '#3B82F6',
+      color: '#889400',
       questions: [
         {
           q: 'How do I book a service?',
@@ -70,7 +70,7 @@ const HelpSupport = () => {
       id: 'payment',
       title: 'Payments & Wallet',
       icon: FiClock,
-      color: '#10B981',
+      color: '#d97706',
       questions: [
         {
           q: 'How do I add money to my wallet?',
@@ -90,7 +90,7 @@ const HelpSupport = () => {
       id: 'account',
       title: 'Account & Profile',
       icon: FiAlertCircle,
-      color: '#F59E0B',
+      color: '#0f172a',
       questions: [
         {
           q: 'How do I update my profile?',
@@ -174,40 +174,44 @@ const HelpSupport = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-6">
+    <div className="min-h-screen pb-6 relative overflow-x-hidden" style={{ backgroundColor: '#fbfde8' }}>
       {/* Header */}
-      <div className="sticky top-0 z-30 bg-white shadow-sm">
-        <div className="px-4 py-4">
+      <div 
+        className="sticky top-0 z-30 px-6 pt-10 pb-5 rounded-b-[32px] shadow-md shadow-gray-200/50"
+        style={{ background: 'linear-gradient(180deg, rgba(213, 222, 35, 1) 0%, rgba(220, 230, 64, 1) 41%, rgba(227, 236, 114, 1) 69%)' }}
+      >
+        <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <button
               onClick={() => navigate(-1)}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              className="w-8 h-8 bg-white/40 backdrop-blur-md rounded-xl flex items-center justify-center text-gray-900 border border-white/20 active:scale-90 transition-all"
             >
-              <FiArrowLeft className="w-5 h-5 text-gray-700" />
+              <FiArrowLeft className="w-4 h-4" />
             </button>
-            <h1 className="text-xl font-bold text-gray-900">Help & Support</h1>
+            <div>
+              <h1 className="text-lg font-black text-gray-900 tracking-tight leading-tight uppercase">Help & Support</h1>
+              <p className="text-[8px] font-bold text-gray-800 uppercase tracking-[0.2em] opacity-80 leading-none mt-0.5">Customer Care</p>
+            </div>
           </div>
         </div>
 
         {/* Search Bar */}
-        <div className="px-4 pb-4">
-          <div className="relative">
-            <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search for help..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all"
-            />
-          </div>
+        <div className="relative">
+          <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-800" />
+          <input
+            type="text"
+            placeholder="Search for help..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 text-[10px] font-bold text-gray-900 rounded-xl bg-white/50 backdrop-blur-md border border-white/30 focus:border-white focus:bg-white focus:ring-0 outline-none transition-all placeholder:text-gray-600"
+          />
         </div>
       </div>
 
-      <main className="px-4 pt-4">
+      <main className="px-6 pt-6">
         {/* Quick Actions */}
         <div className="mb-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-3">Contact Us</h2>
+          <h2 className="text-[9px] font-black text-gray-400 uppercase tracking-[0.4em] mb-4 ml-4">Contact Us</h2>
           <div className="grid grid-cols-1 gap-3">
             {quickActions.map(action => {
               let href = null;
@@ -226,7 +230,7 @@ const HelpSupport = () => {
                   key={action.id}
                   href={href}
                   onClick={!href ? action.action : undefined}
-                  className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-all active:scale-98 border border-gray-100 flex items-center gap-4 w-full"
+                  className="bg-white rounded-[24px] p-4 shadow-sm hover:shadow-md transition-all active:scale-98 border border-gray-50 flex items-center gap-4 w-full"
                 >
                   <div
                     className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
@@ -235,10 +239,10 @@ const HelpSupport = () => {
                     <action.icon className="w-6 h-6" style={{ color: action.color }} />
                   </div>
                   <div className="flex-1 text-left">
-                    <h3 className="font-semibold text-gray-900">{action.title}</h3>
-                    <p className="text-sm text-gray-600">{action.subtitle}</p>
+                    <h3 className="text-[11px] font-black text-gray-900 leading-tight mb-1">{action.title}</h3>
+                    <p className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">{action.subtitle}</p>
                   </div>
-                  <FiChevronRight className="w-5 h-5 text-gray-400" />
+                  <FiChevronRight className="w-5 h-5 text-gray-300" />
                 </Component>
               );
             })}
@@ -248,22 +252,22 @@ const HelpSupport = () => {
         {/* Submit a Request Button */}
         <button
           onClick={() => setShowContactForm(true)}
-          className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl p-4 font-semibold shadow-lg hover:shadow-xl transition-all active:scale-98 mb-6 flex items-center justify-center gap-2"
+          className="w-full bg-[#0f172a] text-white rounded-[22px] py-4.5 font-black text-[10px] uppercase tracking-[0.3em] shadow-md shadow-gray-200 active:scale-98 transition-all mb-8 flex items-center justify-center gap-2.5"
         >
-          <FiSend className="w-5 h-5" />
+          <FiSend className="w-4 h-4" />
           Submit a Request
         </button>
 
         {/* FAQ Categories */}
         {searchQuery === '' && (
           <div className="mb-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-3">Browse by Category</h2>
+            <h2 className="text-[9px] font-black text-gray-400 uppercase tracking-[0.4em] mb-4 ml-4">Browse by Category</h2>
             <div className="space-y-3">
               {categories.map(category => (
                 <button
                   key={category.id}
                   onClick={() => setSelectedCategory(category.id === selectedCategory ? null : category.id)}
-                  className="w-full bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-all border border-gray-100"
+                  className="w-full bg-white rounded-[24px] p-4 shadow-sm hover:shadow-md transition-all border border-gray-50 text-left mb-3"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -286,10 +290,10 @@ const HelpSupport = () => {
                       {category.questions.map((item, idx) => (
                         <div key={idx} className="text-left">
                           <div className="flex items-start gap-2 mb-2">
-                            <FiHelpCircle className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                            <p className="font-medium text-gray-900 text-sm">{item.q}</p>
+                            <FiHelpCircle className="w-4 h-4 text-[#889400] mt-0.5 flex-shrink-0" />
+                            <p className="font-bold text-gray-900 text-xs">{item.q}</p>
                           </div>
-                          <p className="text-sm text-gray-600 ml-6">{item.a}</p>
+                          <p className="text-[10px] font-medium text-gray-500 ml-6 leading-relaxed">{item.a}</p>
                         </div>
                       ))}
                     </div>

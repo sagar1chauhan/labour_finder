@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiSearch, FiSliders, FiZap, FiStar, FiMapPin, FiMoreHorizontal, FiShoppingBag, FiChevronRight, FiArrowLeft, FiHeart, FiShare2, FiMessageCircle, FiPhone, FiCheckCircle, FiPackage, FiFilter, FiChevronDown } from 'react-icons/fi';
+import { FiSearch, FiSliders, FiZap, FiStar, FiMapPin, FiMoreHorizontal, FiShoppingBag, FiChevronRight, FiArrowLeft, FiHeart, FiShare2, FiMessageCircle, FiPhone, FiCheckCircle, FiPackage, FiFilter, FiChevronDown, FiPlus, FiX } from 'react-icons/fi';
 import { publicCatalogService } from '../../../../services/catalogService';
 import userBannerService from '../../../../services/userBannerService';
 import LogoLoader from '../../../../components/common/LogoLoader';
@@ -61,10 +61,10 @@ const Header = ({ city, onLocationClick, cartCount, navigate }) => {
         {/* Search bar below top line */}
         <div 
           onClick={() => navigate('/user/search')}
-          className="relative mt-1 pointer-events-auto cursor-pointer"
+          className="relative mt-1.5 pointer-events-auto cursor-pointer group"
         >
-          <FiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-600 w-3.5 h-3.5" />
-          <div className="w-full pl-10 pr-4 py-2.5 bg-white/90 hover:bg-white backdrop-blur-md rounded-xl border border-white/20 text-gray-400 text-xs font-semibold tracking-wide shadow-sm flex items-center h-[38px] transition-all">
+          <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-[#889400] w-4 h-4 z-20 transition-transform duration-300 group-hover:scale-110" />
+          <div className="w-full pl-11 pr-4 py-2.5 bg-white/95 hover:bg-white backdrop-blur-md rounded-2xl border border-white/30 text-gray-400 text-xs font-semibold tracking-wide shadow-sm flex items-center h-[42px] transition-all relative z-10">
             Search for Services (Cement, Paints...)
           </div>
         </div>
@@ -163,6 +163,142 @@ const DynamicBanners = ({ banners, navigate, defaultHero }) => {
         </div>
       ))}
     </div>
+  );
+};
+
+const toAssetUrl = (url) => {
+  if (!url) return '';
+  const clean = url.replace('/api/upload', '/upload');
+  if (clean.startsWith('http')) return clean;
+  const base = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000').replace(/\/api$/, '');
+  return `${base}${clean.startsWith('/') ? '' : '/'}${clean}`;
+};
+
+const BrandServicesDrawer = ({ isOpen, onClose, brand, currentCity, navigate }) => {
+  const { addToCart } = useCart();
+  const [services, setServices] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const cityId = currentCity?._id || currentCity?.id;
+
+  useEffect(() => {
+    if (isOpen && brand?._id) {
+      fetchServices();
+    }
+  }, [isOpen, brand?._id, cityId]);
+
+  const fetchServices = async () => {
+    try {
+      setLoading(true);
+      const response = await publicCatalogService.getServices({ brandId: brand._id, cityId });
+      if (response.success) {
+        setServices(response.services || []);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleServiceClick = async (service) => {
+    try {
+      const res = await addToCart({
+        serviceId: service.id || service._id,
+        categoryId: service.categoryId,
+        title: service.title,
+        price: service.discountPrice || service.basePrice,
+        serviceCount: 1,
+        icon: toAssetUrl(service.icon || ''),
+      });
+      if (res.success) {
+        toast.success('Added to cart!');
+        navigate('/user/cart');
+      }
+    } catch (err) {
+      toast.error('Failed to add');
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <AnimatePresence>
+      <div className="fixed inset-0 z-[9998] flex flex-col justify-end">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+          onClick={onClose}
+        />
+        
+        <motion.div
+          initial={{ y: "100%" }}
+          animate={{ y: 0 }}
+          exit={{ y: "100%" }}
+          transition={{ type: "spring", damping: 25, stiffness: 300 }}
+          className="relative bg-white rounded-t-[40px] max-h-[85vh] overflow-hidden flex flex-col"
+        >
+          {/* Header */}
+          <div className="px-6 pt-8 pb-4 flex items-center justify-between border-b border-gray-50">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-[#f5faff] rounded-2xl flex items-center justify-center p-2 border border-sky-100/50 shadow-sm">
+                <img src={toAssetUrl(brand.iconUrl || brand.logo)} alt={brand.title} className="w-full h-full object-contain" />
+              </div>
+              <div>
+                <h2 className="text-lg font-black text-gray-900 tracking-tight">
+                  {brand.title}
+                </h2>
+                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">
+                  Select Service
+                </p>
+              </div>
+            </div>
+            <button onClick={onClose} className="w-10 h-10 bg-gray-50 rounded-2xl flex items-center justify-center">
+              <FiX className="w-5 h-5 text-gray-400" />
+            </button>
+          </div>
+
+          {/* Body */}
+          <div className="flex-1 overflow-y-auto px-6 py-6 no-scrollbar">
+            {loading ? (
+              <div className="space-y-4 animate-pulse">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="h-24 bg-gray-100 rounded-3xl" />
+                ))}
+              </div>
+            ) : services.length === 0 ? (
+              <div className="py-20 text-center opacity-30">
+                <FiZap className="w-12 h-12 mx-auto mb-2" />
+                <p className="text-xs font-black uppercase">No services found</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {services.map(svc => (
+                  <div key={svc.id || svc._id} className="bg-white rounded-3xl p-4 border border-gray-100 flex justify-between items-center group active:scale-[0.98] transition-all">
+                    <div className="flex-1 pr-4">
+                      <h3 className="text-sm font-black text-gray-900 mb-1">{svc.title}</h3>
+                      <p className="text-[10px] text-gray-400 font-medium line-clamp-2 leading-relaxed mb-2">{svc.description || 'Professional standard brand service'}</p>
+                      <div className="flex items-center gap-2">
+                        <span className="text-base font-black text-amber-600">₹{svc.discountPrice || svc.basePrice}</span>
+                        {svc.discountPrice > 0 && <span className="text-[10px] text-gray-300 line-through">₹{svc.basePrice}</span>}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleServiceClick(svc)}
+                      className="w-12 h-12 bg-[#cfdc01] text-[#0f172a] rounded-2xl flex items-center justify-center shadow-lg shadow-[#cfdc01]/20 hover:shadow-[#cfdc01]/40 active:scale-90 transition-all font-black"
+                    >
+                      <FiPlus className="w-6 h-6 stroke-[3]" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </motion.div>
+      </div>
+    </AnimatePresence>
   );
 };
 
@@ -375,6 +511,8 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState([]);
   const [banners, setBanners] = useState([]);
+  const [brands, setBrands] = useState([]);
+  const [selectedBrand, setSelectedBrand] = useState(null);
   const [activeFilter, setActiveFilter] = useState('All');
   const [activeServiceTab, setActiveServiceTab] = useState('Repairing');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -384,14 +522,14 @@ const Home = () => {
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
 
   useEffect(() => {
-    const isAnyModalOpen = !!selectedWorker || isCategoryModalOpen || isSearchOpen || isAddressModalOpen;
+    const isAnyModalOpen = !!selectedWorker || isCategoryModalOpen || isSearchOpen || isAddressModalOpen || !!selectedBrand;
     window.dispatchEvent(new CustomEvent('toggle-bottom-nav', { detail: !isAnyModalOpen }));
     if (isAnyModalOpen) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
     }
-  }, [selectedWorker, isCategoryModalOpen, isSearchOpen, isAddressModalOpen]);
+  }, [selectedWorker, isCategoryModalOpen, isSearchOpen, isAddressModalOpen, selectedBrand]);
 
   useEffect(() => {
     fetchData();
@@ -402,13 +540,17 @@ const Home = () => {
       setLoading(true);
       const cityId = currentCity?._id || currentCity?.id;
 
-      // Fetch categories, home content, and banners in parallel
-      const [catRes, homeRes, bannerRes] = await Promise.all([
+      // Fetch categories, home content, banners, and brands in parallel
+      const [catRes, homeRes, bannerRes, brandRes] = await Promise.all([
         publicCatalogService.getCategories(cityId),
         publicCatalogService.getHomeContent(cityId),
         userBannerService.getActiveBanners().catch(err => {
           console.error("Error fetching active banners:", err);
           return { success: false, data: [] };
+        }),
+        publicCatalogService.getBrands({ cityId }).catch(err => {
+          console.error("Error fetching brands:", err);
+          return { success: false, brands: [] };
         })
       ]);
 
@@ -423,6 +565,12 @@ const Home = () => {
         setBanners(bannerRes.data);
       } else {
         setBanners([]);
+      }
+
+      if (brandRes?.success && brandRes.brands?.length > 0) {
+        setBrands(brandRes.brands);
+      } else {
+        setBrands([]);
       }
     } catch (err) {
       console.error(err);
@@ -473,7 +621,7 @@ const Home = () => {
   if (loading && categories.length === 0) return <LogoLoader />;
 
   return (
-    <div className="min-h-screen pb-24 overflow-x-hidden relative" style={{ backgroundColor: '#fbfde8' }}>
+    <div className="overflow-x-hidden relative" style={{ backgroundColor: '#fbfde8' }}>
       <div className="relative z-10">
         <Header 
           city={currentCity} 
@@ -529,36 +677,43 @@ const Home = () => {
           defaultHero={<HeroCard onAction={() => navigate('/user/shop')} />} 
         />
 
-        {/* Our Services Section */}
-        <div className="px-6 py-3 mb-12">
+        {/* Shop by Brands Section */}
+        <div className="px-6 py-3 mb-0">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-bold text-gray-900 tracking-tight">Our Services</h2>
-            <button className="text-[10px] font-bold text-[#a2ad02] bg-[#cfdc01]/10 px-2.5 py-1 rounded-lg">View All</button>
+            <h2 className="text-base font-bold text-gray-900 tracking-tight">Shop by Brands</h2>
           </div>
 
-          <div className="flex gap-2 mb-4 overflow-x-auto no-scrollbar">
-            {['Repairing', 'Installation'].map(tab => (
-              <button
-                key={tab}
-                onClick={() => setActiveServiceTab(tab)}
-                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[10px] font-bold tracking-wide transition-all ${activeServiceTab === tab 
-                  ? 'bg-[#cfdc01] text-[#0f172a] shadow-sm' 
-                  : 'bg-white text-gray-400 border border-gray-100 shadow-sm'}`}
-              >
-                {tab}
-              </button>
-            ))}
-          </div>
-
-          <div className="flex overflow-x-auto no-scrollbar pb-2 -mx-1 px-1">
-            {displayWorkers.map(worker => (
-              <WorkerCard 
-                key={worker.id} 
-                {...worker} 
-                onClick={() => setSelectedWorker(worker)}
-              />
-            ))}
-          </div>
+          {loading ? (
+            <div className="grid grid-cols-4 gap-x-2 gap-y-4 py-2">
+              {[1, 2, 3, 4].map(i => (
+                <div key={i} className="flex flex-col items-center animate-pulse">
+                  <div className="w-16 h-16 bg-gray-200 rounded-2xl" />
+                  <div className="h-2 w-10 bg-gray-200 rounded-full mt-2" />
+                </div>
+              ))}
+            </div>
+          ) : brands.length > 0 ? (
+            <div className="grid grid-cols-4 gap-x-2 gap-y-4 pb-2">
+              {brands.map(brand => (
+                <div 
+                  key={brand._id}
+                  onClick={() => setSelectedBrand(brand)}
+                  className="flex flex-col items-center cursor-pointer active:scale-95 transition-all group"
+                >
+                  <div className="w-16 h-16 bg-sky-100 rounded-2xl border border-sky-200/50 flex items-center justify-center p-3 shadow-sm group-hover:border-[#cfdc01] group-hover:shadow-md transition-all overflow-hidden">
+                    {brand.iconUrl || brand.logo ? (
+                      <img src={toAssetUrl(brand.iconUrl || brand.logo)} alt={brand.title} className="w-full h-full object-contain group-hover:scale-105 transition-transform" />
+                    ) : (
+                      <span className="text-xl font-bold text-gray-400">{brand.title.charAt(0)}</span>
+                    )}
+                  </div>
+                  <span className="text-[9px] font-bold text-gray-800 mt-2 text-center max-w-[70px] truncate uppercase tracking-tight">{brand.title}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-gray-400 text-center py-4">No brands available</p>
+          )}
         </div>
 
         <ServiceDetail
@@ -588,6 +743,14 @@ const Home = () => {
           isOpen={isAddressModalOpen}
           onClose={() => setIsAddressModalOpen(false)}
           onSave={handleLocationSave}
+        />
+
+        <BrandServicesDrawer
+          isOpen={!!selectedBrand}
+          onClose={() => setSelectedBrand(null)}
+          brand={selectedBrand}
+          currentCity={currentCity}
+          navigate={navigate}
         />
       </div>
     </div>

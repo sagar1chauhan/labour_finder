@@ -63,46 +63,49 @@ const Account = () => {
       className="w-full flex items-center justify-between p-3.5 bg-white rounded-[22px] border border-gray-50 shadow-sm active:bg-gray-50 transition-all group mb-2.5"
     >
       <div className="flex items-center gap-3.5">
-        <div className="w-8.5 h-8.5 rounded-xl flex items-center justify-center bg-teal-50 text-teal-600">
+        <div className="w-8.5 h-8.5 rounded-xl flex items-center justify-center bg-[#889400]/10 text-[#889400]">
           <Icon className={`w-4 h-4 ${color === 'text-red-500' ? 'text-red-500' : ''}`} />
         </div>
         <span className={`text-[9px] font-black uppercase tracking-widest ${color}`}>{label}</span>
       </div>
-      <FiChevronRight className="w-4 h-4 text-gray-300 group-active:text-teal-600 transition-colors" />
+      <FiChevronRight className="w-4 h-4 text-gray-300 group-active:text-[#889400] transition-colors" />
     </motion.button>
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-32 relative overflow-x-hidden">
+    <div className="min-h-screen pb-32 relative overflow-x-hidden" style={{ backgroundColor: '#fbfde8' }}>
       <div className="relative z-10">
-        <header className="bg-[#0D9488] px-6 pt-10 pb-8 rounded-b-[40px] shadow-lg shadow-teal-900/20 relative overflow-hidden">
+        <header 
+          className="px-6 pt-10 pb-8 rounded-b-[40px] shadow-md shadow-gray-200/50 relative overflow-hidden"
+          style={{ background: 'linear-gradient(180deg, rgba(213, 222, 35, 1) 0%, rgba(220, 230, 64, 1) 41%, rgba(227, 236, 114, 1) 69%)' }}
+        >
           <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full blur-2xl -translate-y-24 translate-x-24" />
           
           <div className="flex items-center justify-between mb-8">
             <button
               onClick={() => navigate(-1)}
-              className="w-8 h-8 bg-white/10 backdrop-blur-xl rounded-lg flex items-center justify-center text-white border border-white/10 active:scale-90 transition-all"
+              className="w-8 h-8 bg-white/40 backdrop-blur-md rounded-xl flex items-center justify-center text-gray-900 border border-white/20 active:scale-90 transition-all"
             >
               <FiArrowLeft className="w-4 h-4" />
             </button>
-            <h1 className="text-base font-black text-white tracking-tight">Profile</h1>
-            <NotificationBell light />
+            <h1 className="text-base font-black text-gray-900 tracking-tight">Profile</h1>
+            <NotificationBell navigate={navigate} />
           </div>
 
           <div className="flex items-center gap-4">
              <div className="relative shrink-0">
-                <div className="w-16 h-16 rounded-[22px] bg-gradient-to-br from-teal-400 to-emerald-600 flex items-center justify-center text-white font-black text-2xl shadow-xl border-2 border-white/20">
+                <div className="w-16 h-16 rounded-[22px] bg-gradient-to-br from-[#0f172a] to-[#1e293b] flex items-center justify-center text-white font-black text-2xl shadow-xl border-2 border-white/20">
                    {userProfile.name[0]}
                 </div>
-                <button className="absolute -bottom-1 -right-1 w-7 h-7 bg-white text-teal-600 rounded-lg flex items-center justify-center shadow-md border-2 border-[#0D9488]">
+                <button className="absolute -bottom-1 -right-1 w-7 h-7 bg-white text-[#0f172a] rounded-lg flex items-center justify-center shadow-md border-2 border-white">
                    <FiEdit3 className="w-3.5 h-3.5" />
                 </button>
              </div>
              <div>
-                <h2 className="text-xl font-black text-white leading-tight">{userProfile.name}</h2>
-                <p className="text-[10px] font-bold text-teal-100 uppercase tracking-widest opacity-80 mt-0.5">{userProfile.phone}</p>
+                <h2 className="text-xl font-black text-gray-900 leading-tight">{userProfile.name}</h2>
+                <p className="text-[10px] font-bold text-gray-800 uppercase tracking-widest opacity-80 mt-0.5">{userProfile.phone}</p>
                 <div className="mt-1.5 flex flex-wrap gap-1.5">
-                   <span className="px-2 py-0.5 bg-white/20 backdrop-blur-md text-white rounded-md text-[7px] font-black uppercase tracking-widest">Verified User</span>
+                   <span className="px-2 py-0.5 bg-white/40 backdrop-blur-md text-gray-900 rounded-md text-[7px] font-black uppercase tracking-widest shadow-sm">Verified User</span>
                    {userProfile.usageRole && (
                      <span className="px-2 py-0.5 bg-[#F59E0B] text-white rounded-md text-[7px] font-black uppercase tracking-widest shadow-sm">
                        {userProfile.usageRole}
@@ -117,11 +120,11 @@ const Account = () => {
           {/* Stats Cards - Now properly separated from header */}
           <div className="grid grid-cols-2 gap-4 mb-8">
             <div className="bg-white p-4 rounded-[28px] border border-gray-50 shadow-sm flex flex-col items-center">
-              <div className="w-10 h-10 bg-teal-50 rounded-xl flex items-center justify-center text-teal-600 mb-2.5">
+              <div className="w-10 h-10 bg-[#889400]/10 rounded-xl flex items-center justify-center text-[#889400] mb-2.5">
                 <FiCreditCard className="w-5 h-5" />
               </div>
               <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Wallet Balance</p>
-              <p className="text-base font-black text-gray-900">₹{userProfile.walletBalance}</p>
+              <p className="text-base font-black text-amber-600">₹{userProfile.walletBalance}</p>
             </div>
             <div className="bg-[#111111] p-4 rounded-[28px] shadow-xl flex flex-col items-center relative overflow-hidden group active:scale-95 transition-all">
               <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-orange-400 mb-2.5">

@@ -39,10 +39,10 @@ const ProductCard = ({ product, onAdd, onClick }) => (
     </div>
     <div className="px-1 flex-1 flex flex-col">
       <h3 className="font-black text-gray-900 text-[10px] line-clamp-1 mb-0.5">{product.title}</h3>
-      <p className="text-[7px] text-teal-600 font-black uppercase tracking-wider mb-2">{product.category}</p>
+      <p className="text-[7px] text-[#a2ad02] font-black uppercase tracking-wider mb-2">{product.category}</p>
       <div className="mt-auto flex items-center justify-between">
-        <span className="text-[12px] font-black text-gray-900">₹{product.price}</span>
-        <button onClick={(e) => { e.stopPropagation(); onAdd(product); }} className="w-7 h-7 bg-[#0D9488] text-white rounded-lg flex items-center justify-center shadow-md active:scale-90 transition-all">
+        <span className="text-[12px] font-black text-amber-600">₹{product.price}</span>
+        <button onClick={(e) => { e.stopPropagation(); onAdd(product); }} className="w-7 h-7 bg-[#0f172a] text-white rounded-lg flex items-center justify-center shadow-md active:scale-90 transition-all">
           <FiShoppingCart className="w-4 h-4" />
         </button>
       </div>
@@ -95,41 +95,44 @@ const UserShopPage = () => {
   }, [products, searchQuery, selectedCategory]);
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24 overflow-x-hidden relative">
+    <div className="min-h-screen pb-24 overflow-x-hidden relative" style={{ backgroundColor: '#fbfde8' }}>
       <div className="relative z-10">
-        <header className="bg-[#0D9488] px-6 pt-10 pb-5 rounded-b-[32px] shadow-lg shadow-teal-900/20">
+        <header 
+          className="px-6 pt-10 pb-5 rounded-b-[32px] shadow-md shadow-gray-200/50"
+          style={{ background: 'linear-gradient(180deg, rgba(213, 222, 35, 1) 0%, rgba(220, 230, 64, 1) 41%, rgba(227, 236, 114, 1) 69%)' }}
+        >
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-3">
-              <button onClick={() => navigate(-1)} className="w-8 h-8 bg-white/10 backdrop-blur-xl rounded-xl flex items-center justify-center text-white border border-white/10 active:scale-90 transition-all">
+              <button onClick={() => navigate(-1)} className="w-8 h-8 bg-white/40 backdrop-blur-md rounded-xl flex items-center justify-center text-gray-900 border border-white/20 active:scale-90 transition-all">
                 <FiArrowLeft className="w-4 h-4" />
               </button>
               <div>
-                <h1 className="text-lg font-black text-white tracking-tight leading-tight uppercase">Marketplace</h1>
-                <p className="text-[8px] font-bold text-teal-100 uppercase tracking-[0.2em] opacity-80 leading-none mt-0.5">Premium Materials</p>
+                <h1 className="text-lg font-black text-gray-900 tracking-tight leading-tight uppercase">Marketplace</h1>
+                <p className="text-[8px] font-bold text-gray-800 uppercase tracking-[0.2em] opacity-80 leading-none mt-0.5">Premium Materials</p>
               </div>
             </div>
             <div className="flex items-center gap-2.5">
-              <div onClick={() => navigate('/user/cart')} className="w-8 h-8 bg-white/10 backdrop-blur-xl rounded-xl flex items-center justify-center text-white border border-white/10 cursor-pointer relative">
+              <div onClick={() => navigate('/user/cart')} className="w-8 h-8 bg-white/40 backdrop-blur-md rounded-xl flex items-center justify-center text-gray-900 border border-white/20 cursor-pointer relative active:scale-90 transition-all shadow-sm">
                 <FiShoppingCart className="w-4 h-4" />
                 {cartCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-[7px] font-black w-3.5 h-3.5 rounded-full flex items-center justify-center border-2 border-[#0D9488]">
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[7px] font-black w-3.5 h-3.5 rounded-full flex items-center justify-center border border-white shadow-sm">
                     {cartCount}
                   </span>
                 )}
               </div>
-              <NotificationBell light />
+              <NotificationBell navigate={navigate} />
             </div>
           </div>
           <div className="relative">
-            <FiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-teal-600 w-3.5 h-3.5" />
-            <input type="text" placeholder="Search materials..." className="w-full pl-10 pr-4 py-2 bg-white rounded-xl border-none text-[11px] font-bold text-gray-700 h-[40px]" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+            <FiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 w-3.5 h-3.5" />
+            <input type="text" placeholder="Search materials..." className="w-full pl-10 pr-4 py-2 bg-white/95 rounded-xl border border-white/20 text-[11px] font-bold text-gray-700 h-[40px] focus:outline-none focus:ring-2 focus:ring-amber-500/20 transition-all" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
           </div>
         </header>
 
         <div className="px-6 py-3 flex gap-1.5 overflow-x-auto no-scrollbar">
-          <button onClick={() => setSelectedCategory('all')} className={`px-4 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${selectedCategory === 'all' ? 'bg-[#0D9488] text-white shadow-md' : 'bg-white text-gray-400 border border-gray-100'}`}>All Products</button>
+          <button onClick={() => setSelectedCategory('all')} className={`px-4 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${selectedCategory === 'all' ? 'bg-[#0f172a] text-white shadow-md' : 'bg-white text-gray-500 border border-gray-100 shadow-sm'}`}>All Products</button>
           {categories.filter(c => c.categoryType === 'product').map(cat => (
-            <button key={cat._id || cat.id} onClick={() => setSelectedCategory(cat._id || cat.id)} className={`px-4 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${selectedCategory === (cat._id || cat.id) ? 'bg-[#0D9488] text-white shadow-md' : 'bg-white text-gray-400 border border-gray-100'}`}>{cat.title}</button>
+            <button key={cat._id || cat.id} onClick={() => setSelectedCategory(cat._id || cat.id)} className={`px-4 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${selectedCategory === (cat._id || cat.id) ? 'bg-[#0f172a] text-white shadow-md' : 'bg-white text-gray-500 border border-gray-100 shadow-sm'}`}>{cat.title}</button>
           ))}
         </div>
 

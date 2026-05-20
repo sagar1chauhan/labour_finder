@@ -10,6 +10,7 @@ import { uploadToCloudinary } from '../../../../utils/cloudinaryUpload';
 const ServicesPage = () => {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [brands, setBrands] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -19,12 +20,30 @@ const ServicesPage = () => {
   const [form, setForm] = useState({
     title: '',
     categoryId: '',
+    brandId: '',
     basePrice: '',
     discountPrice: '',
     description: '',
     type: 'service', // 'service' or 'product'
     isPriceDisclosed: true
   });
+
+  const handleCategoryChange = async (catId) => {
+    setForm(prev => ({ ...prev, categoryId: catId, brandId: '' }));
+    if (!catId) {
+      setBrands([]);
+      return;
+    }
+    try {
+      const res = await api.get(`/public/brands?categoryId=${catId}&all=true`);
+      if (res.data.success) {
+        setBrands(res.data.brands || []);
+      }
+    } catch (error) {
+      console.error('Error fetching brands for category:', error);
+      setBrands([]);
+    }
+  };
 
   useEffect(() => {
     fetchData();
@@ -104,7 +123,7 @@ const ServicesPage = () => {
       if (res.data.success) {
         toast.success(`${form.type === 'service' ? 'Service' : 'Product'} created successfully!`);
         setIsModalOpen(false);
-        setForm({ title: '', categoryId: '', basePrice: '', discountPrice: '', description: '', type: 'service', isPriceDisclosed: true });
+        setForm({ title: '', categoryId: '', brandId: '', basePrice: '', discountPrice: '', description: '', type: 'service', isPriceDisclosed: true });
         setImageFile(null);
         setImagePreview('');
         fetchData();
@@ -225,7 +244,7 @@ const ServicesPage = () => {
                   <select 
                     required 
                     value={form.categoryId} 
-                    onChange={e => setForm({...form, categoryId: e.target.value})} 
+                    onChange={e => handleCategoryChange(e.target.value)} 
                     className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-inner appearance-none"
                   >
                     <option value="">Select Category</option>
@@ -237,6 +256,23 @@ const ServicesPage = () => {
                     }
                   </select>
                 </div>
+
+                {form.categoryId && (
+                  <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 block">Brand Name / Sub-category *</label>
+                    <select 
+                      required 
+                      value={form.brandId} 
+                      onChange={e => setForm({...form, brandId: e.target.value})} 
+                      className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all shadow-inner appearance-none"
+                    >
+                      <option value="">Select Brand</option>
+                      {brands.map(b => (
+                        <option key={b.id || b._id} value={b.id || b._id}>{b.title}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
 
                 {/* Price Disclosure Toggle - Only for Products */}
                 {form.type === 'product' && (

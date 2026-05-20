@@ -28,23 +28,26 @@ const Cart = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-48 relative overflow-x-hidden">
+    <div className="min-h-screen pb-48 relative overflow-x-hidden" style={{ backgroundColor: '#fbfde8' }}>
       <div className="relative z-10">
-        <header className="bg-[#0D9488] px-6 pt-10 pb-5 rounded-b-[32px] shadow-lg shadow-teal-900/20">
+        <header 
+          className="px-6 pt-10 pb-5 rounded-b-[32px] shadow-md shadow-gray-200/50"
+          style={{ background: 'linear-gradient(180deg, rgba(213, 222, 35, 1) 0%, rgba(220, 230, 64, 1) 41%, rgba(227, 236, 114, 1) 69%)' }}
+        >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <button
                 onClick={() => navigate(-1)}
-                className="w-8 h-8 bg-white/10 backdrop-blur-xl rounded-xl flex items-center justify-center text-white border border-white/10 active:scale-90 transition-all"
+                className="w-8 h-8 bg-white/40 backdrop-blur-md rounded-xl flex items-center justify-center text-gray-900 border border-white/20 active:scale-90 transition-all"
               >
                 <FiArrowLeft className="w-4 h-4" />
               </button>
               <div>
-                <h1 className="text-lg font-black text-white tracking-tight leading-tight uppercase">Your Cart</h1>
-                <p className="text-[8px] font-bold text-teal-100 uppercase tracking-widest opacity-80 leading-none mt-0.5">{items.length} Items Selected</p>
+                <h1 className="text-lg font-black text-gray-900 tracking-tight leading-tight uppercase">Your Cart</h1>
+                <p className="text-[8px] font-bold text-gray-800 uppercase tracking-widest opacity-80 leading-none mt-0.5">{items.length} Items Selected</p>
               </div>
             </div>
-            <NotificationBell light />
+            <NotificationBell navigate={navigate} />
           </div>
         </header>
 
@@ -66,13 +69,13 @@ const Cart = () => {
                 <div className="flex-1 flex flex-col justify-between py-0.5">
                   <div>
                     <h3 className="text-[10px] font-black text-gray-900 line-clamp-1 mb-0.5">{item.title}</h3>
-                    <p className="text-[7px] font-black text-teal-600 bg-teal-50 px-1.5 py-0.5 rounded-md w-fit uppercase tracking-widest">
+                    <p className="text-[7px] font-black text-[#889400] bg-[#889400]/10 px-1.5 py-0.5 rounded-md w-fit uppercase tracking-widest">
                       {item.category}
                     </p>
                   </div>
                   
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-black text-gray-900">₹{item.price}</span>
+                    <span className="text-[11px] font-black text-amber-600">₹{item.price}</span>
                     <button 
                       onClick={() => handleRemove(item.id || item._id)}
                       className="w-7 h-7 rounded-lg bg-red-50 text-red-500 flex items-center justify-center border border-red-100 active:scale-90 transition-all"
@@ -113,7 +116,7 @@ const Cart = () => {
               
               <button 
                 onClick={() => navigate('/user/checkout')}
-                className="w-full h-11 bg-[#0D9488] text-white rounded-xl font-black text-[9px] uppercase tracking-[0.2em] shadow-lg shadow-teal-50 active:scale-[0.98] transition-all flex items-center justify-center gap-2.5"
+                className="w-full h-11 bg-[#0f172a] text-white rounded-xl font-black text-[9px] uppercase tracking-[0.2em] shadow-md shadow-gray-200 active:scale-[0.98] transition-all flex items-center justify-center gap-2.5"
               >
                 <FiZap className="w-3.5 h-3.5 fill-current" />
                 Checkout Securely

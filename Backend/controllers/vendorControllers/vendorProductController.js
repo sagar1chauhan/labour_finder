@@ -5,30 +5,31 @@ const { validationResult } = require('express-validator');
 const { SERVICE_STATUS } = require('../../utils/constants');
 
 /**
- * Get all products (Brands) created by the vendor
+ * Get all products (Brands/Services) created by the vendor
  * GET /api/vendors/products
  */
 const getVendorProducts = async (req, res) => {
   try {
-    const products = await Brand.find({ vendorId: req.user.id })
-      .populate('categoryIds', 'title')
+    const services = await UserService.find({ vendorId: req.user.id })
+      .populate('brandId')
+      .populate('categoryId')
       .sort({ createdAt: -1 })
       .lean();
 
     res.status(200).json({
       success: true,
-      count: products.length,
-      products: products.map(p => ({
-        id: p._id,
-        title: p.title,
-        slug: p.slug,
-        iconUrl: p.iconUrl || p.logo,
-        basePrice: p.basePrice || 0,
-        discountPrice: p.discountPrice || 0,
-        status: p.status,
-        isPriceDisclosed: p.isPriceDisclosed ?? true,
-        category: p.categoryIds?.[0]?.title || 'Uncategorized',
-        createdAt: p.createdAt
+      count: services.length,
+      products: services.map(s => ({
+        id: s._id,
+        title: s.title,
+        slug: s.brandId?.slug || '',
+        iconUrl: s.iconUrl || s.brandId?.iconUrl || s.brandId?.logo,
+        basePrice: s.basePrice || 0,
+        discountPrice: s.discountPrice || 0,
+        status: s.status,
+        isPriceDisclosed: s.isPriceDisclosed ?? true,
+        category: s.categoryId?.title || s.brandId?.categoryIds?.[0]?.title || 'Uncategorized',
+        createdAt: s.createdAt
       }))
     });
   } catch (error) {
@@ -48,37 +49,43 @@ const createVendorProduct = async (req, res) => {
       return res.status(400).json({ success: false, errors: errors.array() });
     }
 
-    const { title, description, basePrice, discountPrice, iconUrl, categoryId, type, isPriceDisclosed } = req.body;
+    const { title, description, basePrice, discountPrice, iconUrl, categoryId, type, isPriceDisclosed, brandId } = req.body;
 
-    const slug = title.trim().toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-');
-    const uniqueSlug = `${slug}-${Date.now().toString().slice(-4)}`; // ensure uniqueness
+    let finalBrandId = brandId;
 
-    // Create the Brand (Product Group)
-    const brand = await Brand.create({
-      title: title.trim(),
-      slug: uniqueSlug,
-      categoryIds: [categoryId],
-      categoryId: categoryId,
-      iconUrl: iconUrl || null,
-      logo: iconUrl || null,
-      imageUrl: iconUrl || null,
-      basePrice: Number(basePrice) || 0,
-      discountPrice: Number(discountPrice) || 0,
-      status: SERVICE_STATUS.ACTIVE,
-      vendorId: req.user.id,
-      type: type || 'service',
-      isPriceDisclosed: isPriceDisclosed !== undefined ? isPriceDisclosed : true
-    });
+    if (!finalBrandId) {
+      const slug = title.trim().toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-');
+      const uniqueSlug = `${slug}-${Date.now().toString().slice(-4)}`; // ensure uniqueness
+
+      // Create the Brand (Product Group)
+      const brand = await Brand.create({
+        title: title.trim(),
+        slug: uniqueSlug,
+        categoryIds: [categoryId],
+        categoryId: categoryId,
+        iconUrl: iconUrl || null,
+        logo: iconUrl || null,
+        imageUrl: iconUrl || null,
+        basePrice: Number(basePrice) || 0,
+        discountPrice: Number(discountPrice) || 0,
+        status: SERVICE_STATUS.ACTIVE,
+        vendorId: req.user.id,
+        type: type || 'service',
+        isPriceDisclosed: isPriceDisclosed !== undefined ? isPriceDisclosed : true
+      });
+      finalBrandId = brand._id;
+    }
 
     // Create a default Service under this Brand so it can be booked
     const service = await UserService.create({
-      brandId: brand._id,
+      brandId: finalBrandId,
       categoryId: categoryId,
       vendorId: req.user.id,
       title: title.trim(),
       description: description?.trim() || null,
       iconUrl: iconUrl || null,
       basePrice: Number(basePrice) || 0,
+      discountPrice: Number(discountPrice) || 0,
       status: SERVICE_STATUS.ACTIVE,
       type: type || 'service',
       isPriceDisclosed: isPriceDisclosed !== undefined ? isPriceDisclosed : true
@@ -88,9 +95,9 @@ const createVendorProduct = async (req, res) => {
       success: true,
       message: 'Product created successfully',
       product: {
-        id: brand._id,
-        title: brand.title,
-        status: brand.status
+        id: service._id,
+        title: service.title,
+        status: service.status
       }
     });
   } catch (error) {
@@ -111,14 +118,19 @@ const deleteVendorProduct = async (req, res) => {
     const { id } = req.params;
     const vendorId = req.user.id;
 
-    // Verify ownership and delete brand
-    const brand = await Brand.findOneAndDelete({ _id: id, vendorId });
-    if (!brand) {
-      return res.status(404).json({ success: false, message: 'Product not found or not authorized' });
+    // Delete the service
+    const service = await UserService.findOneAndDelete({ _id: id, vendorId });
+    if (!service) {
+      // Fallback: see if they try to delete by custom brand id directly
+      const brand = await Brand.findOneAndDelete({ _id: id, vendorId });
+      if (!brand) {
+        return res.status(404).json({ success: false, message: 'Product not found or not authorized' });
+      }
+      await UserService.deleteMany({ brandId: id, vendorId });
+    } else {
+      // If it was a custom brand created by the vendor (where brand.vendorId exists), clean it up too
+      await Brand.findOneAndDelete({ _id: service.brandId, vendorId });
     }
-
-    // Delete associated services
-    await UserService.deleteMany({ brandId: id, vendorId });
 
     res.status(200).json({ success: true, message: 'Product deleted successfully' });
   } catch (error) {

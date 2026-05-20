@@ -57,30 +57,33 @@ const MyBookings = () => {
   const getStatusInfo = (status) => {
     const s = status?.toLowerCase() || '';
     if (s === 'confirmed' || s === 'accepted') return { icon: <FiCheckCircle className="w-3 h-3" />, color: 'bg-emerald-500', label: 'Confirmed' };
-    if (s.includes('progress')) return { icon: <FiLoader className="w-3 h-3 animate-spin" />, color: 'bg-[#0D9488]', label: 'In Progress' };
+    if (s.includes('progress')) return { icon: <FiLoader className="w-3 h-3 animate-spin" />, color: 'bg-amber-500', label: 'In Progress' };
     if (s === 'completed') return { icon: <FiCheckCircle className="w-3 h-3" />, color: 'bg-blue-500', label: 'Completed' };
     if (s === 'cancelled') return { icon: <FiXCircle className="w-3 h-3" />, color: 'bg-rose-500', label: 'Cancelled' };
     return { icon: <FiClock className="w-3 h-3" />, color: 'bg-gray-400', label: status || 'Pending' };
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-32 overflow-x-hidden relative">
+    <div className="min-h-screen pb-32 overflow-x-hidden relative" style={{ backgroundColor: '#fbfde8' }}>
       <div className="relative z-10">
-        <header className="bg-[#0D9488] px-6 pt-10 pb-5 rounded-b-[32px] shadow-lg shadow-teal-900/20">
+        <header 
+          className="px-6 pt-10 pb-5 rounded-b-[32px] shadow-md shadow-gray-200/50"
+          style={{ background: 'linear-gradient(180deg, rgba(213, 222, 35, 1) 0%, rgba(220, 230, 64, 1) 41%, rgba(227, 236, 114, 1) 69%)' }}
+        >
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-3">
               <button
                 onClick={() => navigate(-1)}
-                className="w-8 h-8 bg-white/10 backdrop-blur-xl rounded-xl flex items-center justify-center text-white border border-white/10 active:scale-90 transition-all"
+                className="w-8 h-8 bg-white/40 backdrop-blur-md rounded-xl flex items-center justify-center text-gray-900 border border-white/20 active:scale-90 transition-all"
               >
                 <FiArrowLeft className="w-4 h-4" />
               </button>
               <div>
-                <h1 className="text-lg font-black text-white tracking-tight leading-tight uppercase">My Bookings</h1>
-                <p className="text-[8px] font-bold text-teal-100 uppercase tracking-[0.2em] opacity-80 leading-none mt-0.5">Track History</p>
+                <h1 className="text-lg font-black text-gray-900 tracking-tight leading-tight uppercase">My Bookings</h1>
+                <p className="text-[8px] font-bold text-gray-800 uppercase tracking-[0.2em] opacity-80 leading-none mt-0.5">Track History</p>
               </div>
             </div>
-            <NotificationBell light />
+            <NotificationBell navigate={navigate} />
           </div>
 
           <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
@@ -89,8 +92,8 @@ const MyBookings = () => {
                 key={id}
                 onClick={() => setFilter(id)}
                 className={`px-4 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${filter === id 
-                  ? 'bg-white text-teal-600 shadow-md' 
-                  : 'bg-white/10 text-teal-50 border border-white/10'}`}
+                  ? 'bg-[#0f172a] text-white shadow-md' 
+                  : 'bg-white text-gray-500 border border-gray-100 shadow-sm'}`}
               >
                 {id.replace('-', ' ')}
               </button>
@@ -117,7 +120,7 @@ const MyBookings = () => {
                     <div className="flex justify-between items-start mb-3">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
-                           <span className="text-[8px] font-black text-teal-600 bg-teal-50 px-1.5 py-0.5 rounded-md uppercase tracking-widest">
+                           <span className="text-[8px] font-black text-[#889400] bg-[#889400]/10 px-1.5 py-0.5 rounded-md uppercase tracking-widest">
                              {booking.serviceCategory || 'Service'}
                            </span>
                            <span className="text-[8px] font-bold text-gray-300 tracking-tighter">#{booking.bookingNumber || 'BK-7892'}</span>
@@ -132,14 +135,14 @@ const MyBookings = () => {
 
                     <div className="grid grid-cols-2 gap-2.5 mb-3">
                       <div className="bg-gray-50/50 rounded-xl p-2 flex items-center gap-2.5">
-                        <FiCalendar className="w-3.5 h-3.5 text-teal-600" />
+                        <FiCalendar className="w-3.5 h-3.5 text-[#889400]" />
                         <div>
                           <p className="text-[7px] font-bold text-gray-400 uppercase leading-none mb-0.5">Date</p>
                           <p className="text-[9px] font-black text-gray-800">{new Date(booking.scheduledDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</p>
                         </div>
                       </div>
                       <div className="bg-gray-50/50 rounded-xl p-2 flex items-center gap-2.5">
-                        <FiClock className="w-3.5 h-3.5 text-teal-600" />
+                        <FiClock className="w-3.5 h-3.5 text-[#889400]" />
                         <div>
                           <p className="text-[7px] font-bold text-gray-400 uppercase leading-none mb-0.5">Time</p>
                           <p className="text-[9px] font-black text-gray-800">{booking.scheduledTime || '10:00 AM'}</p>
@@ -155,7 +158,7 @@ const MyBookings = () => {
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="text-[10px] font-black text-teal-600">₹{booking.totalAmount || 0}</p>
+                        <p className="text-[10px] font-black text-amber-600">₹{booking.totalAmount || 0}</p>
                       </div>
                     </div>
                   </motion.div>

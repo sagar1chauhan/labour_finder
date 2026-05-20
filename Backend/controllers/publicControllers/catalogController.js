@@ -91,7 +91,7 @@ const getPublicCategories = async (req, res) => {
 
 const getPublicBrands = async (req, res) => {
   try {
-    const { categoryId, categorySlug, search, cityId, lat, lng } = req.query;
+    const { categoryId, categorySlug, search, cityId, lat, lng, all } = req.query;
 
     // Build query
     const query = { status: 'active' };
@@ -122,20 +122,45 @@ const getPublicBrands = async (req, res) => {
       query.title = { $regex: escapedSearch, $options: 'i' };
     }
 
-    const vendorMatch = await getVendorMatchQuery(cityId);
+    let brands;
+    if (all === 'true') {
+      brands = await Brand.find(query)
+        .select('title slug iconUrl logo imageUrl badge categoryIds basePrice discountPrice sections type vendorId isPriceDisclosed')
+        .sort({ createdAt: -1 })
+        .lean();
+    } else {
+      const vendorMatch = await getVendorMatchQuery(cityId);
 
-    let brands = await Brand.find(query)
-      .select('title slug iconUrl logo imageUrl badge categoryIds basePrice discountPrice sections type vendorId isPriceDisclosed')
-      .populate({
-        path: 'vendorId',
-        match: vendorMatch,
-        select: 'name businessName policeVerification address rating totalJobs profilePhoto isOnline availability geoLocation location'
-      })
-      .sort({ createdAt: -1 })
-      .lean();
+      // Fetch all brands matching the query first (to keep their original vendorId values)
+      const rawBrands = await Brand.find(query)
+        .select('title slug iconUrl logo imageUrl badge categoryIds basePrice discountPrice sections type vendorId isPriceDisclosed')
+        .sort({ createdAt: -1 })
+        .lean();
 
-    // Filter out brands where vendor is offline or not found
-    brands = brands.filter(b => b.vendorId);
+      // Separate them into Admin brands (no vendorId) and Vendor brands
+      const adminBrands = rawBrands.filter(b => !b.vendorId);
+      const vendorBrandIds = rawBrands.filter(b => b.vendorId).map(b => b._id);
+
+      // Populate only the vendor-specific brands using the vendorMatch criteria
+      let activeVendorBrands = [];
+      if (vendorBrandIds.length > 0) {
+        activeVendorBrands = await Brand.find({ _id: { $in: vendorBrandIds } })
+          .select('title slug iconUrl logo imageUrl badge categoryIds basePrice discountPrice sections type vendorId isPriceDisclosed')
+          .populate({
+            path: 'vendorId',
+            match: vendorMatch,
+            select: 'name businessName policeVerification address rating totalJobs profilePhoto isOnline availability geoLocation location'
+          })
+          .sort({ createdAt: -1 })
+          .lean();
+        
+        // Filter out those where vendor populated reference is null (meaning vendor is offline/not found/unavailable)
+        activeVendorBrands = activeVendorBrands.filter(b => b.vendorId);
+      }
+
+      // Combine Admin brands (always shown) and active Vendor brands
+      brands = [...adminBrands, ...activeVendorBrands];
+    }
 
     // Deduplicate by title to ensure a clean catalog
     const groupedBrands = new Map();
@@ -143,10 +168,10 @@ const getPublicBrands = async (req, res) => {
     
     brands.forEach(brand => {
       const vendor = brand.vendorId;
-      // STRICT CHECK: Only show Available vendors
-      if (!vendor || vendor.isOnline === false || vendor.availability !== 'AVAILABLE') return;
+      // STRICT CHECK: For vendor-specific brands, only show if online and available. Admin brands (no vendor) are always shown.
+      if (brand.vendorId && (!vendor || vendor.isOnline === false || vendor.availability !== 'AVAILABLE')) return;
       
-      if (userLoc) {
+      if (userLoc && vendor) {
         const vLat = vendor.location?.lat || vendor.address?.lat || (vendor.geoLocation?.coordinates ? vendor.geoLocation.coordinates[1] : null);
         const vLng = vendor.location?.lng || vendor.address?.lng || (vendor.geoLocation?.coordinates ? vendor.geoLocation.coordinates[0] : null);
         if (vLat && vLng) {
@@ -229,7 +254,7 @@ const getPublicBrands = async (req, res) => {
         sections: brand.sections || [],
         type: brand.type || 'service',
         isPriceDisclosed: brand.isPriceDisclosed ?? true,
-        vendor: {
+        vendor: brand.vendorId ? {
           id: brand.vendorId._id,
           name: brand.vendorId.name,
           businessName: brand.vendorId.businessName,
@@ -240,7 +265,7 @@ const getPublicBrands = async (req, res) => {
           profilePhoto: brand.vendorId.profilePhoto,
           isOnline: brand.vendorId.isOnline,
           availability: brand.vendorId.availability
-        }
+        } : null
       }))
     });
   } catch (error) {
