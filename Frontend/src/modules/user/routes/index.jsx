@@ -80,6 +80,8 @@ const HelpSupport = lazyLoad(() => import('../pages/HelpSupport'));
 const CancellationPolicy = lazyLoad(() => import('../pages/CancellationPolicy'));
 const Shop = lazyLoad(() => import('../pages/Shop'));
 const AddScrap = lazyLoad(() => import('../pages/Shop/AddScrap'));
+const Categories = lazyLoad(() => import('../pages/Categories'));
+const BrandProducts = lazyLoad(() => import('../pages/Categories/ProductsList'));
 
 // Loading fallback component
 import LogoLoader from '../../../components/common/LogoLoader';
@@ -99,7 +101,7 @@ const UserRoutes = () => {
   // useAppNotifications('user');
 
   // Pages where BottomNav should be shown
-  const bottomNavPages = ['/user', '/user/my-bookings', '/user/cart', '/user/account', '/user/shop'];
+  const bottomNavPages = ['/user', '/user/my-bookings', '/user/cart', '/user/account', '/user/categories'];
   
   // Normalize path by removing trailing slash (except for root /user)
   const normalizedPath = location.pathname.length > 5 && location.pathname.endsWith('/') 
@@ -153,6 +155,8 @@ const UserRoutes = () => {
               <Route path="/cancellation-policy" element={<ProtectedRoute userType="user"><CancellationPolicy /></ProtectedRoute>} />
               <Route path="/shop" element={<ProtectedRoute userType="user"><Shop /></ProtectedRoute>} />
               <Route path="/shop/add-scrap" element={<ProtectedRoute userType="user"><AddScrap /></ProtectedRoute>} />
+              <Route path="/categories" element={<ProtectedRoute userType="user"><Categories /></ProtectedRoute>} />
+              <Route path="/categories/:categoryId/brand/:brandId" element={<ProtectedRoute userType="user"><BrandProducts /></ProtectedRoute>} />
             </Routes>
           </PageTransition>
         </Suspense>

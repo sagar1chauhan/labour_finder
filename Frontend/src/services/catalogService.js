@@ -374,6 +374,20 @@ export const publicCatalogService = {
     return response.data;
   },
 
+  // Get dynamic products catalog
+  getProductsCatalog: async (cityId) => {
+    const query = cityId ? `?cityId=${cityId}` : '';
+    const response = await api.get(`/public/products/catalog${query}`);
+    return response.data;
+  },
+
+  // Get dynamic products under a brand along with siblings
+  getProductsByBrand: async (brandId, cityId) => {
+    const query = cityId ? `?cityId=${cityId}` : '';
+    const response = await api.get(`/public/products/brand/${brandId}${query}`);
+    return response.data;
+  },
+
   // Invalidate all public caches (useful after admin updates)
   invalidateCache: () => {
     apiCache.invalidatePrefix('public:');

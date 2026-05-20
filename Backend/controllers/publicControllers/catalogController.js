@@ -950,11 +950,181 @@ const getPublicHomeData = async (req, res) => {
   }
 };
 
+const getPublicProductsCatalog = async (req, res) => {
+  try {
+    const { cityId } = req.query;
+
+    // Fetch active product categories
+    const query = { status: 'active', categoryType: 'product' };
+    if (cityId) {
+      query.$or = [
+        { cityIds: cityId },
+        { cityIds: { $exists: false } },
+        { cityIds: { $size: 0 } }
+      ];
+    }
+    const categories = await Category.find(query).sort({ homeOrder: 1, createdAt: -1 }).lean();
+
+    // Fetch all active product brands
+    const brandQuery = { status: 'active', type: 'product' };
+    if (cityId) {
+      brandQuery.$or = [
+        { cityIds: cityId },
+        { cityIds: { $exists: false } },
+        { cityIds: { $size: 0 } }
+      ];
+    }
+
+    const vendorMatch = await getVendorMatchQuery(cityId);
+
+    const rawBrands = await Brand.find(brandQuery)
+      .select('title slug iconUrl logo imageUrl badge categoryIds basePrice discountPrice type vendorId')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const adminBrands = rawBrands.filter(b => !b.vendorId);
+    const vendorBrandIds = rawBrands.filter(b => b.vendorId).map(b => b._id);
+
+    let activeVendorBrands = [];
+    if (vendorBrandIds.length > 0) {
+      activeVendorBrands = await Brand.find({ _id: { $in: vendorBrandIds } })
+        .select('title slug iconUrl logo imageUrl badge categoryIds basePrice discountPrice type vendorId')
+        .populate({
+          path: 'vendorId',
+          match: vendorMatch,
+          select: 'name businessName isOnline availability'
+        })
+        .lean();
+      activeVendorBrands = activeVendorBrands.filter(b => b.vendorId);
+    }
+
+    const allBrands = [...adminBrands, ...activeVendorBrands];
+
+    // Group brands under categories
+    const categoriesWithBrands = categories.map(cat => {
+      const catBrands = allBrands.filter(brand =>
+        Array.isArray(brand.categoryIds) &&
+        brand.categoryIds.some(id => id.toString() === cat._id.toString())
+      );
+
+      return {
+        id: cat._id.toString(),
+        title: cat.title,
+        slug: cat.slug,
+        brands: catBrands.map(b => ({
+          id: b._id.toString(),
+          title: b.title,
+          slug: b.slug,
+          icon: b.iconUrl || b.logo || b.imageUrl || ''
+        }))
+      };
+    }).filter(cat => cat.brands.length > 0);
+
+    res.status(200).json({
+      success: true,
+      catalog: categoriesWithBrands
+    });
+  } catch (error) {
+    console.error('getPublicProductsCatalog error:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch catalog data' });
+  }
+};
+
+const getPublicProductsByBrand = async (req, res) => {
+  try {
+    const { brandId } = req.params;
+    const { cityId } = req.query;
+
+    const brand = await Brand.findById(brandId).lean();
+    if (!brand) {
+      return res.status(404).json({ success: false, message: 'Brand not found' });
+    }
+
+    const products = await Service.find({
+      brandId,
+      type: 'product',
+      status: 'active'
+    })
+    .populate({
+      path: 'vendorId',
+      select: 'name businessName isOnline availability'
+    })
+    .sort({ createdAt: -1 })
+    .lean();
+
+    const parentCategoryId = brand.categoryId || brand.categoryIds?.[0];
+    let siblings = [];
+    if (parentCategoryId) {
+      const siblingQuery = {
+        status: 'active',
+        type: 'product',
+        categoryIds: parentCategoryId
+      };
+
+      const rawSiblings = await Brand.find(siblingQuery)
+        .select('title slug iconUrl logo imageUrl categoryIds vendorId')
+        .lean();
+
+      const adminSiblings = rawSiblings.filter(b => !b.vendorId);
+      const vendorSiblingIds = rawSiblings.filter(b => b.vendorId).map(b => b._id);
+
+      let activeVendorSiblings = [];
+      const vendorMatch = await getVendorMatchQuery(cityId);
+      if (vendorSiblingIds.length > 0) {
+        activeVendorSiblings = await Brand.find({ _id: { $in: vendorSiblingIds } })
+          .select('title slug iconUrl logo imageUrl categoryIds vendorId')
+          .populate({
+            path: 'vendorId',
+            match: vendorMatch,
+            select: 'name businessName isOnline availability'
+          })
+          .lean();
+        activeVendorSiblings = activeVendorSiblings.filter(b => b.vendorId);
+      }
+
+      siblings = [...adminSiblings, ...activeVendorSiblings];
+    }
+
+    res.status(200).json({
+      success: true,
+      brand: {
+        id: brand._id.toString(),
+        title: brand.title,
+        slug: brand.slug,
+        categoryId: parentCategoryId
+      },
+      products: products.map(p => ({
+        id: p._id.toString(),
+        title: p.title,
+        description: p.description || '',
+        basePrice: p.basePrice || 0,
+        discountPrice: p.discountPrice || 0,
+        iconUrl: p.iconUrl || brand.iconUrl || brand.logo || '',
+        vendor: p.vendorId ? {
+          id: p.vendorId._id.toString(),
+          name: p.vendorId.businessName || p.vendorId.name
+        } : null
+      })),
+      siblings: siblings.map(s => ({
+        id: s._id.toString(),
+        title: s.title,
+        slug: s.slug,
+        icon: s.iconUrl || s.logo || s.imageUrl || ''
+      }))
+    });
+  } catch (error) {
+    console.error('getPublicProductsByBrand error:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch products for brand' });
+  }
+};
+
 module.exports = {
   getPublicCategories,
   getPublicBrands,
   getPublicBrandBySlug,
   getPublicServices,
   getPublicHomeContent,
-  getPublicHomeData
+  getPublicHomeData,
+  getPublicProductsCatalog,
+  getPublicProductsByBrand
 };

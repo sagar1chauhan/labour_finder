@@ -18,7 +18,7 @@ const BottomNav = React.memo(() => {
 
   const navItems = useMemo(() => [
     { id: 'home', label: 'Home', icon: FiHome, path: '/user' },
-    { id: 'shop', label: 'Shop', icon: FiGrid, path: '/user/shop' },
+    { id: 'categories', label: 'Categories', icon: FiGrid, path: '/user/categories' },
     { id: 'bookings', label: 'Bookings', icon: FiCalendar, path: '/user/my-bookings' },
     { id: 'cart', label: 'Cart', icon: FiShoppingCart, path: '/user/cart', isCart: true },
     { id: 'account', label: 'Account', icon: FiUser, path: '/user/account' },
@@ -27,7 +27,7 @@ const BottomNav = React.memo(() => {
   const getActiveTab = () => {
     const path = location.pathname;
     if (path === '/user' || path === '/user/') return 'home';
-    if (path === '/user/shop') return 'shop';
+    if (path.startsWith('/user/categories')) return 'categories';
     if (path === '/user/my-bookings') return 'bookings';
     if (path === '/user/cart') return 'cart';
     if (path === '/user/account') return 'account';
