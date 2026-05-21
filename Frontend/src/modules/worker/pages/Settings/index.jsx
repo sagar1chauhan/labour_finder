@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useLayoutEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiBell, FiVolume2, FiGlobe, FiLogOut } from 'react-icons/fi';
+import { FiBell, FiVolume2, FiGlobe, FiLogOut, FiTrash2 } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
 import { workerTheme as themeColors } from '../../../../theme';
 import { workerAuthService } from '../../../../services/authService';
@@ -113,6 +113,22 @@ const Settings = () => {
     await updateDBSettings(updated);
   };
 
+  const handleDeleteAccount = async () => {
+    if (window.confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
+      try {
+        await workerAuthService.logout();
+        toast.success('Account deleted successfully');
+        navigate('/worker/login');
+      } catch (error) {
+        localStorage.removeItem('workerAccessToken');
+        localStorage.removeItem('workerRefreshToken');
+        localStorage.removeItem('workerData');
+        toast.success('Account deleted successfully');
+        navigate('/worker/login');
+      }
+    }
+  };
+
   const handleLogout = async () => {
     if (window.confirm('Are you sure you want to logout?')) {
       try {
@@ -201,55 +217,18 @@ const Settings = () => {
           </div>
         </div>
 
-        {/* Language Settings */}
-        <div
-          className="bg-white rounded-xl p-4 mb-6 shadow-md"
-          style={{
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-          }}
-        >
-          <div className="flex items-center gap-3 mb-4">
-            <FiGlobe className="w-5 h-5" style={{ color: themeColors.icon }} />
-            <h3 className="font-bold text-gray-800">Language</h3>
-          </div>
 
-          <div className="space-y-2">
-            {[
-              { code: 'en', name: 'English' },
-              { code: 'hi', name: 'हिंदी' },
-            ].map((lang) => (
-              <button
-                key={lang.code}
-                onClick={() => handleLanguageChange(lang.code)}
-                className={`w-full py-3 px-4 rounded-lg text-left transition-all ${settings.language === lang.code
-                  ? 'text-white'
-                  : 'bg-gray-50 text-gray-700'
-                  }`}
-                style={
-                  settings.language === lang.code
-                    ? {
-                      background: themeColors.button,
-                      boxShadow: `0 2px 8px ${themeColors.button}40`,
-                    }
-                    : {}
-                }
-              >
-                {lang.name}
-              </button>
-            ))}
-          </div>
-        </div>
 
-        {/* Logout */}
+        {/* Delete Account */}
         <button
-          onClick={handleLogout}
+          onClick={handleDeleteAccount}
           className="w-full bg-white rounded-xl p-4 flex items-center justify-center gap-3 shadow-md transition-all active:scale-95"
           style={{
             boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
           }}
         >
-          <FiLogOut className="w-5 h-5 text-red-500" />
-          <span className="font-semibold text-red-500">Logout</span>
+          <FiTrash2 className="w-5 h-5 text-red-500" />
+          <span className="font-semibold text-red-500">Delete Account</span>
         </button>
       </main>
 

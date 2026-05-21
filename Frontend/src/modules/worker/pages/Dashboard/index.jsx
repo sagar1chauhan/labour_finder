@@ -194,101 +194,38 @@ const Dashboard = () => {
       <Header title="Dashboard" showBack={false} notificationCount={stats.pendingJobs} />
 
       <main className="pt-0">
-        {/* Profile Card Section */}
-        <div className="px-4 pt-4 pb-2">
-          <div
-            className="rounded-2xl p-4 cursor-pointer active:scale-98 transition-all duration-200 relative overflow-hidden"
-            onClick={() => navigate('/worker/profile')}
-            style={{
-              background: themeColors.button,
-              border: `2px solid ${themeColors.button}`,
-            }}
-          >
-            {/* Decorative Pattern */}
-            <div
-              className="absolute top-0 right-0 w-24 h-24 rounded-full opacity-10"
-              style={{
-                background: `radial-gradient(circle, ${themeColors.button} 0%, transparent 70%)`,
-                transform: 'translate(20px, -20px)',
-              }}
-            />
 
-            <div className="relative z-10 flex items-center gap-3">
-              {/* Profile Photo */}
-              <div
-                className="w-14 h-14 rounded-full flex items-center justify-center shrink-0 overflow-hidden"
-                style={{
-                  background: `linear-gradient(135deg, ${themeColors.button} 0%, ${themeColors.button}dd 100%)`,
-                  border: `2.5px solid #FFFFFF`,
-                }}
-              >
-
-                {workerProfile.photo ? (
-                  <OptimizedImage
-                    src={workerProfile.photo}
-                    alt={workerProfile.name}
-                    className="w-full h-full object-cover"
-                    width={56}
-                    height={56}
-                  />
-                ) : (
-                  <FiUser className="w-7 h-7" style={{ color: '#FFFFFF' }} />
-                )}
-              </div>
-
-              {/* Profile Info */}
-              <div className="flex-1 min-w-0">
-                <p className="text-lg font-bold uppercase tracking-wider mb-0.5" style={{
-                  color: '#FFFFFF',
-                  textShadow: `1px 1px 0px rgba(0, 0, 0, 0.2)`,
-                  letterSpacing: '0.12em',
-                }}>
-                  WELCOME !
-                </p>
-                <h2 className="text-base font-bold text-white truncate mb-0.5">{workerProfile.name}</h2>
-                {workerProfile.categories && workerProfile.categories.length > 0 && (
-                  <p className="text-xs text-white truncate font-medium opacity-90">
-                    {workerProfile.categories.join(', ')}
-                  </p>
-                )}
-              </div>
-
-              {/* Arrow Icon */}
-              <div
-                className="p-2.5 rounded-lg shrink-0"
-                style={{
-                  background: 'rgba(255, 255, 255, 0.35)',
-                  backdropFilter: 'blur(10px)',
-                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
-                  border: '1px solid rgba(255, 255, 255, 0.4)',
-                }}
-              >
-                <FiChevronRight className="w-6 h-6" style={{ color: '#FFFFFF', fontWeight: 'bold' }} />
-              </div>
-            </div>
-          </div>
-        </div>
 
         {/* Incomplete Profile Prompt */}
         {((!workerProfile.categories || workerProfile.categories.length === 0) ||
           (!workerProfile.address || Object.keys(workerProfile.address).length === 0)) && (
-            <div className="px-4 pt-2 -mb-2">
+            <div className="px-4 pt-4 -mb-1">
               <div
                 onClick={() => navigate('/worker/profile')}
-                className="bg-orange-50 border-l-4 border-orange-500 p-4 rounded-r shadow-sm cursor-pointer hover:bg-orange-100 transition-colors"
+                className="relative overflow-hidden p-4 rounded-xl cursor-pointer group transition-all duration-300 active:scale-95"
+                style={{
+                  background: 'linear-gradient(135deg, #fff3cd 0%, #ffe69c 100%)',
+                  boxShadow: '0 4px 15px rgba(255, 193, 7, 0.15)',
+                  border: '1px solid rgba(255, 193, 7, 0.3)',
+                }}
               >
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <FiClock className="h-5 w-5 text-orange-500" />
+                {/* Warning Pulse Animation */}
+                <div className="absolute top-0 right-0 p-4 opacity-10">
+                  <FiClock className="w-24 h-24 text-amber-600 animate-pulse" style={{ transform: 'translate(20%, -20%)' }} />
+                </div>
+                
+                <div className="relative z-10 flex items-center gap-4">
+                  <div className="flex-shrink-0 p-3 bg-amber-500 text-white rounded-full shadow-inner shadow-amber-700/50">
+                    <FiClock className="h-6 w-6 animate-bounce" style={{ animationDuration: '2s' }} />
                   </div>
-                  <div className="ml-3">
-                    <p className="text-sm font-bold text-orange-700">Profile Incomplete</p>
-                    <p className="text-sm text-orange-600">
-                      Complete your profile (Address and Category) to start receiving jobs.
+                  <div className="flex-1">
+                    <p className="text-base font-extrabold text-amber-900 tracking-tight">Action Required</p>
+                    <p className="text-xs text-amber-800/80 font-semibold mt-0.5 leading-snug">
+                      Complete your profile to start receiving jobs.
                     </p>
                   </div>
-                  <div className="ml-auto">
-                    <FiArrowRight className="h-4 w-4 text-orange-500" />
+                  <div className="flex-shrink-0 bg-amber-900/10 p-2 rounded-lg group-hover:bg-amber-900/20 transition-colors">
+                    <FiArrowRight className="h-5 w-5 text-amber-900 group-hover:translate-x-1 transition-transform" />
                   </div>
                 </div>
               </div>
@@ -298,178 +235,126 @@ const Dashboard = () => {
         {/* Stats Cards - Outside Gradient */}
         <div className="px-4 pt-4">
           <div className="grid grid-cols-2 gap-3 mb-4">
-            {/* Card 1: This Month Earnings - Dark Blue Gradient */}
+            {/* Card 1: This Month Earnings */}
             <div
               onClick={() => navigate('/worker/jobs')}
-              className="rounded-xl p-4 relative overflow-hidden cursor-pointer active:scale-95 transition-transform"
+              className="rounded-2xl p-3 relative overflow-hidden cursor-pointer active:scale-95 transition-all duration-300 group shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)]"
               style={{
-                background: 'linear-gradient(135deg, #001947 0%, #003b77 100%)',
-                border: '2px solid rgba(255, 255, 255, 0.2)',
+                background: 'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)',
+                border: '1px solid rgba(255, 255, 255, 0.6)',
               }}
             >
-              {/* Decorative Pattern */}
-              <div
-                className="absolute top-0 right-0 w-20 h-20 rounded-full opacity-20"
-                style={{
-                  background: 'radial-gradient(circle, rgba(255, 255, 255, 0.4) 0%, transparent 70%)',
-                  transform: 'translate(20px, -20px)',
-                }}
-              />
+              <div className="absolute top-0 right-0 w-20 h-20 bg-white/40 rounded-full blur-2xl -mr-4 -mt-4 transition-transform group-hover:scale-150 duration-500" />
               <div className="relative z-10">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex-1">
-                    <p className="text-xs text-white font-semibold mb-1 opacity-90 uppercase tracking-wide">This Month</p>
-                    <p className="text-2xl font-bold text-white leading-tight">
-                      ₹{stats.thisMonthEarnings.toLocaleString()}
-                    </p>
-                  </div>
+                <div className="flex items-center justify-between mb-2">
                   <div
-                    className="p-3 rounded-xl flex-shrink-0"
-                    style={{
-                      background: 'rgba(255, 255, 255, 0.25)',
-                      backdropFilter: 'blur(10px)',
-                      boxShadow: '0 4px 16px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.3)',
-                      border: '1px solid rgba(255, 255, 255, 0.3)',
-                    }}
+                    className="p-2 rounded-lg flex-shrink-0 bg-white/60 backdrop-blur-md border border-white/80 shadow-sm group-hover:bg-white/80 transition-colors duration-300"
                   >
-                    <FaWallet className="w-6 h-6" style={{ color: '#FFFFFF' }} />
+                    <FaWallet className="w-4 h-4 text-emerald-600" />
+                  </div>
+                  <div className="flex items-center gap-1 bg-emerald-500/10 px-1.5 py-0.5 rounded-full border border-emerald-500/20">
+                    <FiTrendingUp className="w-3 h-3 text-emerald-700" />
+                    <span className="text-[9px] text-emerald-700 font-bold uppercase tracking-wider">Earnings</span>
                   </div>
                 </div>
-                <div className="flex items-center gap-1 mt-2">
-                  <FiTrendingUp className="w-4 h-4 text-white opacity-80" />
-                  <span className="text-xs text-white opacity-80 font-medium">Earnings</span>
+                <div>
+                  <p className="text-2xl font-black text-emerald-950 leading-tight tracking-tight mb-0.5">
+                    ₹{stats.thisMonthEarnings.toLocaleString()}
+                  </p>
+                  <p className="text-[10px] text-emerald-800/80 font-bold uppercase tracking-widest">This Month</p>
                 </div>
               </div>
             </div>
 
-            {/* Card 2: Pending Jobs - Light Blue Gradient */}
+            {/* Card 2: Pending Jobs */}
             <div
               onClick={() => navigate('/worker/jobs')}
-              className="rounded-xl p-4 relative overflow-hidden cursor-pointer active:scale-95 transition-transform"
+              className="rounded-2xl p-3 relative overflow-hidden cursor-pointer active:scale-95 transition-all duration-300 group shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)]"
               style={{
-                background: 'linear-gradient(135deg, #406788 0%, #304a63 100%)',
-                border: '2px solid rgba(255, 255, 255, 0.2)',
+                background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
+                border: '1px solid rgba(255, 255, 255, 0.6)',
               }}
             >
-              {/* Decorative Pattern */}
-              <div
-                className="absolute top-0 right-0 w-20 h-20 rounded-full opacity-20"
-                style={{
-                  background: 'radial-gradient(circle, rgba(255, 255, 255, 0.4) 0%, transparent 70%)',
-                  transform: 'translate(20px, -20px)',
-                }}
-              />
+              <div className="absolute top-0 right-0 w-20 h-20 bg-white/40 rounded-full blur-2xl -mr-4 -mt-4 transition-transform group-hover:scale-150 duration-500" />
               <div className="relative z-10">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex-1">
-                    <p className="text-xs text-white font-semibold mb-1 opacity-90 uppercase tracking-wide">Pending Jobs</p>
-                    <p className="text-2xl font-bold text-white leading-tight">
-                      {stats.pendingJobs}
-                    </p>
-                  </div>
+                <div className="flex items-center justify-between mb-2">
                   <div
-                    className="p-3 rounded-xl flex-shrink-0"
-                    style={{
-                      background: 'rgba(255, 255, 255, 0.25)',
-                      backdropFilter: 'blur(10px)',
-                      boxShadow: '0 4px 16px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.3)',
-                      border: '1px solid rgba(255, 255, 255, 0.3)',
-                    }}
+                    className="p-2 rounded-lg flex-shrink-0 bg-white/60 backdrop-blur-md border border-white/80 shadow-sm group-hover:bg-white/80 transition-colors duration-300"
                   >
-                    <FiClock className="w-6 h-6" style={{ color: '#FFFFFF' }} />
+                    <FiClock className="w-4 h-4 text-blue-600" />
+                  </div>
+                  <div className="flex items-center gap-1 bg-blue-500/10 px-1.5 py-0.5 rounded-full border border-blue-500/20">
+                    <FiCheckCircle className="w-3 h-3 text-blue-700" />
+                    <span className="text-[9px] text-blue-700 font-bold uppercase tracking-wider">Waiting</span>
                   </div>
                 </div>
-                <div className="flex items-center gap-1 mt-2">
-                  <FiCheckCircle className="w-4 h-4 text-white opacity-80" />
-                  <span className="text-xs text-white opacity-80 font-medium">Waiting</span>
+                <div>
+                  <p className="text-2xl font-black text-blue-950 leading-tight tracking-tight mb-0.5">
+                    {stats.pendingJobs}
+                  </p>
+                  <p className="text-[10px] text-blue-800/80 font-bold uppercase tracking-widest">Pending Jobs</p>
                 </div>
               </div>
             </div>
 
-            {/* Card 3: Accepted Jobs - Light Blue Gradient */}
+            {/* Card 3: Accepted Jobs */}
             <div
               onClick={() => navigate('/worker/jobs')}
-              className="rounded-xl p-4 relative overflow-hidden cursor-pointer active:scale-95 transition-transform"
+              className="rounded-2xl p-3 relative overflow-hidden cursor-pointer active:scale-95 transition-all duration-300 group shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)]"
               style={{
-                background: 'linear-gradient(135deg, #406788 0%, #304a63 100%)',
-                border: '2px solid rgba(255, 255, 255, 0.2)',
+                background: 'linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%)',
+                border: '1px solid rgba(255, 255, 255, 0.6)',
               }}
             >
-              {/* Decorative Pattern */}
-              <div
-                className="absolute top-0 right-0 w-20 h-20 rounded-full opacity-20"
-                style={{
-                  background: 'radial-gradient(circle, rgba(255, 255, 255, 0.4) 0%, transparent 70%)',
-                  transform: 'translate(20px, -20px)',
-                }}
-              />
+              <div className="absolute top-0 right-0 w-20 h-20 bg-white/40 rounded-full blur-2xl -mr-4 -mt-4 transition-transform group-hover:scale-150 duration-500" />
               <div className="relative z-10">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex-1">
-                    <p className="text-xs text-white font-semibold mb-1 opacity-90 uppercase tracking-wide">Accepted</p>
-                    <p className="text-2xl font-bold text-white leading-tight">
-                      {stats.acceptedJobs}
-                    </p>
-                  </div>
+                <div className="flex items-center justify-between mb-2">
                   <div
-                    className="p-3 rounded-xl flex-shrink-0"
-                    style={{
-                      background: 'rgba(255, 255, 255, 0.25)',
-                      backdropFilter: 'blur(10px)',
-                      boxShadow: '0 4px 16px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.3)',
-                      border: '1px solid rgba(255, 255, 255, 0.3)',
-                    }}
+                    className="p-2 rounded-lg flex-shrink-0 bg-white/60 backdrop-blur-md border border-white/80 shadow-sm group-hover:bg-white/80 transition-colors duration-300"
                   >
-                    <FiCheckCircle className="w-6 h-6" style={{ color: '#FFFFFF' }} />
+                    <FiCheckCircle className="w-4 h-4 text-purple-600" />
+                  </div>
+                  <div className="flex items-center gap-1 bg-purple-500/10 px-1.5 py-0.5 rounded-full border border-purple-500/20">
+                    <FiBriefcase className="w-3 h-3 text-purple-700" />
+                    <span className="text-[9px] text-purple-700 font-bold uppercase tracking-wider">Active</span>
                   </div>
                 </div>
-                <div className="flex items-center gap-1 mt-2">
-                  <FiBriefcase className="w-4 h-4 text-white opacity-80" />
-                  <span className="text-xs text-white opacity-80 font-medium">Active</span>
+                <div>
+                  <p className="text-2xl font-black text-purple-950 leading-tight tracking-tight mb-0.5">
+                    {stats.acceptedJobs}
+                  </p>
+                  <p className="text-[10px] text-purple-800/80 font-bold uppercase tracking-widest">Accepted</p>
                 </div>
               </div>
             </div>
 
-            {/* Card 4: Completed Jobs - Dark Blue Gradient */}
+            {/* Card 4: Completed Jobs */}
             <div
               onClick={() => navigate('/worker/jobs')}
-              className="rounded-xl p-4 relative overflow-hidden cursor-pointer active:scale-95 transition-transform"
+              className="rounded-2xl p-3 relative overflow-hidden cursor-pointer active:scale-95 transition-all duration-300 group shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)]"
               style={{
-                background: 'linear-gradient(135deg, #001947 0%, #003b77 100%)',
-                border: '2px solid rgba(255, 255, 255, 0.2)',
+                background: 'linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%)',
+                border: '1px solid rgba(255, 255, 255, 0.6)',
               }}
             >
-              {/* Decorative Pattern */}
-              <div
-                className="absolute top-0 right-0 w-20 h-20 rounded-full opacity-20"
-                style={{
-                  background: 'radial-gradient(circle, rgba(255, 255, 255, 0.4) 0%, transparent 70%)',
-                  transform: 'translate(20px, -20px)',
-                }}
-              />
+              <div className="absolute top-0 right-0 w-20 h-20 bg-white/40 rounded-full blur-2xl -mr-4 -mt-4 transition-transform group-hover:scale-150 duration-500" />
               <div className="relative z-10">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex-1">
-                    <p className="text-xs text-white font-semibold mb-1 opacity-90 uppercase tracking-wide">Completed</p>
-                    <p className="text-2xl font-bold text-white leading-tight">
-                      {stats.completedJobs}
-                    </p>
-                  </div>
+                <div className="flex items-center justify-between mb-2">
                   <div
-                    className="p-3 rounded-xl flex-shrink-0"
-                    style={{
-                      background: 'rgba(255, 255, 255, 0.25)',
-                      backdropFilter: 'blur(10px)',
-                      boxShadow: '0 4px 16px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.3)',
-                      border: '1px solid rgba(255, 255, 255, 0.3)',
-                    }}
+                    className="p-2 rounded-lg flex-shrink-0 bg-white/60 backdrop-blur-md border border-white/80 shadow-sm group-hover:bg-white/80 transition-colors duration-300"
                   >
-                    <FiBriefcase className="w-6 h-6" style={{ color: '#FFFFFF' }} />
+                    <FiBriefcase className="w-4 h-4 text-teal-600" />
+                  </div>
+                  <div className="flex items-center gap-1 bg-teal-500/10 px-1.5 py-0.5 rounded-full border border-teal-500/20">
+                    <FiCheckCircle className="w-3 h-3 text-teal-700" />
+                    <span className="text-[9px] text-teal-700 font-bold uppercase tracking-wider">Done</span>
                   </div>
                 </div>
-                <div className="flex items-center gap-1 mt-2">
-                  <FiCheckCircle className="w-4 h-4 text-white opacity-80" />
-                  <span className="text-xs text-white opacity-80 font-medium">Done</span>
+                <div>
+                  <p className="text-2xl font-black text-teal-950 leading-tight tracking-tight mb-0.5">
+                    {stats.completedJobs}
+                  </p>
+                  <p className="text-[10px] text-teal-800/80 font-bold uppercase tracking-widest">Completed</p>
                 </div>
               </div>
             </div>
@@ -502,7 +387,7 @@ const Dashboard = () => {
             )}
           </div>
           {recentJobs.length > 0 ? (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {recentJobs.map((job, index) => {
                 // Alternating colors
                 const isDarkBlue = index % 2 === 0;
@@ -623,15 +508,17 @@ const Dashboard = () => {
             </div>
           ) : (
             <div
-              className="bg-white rounded-xl p-8 text-center shadow-md"
+              className="bg-white/80 backdrop-blur-xl rounded-2xl p-10 text-center shadow-sm border border-white/50"
               style={{
-                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                boxShadow: '0 8px 30px rgba(0, 0, 0, 0.05)',
               }}
             >
-              <FiBriefcase className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-              <p className="text-gray-600 font-semibold mb-2">No jobs assigned yet</p>
-              <p className="text-sm text-gray-500">
-                You'll see assigned jobs here when vendors assign work to you
+              <div className="w-20 h-20 mx-auto mb-5 rounded-full bg-slate-100 flex items-center justify-center shadow-inner">
+                <FiBriefcase className="w-10 h-10 text-slate-400 animate-pulse" />
+              </div>
+              <p className="text-xl text-slate-800 font-bold mb-2">No jobs assigned yet</p>
+              <p className="text-sm text-slate-500 leading-relaxed max-w-[250px] mx-auto">
+                You'll see assigned jobs here when vendors assign work to you. Hang tight!
               </p>
             </div>
           )}

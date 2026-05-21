@@ -155,17 +155,16 @@ const Profile = () => {
       <main className="px-4 pt-4 pb-6">
         {/* Profile Header Card */}
         <div
-          className="rounded-2xl p-5 mb-4 shadow-xl relative overflow-hidden"
+          className="rounded-2xl p-5 mb-4 shadow-[0_8px_30px_rgb(0,0,0,0.06)] relative overflow-hidden"
           style={{
-            background: vendorTheme.button,
-            border: `2px solid ${vendorTheme.button}`,
+            background: 'linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%)', // Light teal gradient
+            border: '1px solid rgba(255, 255, 255, 0.8)',
           }}
         >
           {/* Decorative Pattern */}
           <div
-            className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-10"
+            className="absolute top-0 right-0 w-32 h-32 bg-white/40 rounded-full blur-2xl"
             style={{
-              background: `radial-gradient(circle, ${vendorTheme.button} 0%, transparent 70%)`,
               transform: 'translate(30px, -30px)',
             }}
           />
@@ -173,11 +172,10 @@ const Profile = () => {
           <div className="relative z-10">
             <div className="flex items-start gap-4">
               <div
-                className="w-20 h-20 rounded-full flex items-center justify-center flex-shrink-0"
+                className="w-20 h-20 rounded-full flex items-center justify-center flex-shrink-0 bg-white/60 backdrop-blur-md"
                 style={{
-                  background: 'rgba(255, 255, 255, 0.3)',
-                  border: '3px solid white',
-                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                  border: '3px solid rgba(255,255,255,0.9)',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
                 }}
               >
                 {profile.photo ? (
@@ -187,17 +185,17 @@ const Profile = () => {
                     className="w-full h-full rounded-full object-cover"
                   />
                 ) : (
-                  <FiUser className="w-10 h-10 text-white" />
+                  <FiUser className="w-10 h-10 text-teal-700" />
                 )}
               </div>
               <div className="flex-1 pr-12">
-                <h2 className="text-xl font-bold text-white mb-0.5">{profile.name}</h2>
+                <h2 className="text-2xl font-black text-teal-950 mb-1 leading-tight tracking-tight">{profile.name}</h2>
                 <div className="mb-2"></div>
 
                 <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-1 bg-white/20 px-2 py-0.5 rounded-lg backdrop-blur-sm">
-                    <FiStar className="w-3.5 h-3.5 text-yellow-300 fill-yellow-300" />
-                    <span className="text-white text-sm font-bold">{profile.rating}</span>
+                  <div className="flex items-center gap-1 bg-teal-500/10 border border-teal-500/20 px-2 py-1 rounded-full">
+                    <FiStar className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />
+                    <span className="text-teal-800 text-xs font-bold">{profile.rating}</span>
                   </div>
                 </div>
               </div>
@@ -206,15 +204,13 @@ const Profile = () => {
             {/* Edit Profile Button - Absolute Positioned */}
             <button
               onClick={() => navigate('/worker/profile/edit')}
-              className="absolute top-0 right-0 p-2.5 rounded-lg transition-all active:scale-95"
+              className="absolute top-0 right-0 p-2.5 rounded-xl transition-all active:scale-95 bg-white/60 hover:bg-white/80 backdrop-blur-md"
               style={{
-                background: 'rgba(255, 255, 255, 0.25)',
-                backdropFilter: 'blur(10px)',
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
-                border: '1.5px solid rgba(255, 255, 255, 0.3)',
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
+                border: '1px solid rgba(255, 255, 255, 0.8)',
               }}
             >
-              <FiEdit2 className="w-5 h-5 text-white" />
+              <FiEdit2 className="w-5 h-5 text-teal-700" />
             </button>
           </div>
         </div>
