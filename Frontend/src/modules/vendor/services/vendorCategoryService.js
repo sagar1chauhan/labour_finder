@@ -29,5 +29,15 @@ export const vendorCategoryService = {
     } catch (error) {
       throw error.response?.data || error.message;
     }
+  },
+
+  // Update a category
+  updateCategory: async (id, data) => {
+    try {
+      const response = await api.put(`/vendors/categories/${id}`, data);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
   }
 };

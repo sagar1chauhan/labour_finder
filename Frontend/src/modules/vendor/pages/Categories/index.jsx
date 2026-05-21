@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiPlus, FiGrid, FiBox, FiCheckCircle, FiTrash2 } from 'react-icons/fi';
+import { FiPlus, FiGrid, FiBox, FiCheckCircle, FiTrash2, FiEdit2 } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
 import { vendorTheme } from '../../../../theme';
 import Header from '../../components/layout/Header';
@@ -16,6 +16,7 @@ const Categories = () => {
   const [activeTab, setActiveTab] = useState('service'); // 'service' or 'product'
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState('');
+  const [editingCategoryId, setEditingCategoryId] = useState(null);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -24,12 +25,14 @@ const Categories = () => {
   });
 
   useEffect(() => {
-    if (isModalOpen) {
+    if (isModalOpen && !editingCategoryId) {
       setFormData(prev => ({ ...prev, categoryType: activeTab }));
-    } else {
+    } else if (!isModalOpen) {
       // Reset images on close
       setImageFile(null);
       setImagePreview('');
+      setEditingCategoryId(null);
+      setFormData({ title: '', description: '', categoryType: 'service' });
     }
   }, [isModalOpen, activeTab]);
 
@@ -91,18 +94,24 @@ const Categories = () => {
         toast.dismiss('upload-cat');
       }
 
-      const res = await vendorCategoryService.createCategory({ ...formData, imageUrl });
+      const payload = { ...formData };
+      if (imageUrl) payload.imageUrl = imageUrl;
+
+      let res;
+      if (editingCategoryId) {
+        res = await vendorCategoryService.updateCategory(editingCategoryId, payload);
+      } else {
+        res = await vendorCategoryService.createCategory(payload);
+      }
+
       if (res.success) {
-        toast.success('Category created successfully');
+        toast.success(`Category ${editingCategoryId ? 'updated' : 'created'} successfully`);
         setIsModalOpen(false);
-        setFormData({ title: '', description: '', categoryType: 'service' });
-        setImageFile(null);
-        setImagePreview('');
         fetchCategories(); // Refresh list
       }
     } catch (error) {
       console.error(error);
-      toast.error(error.message || 'Failed to create category');
+      toast.error(error.message || `Failed to ${editingCategoryId ? 'update' : 'create'} category`);
     } finally {
       setIsSubmitting(false);
     }
@@ -116,7 +125,13 @@ const Categories = () => {
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold text-gray-800">Your Categories</h2>
           <button
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => {
+              setEditingCategoryId(null);
+              setFormData({ title: '', description: '', categoryType: activeTab });
+              setImagePreview('');
+              setImageFile(null);
+              setIsModalOpen(true);
+            }}
             className="flex items-center gap-2 px-4 py-2 bg-[#a2ad02] text-white rounded-xl font-semibold shadow-md active:scale-95 transition-transform hover:bg-[#889400]"
           >
             <FiPlus />
@@ -175,6 +190,22 @@ const Categories = () => {
                           Yours
                         </span>
                         <button 
+                          onClick={() => {
+                            setEditingCategoryId(cat.id);
+                            setFormData({
+                              title: cat.title,
+                              description: cat.description || '',
+                              categoryType: cat.categoryType
+                            });
+                            setImagePreview(cat.imageUrl || '');
+                            setIsModalOpen(true);
+                          }}
+                          className="p-1.5 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all active:scale-90"
+                          title="Edit Category"
+                        >
+                          <FiEdit2 className="w-4 h-4" />
+                        </button>
+                        <button 
                           onClick={() => handleDelete(cat.id)}
                           className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all active:scale-90"
                           title="Delete Category"
@@ -208,8 +239,8 @@ const Categories = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
           <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl">
             <div className="p-5 border-b border-gray-100 bg-gray-50">
-              <h3 className="text-lg font-bold text-gray-900">Create New Category</h3>
-              <p className="text-sm text-gray-500 mt-1">Add a custom category if it doesn't exist.</p>
+              <h3 className="text-lg font-bold text-gray-900">{editingCategoryId ? 'Edit Category' : 'Create New Category'}</h3>
+              <p className="text-sm text-gray-500 mt-1">{editingCategoryId ? 'Update your category details below.' : 'Add a custom category if it doesn\'t exist.'}</p>
             </div>
             
             <form onSubmit={handleSubmit} className="p-5 space-y-4">
@@ -286,7 +317,7 @@ const Categories = () => {
                   disabled={isSubmitting}
                   className="flex-1 py-3.5 bg-[#a2ad02] text-white font-bold rounded-xl hover:bg-[#889400] transition-colors disabled:opacity-50"
                 >
-                  {isSubmitting ? 'Creating...' : 'Create Category'}
+                  {isSubmitting ? 'Saving...' : editingCategoryId ? 'Update Category' : 'Create Category'}
                 </button>
               </div>
             </form>

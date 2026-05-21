@@ -6,7 +6,8 @@ const { isVendor } = require('../../middleware/roleMiddleware');
 const {
     getVendorCategories,
     createVendorCategory,
-    deleteVendorCategory
+    deleteVendorCategory,
+    updateVendorCategory
 } = require('../../controllers/vendorControllers/vendorCategoryController');
 
 const createCategoryValidation = [
@@ -16,6 +17,7 @@ const createCategoryValidation = [
 
 router.get('/', authenticate, isVendor, getVendorCategories);
 router.post('/', authenticate, isVendor, createCategoryValidation, createVendorCategory);
+router.put('/:id', authenticate, isVendor, updateVendorCategory);
 router.delete('/:id', authenticate, isVendor, deleteVendorCategory);
 
 module.exports = router;

@@ -82,6 +82,10 @@ const Shop = lazyLoad(() => import('../pages/Shop'));
 const AddScrap = lazyLoad(() => import('../pages/Shop/AddScrap'));
 const Categories = lazyLoad(() => import('../pages/Categories'));
 const BrandProducts = lazyLoad(() => import('../pages/Categories/ProductsList'));
+const WorkersList = lazyLoad(() => import('../pages/Workers'));
+const ShopsList = lazyLoad(() => import('../pages/ShopsList'));
+const ShopDetails = lazyLoad(() => import('../pages/ShopDetails'));
+const SubCategories = lazyLoad(() => import('../pages/SubCategories'));
 
 // Loading fallback component
 import LogoLoader from '../../../components/common/LogoLoader';
@@ -156,6 +160,10 @@ const UserRoutes = () => {
               <Route path="/shop" element={<ProtectedRoute userType="user"><Shop /></ProtectedRoute>} />
               <Route path="/shop/add-scrap" element={<ProtectedRoute userType="user"><AddScrap /></ProtectedRoute>} />
               <Route path="/categories" element={<ProtectedRoute userType="user"><Categories /></ProtectedRoute>} />
+              <Route path="/workers" element={<ProtectedRoute userType="user"><WorkersList /></ProtectedRoute>} />
+              <Route path="/subcategories" element={<ProtectedRoute userType="user"><SubCategories /></ProtectedRoute>} />
+              <Route path="/shops" element={<ProtectedRoute userType="user"><ShopsList /></ProtectedRoute>} />
+              <Route path="/shop/:shopId" element={<ProtectedRoute userType="user"><ShopDetails /></ProtectedRoute>} />
               <Route path="/categories/:categoryId/brand/:brandId" element={<ProtectedRoute userType="user"><BrandProducts /></ProtectedRoute>} />
               <Route path="/catalog/brand/:brandId" element={<ProtectedRoute userType="user"><BrandProducts /></ProtectedRoute>} />
             </Routes>

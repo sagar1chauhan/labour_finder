@@ -153,8 +153,54 @@ const deleteVendorCategory = async (req, res) => {
   }
 };
 
+/**
+ * Update a vendor category
+ * PUT /api/vendor/categories/:id
+ */
+const updateVendorCategory = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const vendorId = req.user.id;
+    const { title, description, imageUrl, categoryType } = req.body;
+
+    const category = await Category.findOne({ _id: id, vendorId });
+    if (!category) {
+      return res.status(404).json({ success: false, message: 'Category not found or not authorized' });
+    }
+
+    if (title) category.title = title.trim();
+    if (description !== undefined) category.description = description?.trim() || null;
+    if (imageUrl) {
+      category.imageUrl = imageUrl;
+      category.homeIconUrl = imageUrl;
+    }
+    if (categoryType) category.categoryType = categoryType;
+
+    await category.save();
+
+    res.status(200).json({ 
+      success: true, 
+      message: 'Category updated successfully',
+      category: {
+        id: category._id,
+        title: category.title,
+        slug: category.slug,
+        categoryType: category.categoryType,
+        imageUrl: category.imageUrl,
+        status: category.status,
+        vendorId: category.vendorId,
+        createdAt: category.createdAt
+      }
+    });
+  } catch (error) {
+    console.error('Update vendor category error:', error);
+    res.status(500).json({ success: false, message: 'Failed to update category.' });
+  }
+};
+
 module.exports = {
   getVendorCategories,
   createVendorCategory,
-  deleteVendorCategory
+  deleteVendorCategory,
+  updateVendorCategory
 };

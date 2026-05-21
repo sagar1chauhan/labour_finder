@@ -543,6 +543,8 @@ const CategoryResultsView = ({ category, isOpen, onClose, workers, onWorkerClick
   );
 };
 
+
+
 // --- Main Page ---
 
 const Home = () => {
@@ -566,6 +568,52 @@ const Home = () => {
   const [selectedWorker, setSelectedWorker] = useState(null);
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
   const [activeCategoryType, setActiveCategoryType] = useState('product'); // 'product' or 'service'
+
+  const MANPOWER_DATA = [
+    {
+      id: "m1",
+      title: "Engineer",
+      icon: "👷‍♂️",
+      subCategories: ["Architect", "Engineer", "Supervisor", "Home decor"]
+    },
+    {
+      id: "m2",
+      title: "Mason & Labour",
+      icon: "🧱",
+      subCategories: ["Tile fixer", "Plumber work", "Carpenter", "Electrician", "Painter", "Plaster & dismantler", "Bar Bander", "Shuttering"]
+    },
+    {
+      id: "m3",
+      title: "Contractor",
+      icon: "🏗️",
+      subCategories: ["Building contractor", "Renovation contractor", "Interior contractor"]
+    },
+    {
+      id: "m4",
+      title: "Vehicle Service",
+      icon: "🚜",
+      subCategories: ["JCB", "Tractor", "Tempo", "Eicher", "Crane", "Water Tanker"]
+    },
+    {
+      id: "m5",
+      title: "Rental Machine",
+      icon: "⚙️",
+      subCategories: ["Material", "Mixture", "Breaker", "Compressor"]
+    }
+  ];
+
+  const SHOP_DATA = {
+    "Constructor material": {
+      title: "Constructor material",
+      icon: "🧱",
+      subCategories: ["Hardware Tool Shop", "Plywood Traders", "Cement Dealers", "Electrical Shop"]
+    },
+    "Safety Materials": {
+      title: "Safety Materials",
+      icon: "🦺",
+      subCategories: ["Safety Gear Shop", "Helmet Suppliers", "Safety Shoes Store"]
+    }
+  };
 
   const handleAddToCart = (product, e) => {
     const cardEl = e?.currentTarget?.closest('.group');
@@ -694,7 +742,12 @@ const Home = () => {
 
   const handleCategoryClick = (category) => {
     if (category.categoryType === 'product') {
-      navigate('/user/categories');
+      const isShopData = SHOP_DATA[category.title];
+      if (isShopData) {
+        navigate(`/user/subcategories?category=${encodeURIComponent(category.title)}&type=shop`);
+      } else {
+        navigate('/user/categories');
+      }
     } else {
       setSelectedCategory(category);
       setIsCategoryModalOpen(true);
@@ -837,12 +890,19 @@ const Home = () => {
 
   const displayWorkers = filteredWorkers.length > 0 ? filteredWorkers : DUMMY_WORKERS;
 
-  const displayCategories = useMemo(() => {
+  const productCategories = useMemo(() => {
     return categories.filter(cat => {
       const type = cat.categoryType || 'service';
-      return type === activeCategoryType;
+      return type === 'product';
     });
-  }, [categories, activeCategoryType]);
+  }, [categories]);
+
+  const serviceCategories = useMemo(() => {
+    return categories.filter(cat => {
+      const type = cat.categoryType || 'service';
+      return type === 'service';
+    });
+  }, [categories]);
 
   const categoryWorkers = useMemo(() => {
     if (!selectedCategory) return [];
@@ -866,44 +926,33 @@ const Home = () => {
         />
         <FilterPills active={activeFilter} onChange={setActiveFilter} />
         
-        {/* Categories Section */}
+        {/* Manpower Categories Section */}
+        <div className="px-6 pt-4 pb-2">
+          <div className="flex flex-col mb-5 items-start">
+            <h3 className="text-[13px] font-black text-gray-900 tracking-tight uppercase">Manpower</h3>
+            <p className="text-[10px] font-bold text-gray-500 italic mt-0.5">"Skilled workers on demand"</p>
+          </div>
+
+          <div className="grid grid-cols-4 gap-x-3 gap-y-4">
+            {MANPOWER_DATA.map(cat => (
+              <div
+                key={cat.id}
+                onClick={() => navigate(`/user/subcategories?category=${encodeURIComponent(cat.title)}&type=worker`)}
+                className="flex flex-col items-center gap-2 group cursor-pointer"
+              >
+                <div className="w-full aspect-square bg-[#f5faff] hover:bg-[#e6f2ff] rounded-2xl flex items-center justify-center border border-sky-100/30 group-active:scale-95 transition-all overflow-hidden p-3.5 text-2xl relative shadow-sm">
+                  <span className="relative z-10">{cat.icon}</span>
+                </div>
+                <span className="text-xs font-semibold text-gray-800 text-center leading-tight line-clamp-2 max-w-[72px]">{cat.title}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Services Categories Section */}
         <div className="px-6 py-4">
           <div className="flex items-center justify-between mb-5">
-            <h3 className="text-[13px] font-black text-gray-900 tracking-tight uppercase">Shop by Categories</h3>
-            
-            {/* Dynamic sliding segment switch */}
-            <div className="flex bg-gray-200/60 p-0.5 rounded-xl border border-gray-300/20 w-[160px] relative shadow-inner shrink-0">
-              <button
-                onClick={() => setActiveCategoryType('product')}
-                className={`flex-1 py-1.5 px-1 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all duration-300 relative ${
-                  activeCategoryType === 'product' ? 'text-white' : 'text-gray-500 hover:text-gray-800'
-                }`}
-              >
-                {activeCategoryType === 'product' && (
-                  <motion.div
-                    layoutId="activeCategoryTypeTab"
-                    className="absolute inset-0 bg-[#a2ad02] rounded-lg z-0 shadow-sm"
-                    transition={{ type: "spring", stiffness: 380, damping: 25 }}
-                  />
-                )}
-                <span className="relative z-10">Products</span>
-              </button>
-              <button
-                onClick={() => setActiveCategoryType('service')}
-                className={`flex-1 py-1.5 px-1 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all duration-300 relative ${
-                  activeCategoryType === 'service' ? 'text-white' : 'text-gray-500 hover:text-gray-800'
-                }`}
-              >
-                {activeCategoryType === 'service' && (
-                  <motion.div
-                    layoutId="activeCategoryTypeTab"
-                    className="absolute inset-0 bg-[#a2ad02] rounded-lg z-0 shadow-sm"
-                    transition={{ type: "spring", stiffness: 380, damping: 25 }}
-                  />
-                )}
-                <span className="relative z-10">Services</span>
-              </button>
-            </div>
+            <h3 className="text-[13px] font-black text-gray-900 tracking-tight uppercase">Services</h3>
           </div>
 
           {/* Skeleton while loading */}
@@ -916,9 +965,9 @@ const Home = () => {
                 </div>
               ))}
             </div>
-          ) : displayCategories.length > 0 ? (
+          ) : serviceCategories.length > 0 ? (
             <div className="grid grid-cols-4 gap-x-3 gap-y-4">
-              {displayCategories.map(cat => (
+              {serviceCategories.map(cat => (
                 <div
                   key={cat._id || cat.id}
                   onClick={() => handleCategoryClick(cat)}
@@ -936,9 +985,50 @@ const Home = () => {
               ))}
             </div>
           ) : (
-            <p className="text-xs text-gray-400 text-center py-4">No categories available</p>
+            <p className="text-xs text-gray-400 text-center py-4">No services available</p>
           )}
         </div>
+
+        {/* Products Categories Section */}
+        <div className="px-6 pb-4">
+          <div className="flex items-center justify-between mb-5">
+            <h3 className="text-[13px] font-black text-gray-900 tracking-tight uppercase">Shop Products</h3>
+          </div>
+
+          {/* Skeleton while loading */}
+          {loading ? (
+            <div className="grid grid-cols-4 gap-x-3 gap-y-4">
+              {[1, 2, 3, 4].map(i => (
+                <div key={i} className="flex flex-col items-center gap-2">
+                  <div className="w-full aspect-square rounded-2xl bg-gray-200 animate-pulse" />
+                  <div className="h-3 w-12 rounded-full bg-gray-200 animate-pulse" />
+                </div>
+              ))}
+            </div>
+          ) : productCategories.length > 0 ? (
+            <div className="grid grid-cols-4 gap-x-3 gap-y-4">
+              {productCategories.map(cat => (
+                <div
+                  key={cat._id || cat.id}
+                  onClick={() => handleCategoryClick(cat)}
+                  className="flex flex-col items-center gap-2 group cursor-pointer"
+                >
+                  <div className="w-full aspect-square bg-[#f5faff] hover:bg-[#e6f2ff] rounded-2xl flex items-center justify-center border border-sky-100/30 group-active:scale-95 transition-all overflow-hidden p-3.5 text-2xl relative shadow-sm">
+                    {cat.icon?.length > 2 ? (
+                      <img src={cat.icon || cat.image} alt={cat.title} className="w-full h-full object-contain relative z-10" />
+                    ) : (
+                      <span className="relative z-10">{cat.icon || '📦'}</span>
+                    )}
+                  </div>
+                  <span className="text-xs font-semibold text-gray-800 text-center leading-tight line-clamp-2 max-w-[72px]">{cat.title}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-gray-400 text-center py-4">No products available</p>
+          )}
+        </div>
+
 
         <DynamicBanners 
           banners={banners} 
@@ -1123,6 +1213,7 @@ const Home = () => {
         {flyingImages.map(img => (
           <FlyingImage key={img.id} img={img} />
         ))}
+        
       </div>
     </div>
   );
