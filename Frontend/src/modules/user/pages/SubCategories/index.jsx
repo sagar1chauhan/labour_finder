@@ -26,7 +26,7 @@ const MANPOWER_DATA = [
   {
     title: "Rental Machine",
     icon: "⚙️",
-    subCategories: ["Material", "Mixture", "Breaker", "Compressor"]
+    subCategories: ["Mixture", "Breaker", "Compressor"]
   }
 ];
 
@@ -44,38 +44,37 @@ const SHOP_DATA = {
 };
 
 const subCategoryImages = {
-  "Building contractor": "https://img.freepik.com/free-photo/building-construction-site-with-scaffolding_1127-2856.jpg?w=740",
-  "Renovation contractor": "https://img.freepik.com/free-photo/man-renovating-house_23-2148187834.jpg?w=740",
-  "Interior contractor": "https://img.freepik.com/free-photo/modern-interior-design-with-home-decor_23-2148301549.jpg?w=740",
-  "Hardware Tool Shop": "https://img.freepik.com/free-photo/view-hardware-store-with-tools-equipment_23-2151693766.jpg?w=740",
-  "Plywood Traders": "https://img.freepik.com/free-photo/wooden-planks-stack-background_1398-4663.jpg?w=740",
-  "Cement Dealers": "https://img.freepik.com/free-photo/sack-cement-plaster-building-site_1150-13768.jpg?w=740",
-  "Electrical Shop": "https://img.freepik.com/free-photo/electric-tools-market_1398-3168.jpg?w=740",
-  "Safety Gear Shop": "https://img.freepik.com/free-photo/construction-safety-equipment_1398-4179.jpg?w=740",
-  "Helmet Suppliers": "https://img.freepik.com/free-photo/helmet-construction-site_1150-13768.jpg?w=740",
-  "Safety Shoes Store": "https://img.freepik.com/free-photo/safety-shoes-construction-site_1150-13768.jpg?w=740",
-  "Architect": "https://img.freepik.com/free-photo/young-female-architect-working-office_23-2147772348.jpg?w=740",
-  "Engineer": "https://img.freepik.com/free-photo/male-engineer-working-office_23-2147772351.jpg?w=740",
-  "Supervisor": "https://img.freepik.com/free-photo/construction-manager-with-hard-hat_114579-2428.jpg?w=740",
-  "Home decor": "https://img.freepik.com/free-photo/interior-design-concept-with-furniture_23-2148301545.jpg?w=740",
-  "Tile fixer": "https://img.freepik.com/free-photo/worker-laying-tiles-floor_23-2148404285.jpg?w=740",
-  "Plumber work": "https://img.freepik.com/free-photo/plumber-ready-work_23-2147744158.jpg?w=740",
-  "Carpenter": "https://img.freepik.com/free-photo/carpenter-working-wood_23-2147772344.jpg?w=740",
-  "Electrician": "https://img.freepik.com/free-photo/smiling-electrician-fixing-electrical-panel_23-2147772322.jpg?w=740",
-  "Painter": "https://img.freepik.com/free-photo/painter-painting-wall_23-2148187835.jpg?w=740",
-  "Plaster & dismantler": "https://img.freepik.com/free-photo/plasterer-working-wall_23-2148187836.jpg?w=740",
-  "Bar Bander": "https://img.freepik.com/free-photo/steel-fixer-working-construction-site_23-2148187837.jpg?w=740",
-  "Shuttering": "https://img.freepik.com/free-photo/construction-worker-working-scaffolding_23-2148187838.jpg?w=740",
-  "JCB": "https://img.freepik.com/free-photo/excavator-working-construction-site_23-2148187839.jpg?w=740",
-  "Tractor": "https://img.freepik.com/free-photo/tractor-working-field_23-2148187840.jpg?w=740",
-  "Tempo": "https://img.freepik.com/free-photo/truck-driving-road_23-2148187841.jpg?w=740",
-  "Eicher": "https://img.freepik.com/free-photo/truck-driving-road_23-2148187841.jpg?w=740",
-  "Crane": "https://img.freepik.com/free-photo/crane-working-construction-site_23-2148187842.jpg?w=740",
-  "Water Tanker": "https://img.freepik.com/free-photo/water-tanker-truck_23-2148187843.jpg?w=740",
-  "Material": "https://img.freepik.com/free-photo/construction-materials_23-2148187844.jpg?w=740",
-  "Mixture": "https://img.freepik.com/free-photo/concrete-mixer-machine_23-2148187845.jpg?w=740",
-  "Breaker": "https://img.freepik.com/free-photo/jackhammer-working-construction-site_23-2148187846.jpg?w=740",
-  "Compressor": "https://img.freepik.com/free-photo/air-compressor-working-construction-site_23-2148187847.jpg?w=740"
+  "Building contractor": "https://images.unsplash.com/photo-1541888946425-d81bb19240f5?auto=format&fit=crop&w=400&q=80",
+  "Renovation contractor": "https://images.unsplash.com/photo-1581858726788-75bc0f6a952d?auto=format&fit=crop&w=400&q=80",
+  "Interior contractor": "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=400&q=80",
+  "Hardware Tool Shop": "https://images.unsplash.com/photo-1581244277943-fe4a9c777189?auto=format&fit=crop&w=400&q=80",
+  "Plywood Traders": "https://images.unsplash.com/photo-1533090161767-e6ffed986c88?auto=format&fit=crop&w=400&q=80",
+  "Cement Dealers": "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?auto=format&fit=crop&w=400&q=80",
+  "Electrical Shop": "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=400&q=80",
+  "Safety Gear Shop": "https://images.unsplash.com/photo-1507537297725-24a1c029d3ca?auto=format&fit=crop&w=400&q=80",
+  "Helmet Suppliers": "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?auto=format&fit=crop&w=400&q=80",
+  "Safety Shoes Store": "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=400&q=80",
+  "Architect": "https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&w=400&q=80",
+  "Engineer": "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=400&q=80",
+  "Supervisor": "https://images.unsplash.com/photo-1507537297725-24a1c029d3ca?auto=format&fit=crop&w=400&q=80",
+  "Home decor": "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=400&q=80",
+  "Tile fixer": "https://images.unsplash.com/photo-1502005229762-fc1b2b812ca5?auto=format&fit=crop&w=400&q=80",
+  "Plumber work": "https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?auto=format&fit=crop&w=400&q=80",
+  "Carpenter": "https://images.unsplash.com/photo-1533090161767-e6ffed986c88?auto=format&fit=crop&w=400&q=80",
+  "Electrician": "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=400&q=80",
+  "Painter": "https://images.unsplash.com/photo-1562259949-e8e7689d7828?auto=format&fit=crop&w=400&q=80",
+  "Plaster & dismantler": "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?auto=format&fit=crop&w=400&q=80",
+  "Bar Bander": "https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=400&q=80",
+  "Shuttering": "https://images.unsplash.com/photo-1590069261209-f8e9b8642343?auto=format&fit=crop&w=400&q=80",
+  "JCB": "https://images.unsplash.com/photo-1579684389782-64d84b5e9053?auto=format&fit=crop&w=400&q=80",
+  "Tractor": "https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=400&q=80",
+  "Tempo": "https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=400&q=80",
+  "Eicher": "https://images.unsplash.com/photo-1592838064575-70ed626d3a44?auto=format&fit=crop&w=400&q=80",
+  "Crane": "https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=400&q=80",
+  "Water Tanker": "https://images.unsplash.com/photo-1580674684081-7617fbf3d745?auto=format&fit=crop&w=400&q=80",
+  "Mixture": "https://images.unsplash.com/photo-1517646287270-a5a9ca602e5c?auto=format&fit=crop&w=400&q=80",
+  "Breaker": "https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=400&q=80",
+  "Compressor": "https://images.unsplash.com/photo-1581092162384-8987c1d64718?auto=format&fit=crop&w=400&q=80"
 };
 
 const SubCategories = () => {

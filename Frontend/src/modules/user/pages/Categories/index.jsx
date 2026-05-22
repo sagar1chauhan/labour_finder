@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiSearch, FiShoppingCart, FiMapPin, FiChevronDown, FiCompass, FiPackage, FiTool } from 'react-icons/fi';
+import { FiSearch, FiShoppingCart, FiMapPin, FiChevronDown, FiCompass, FiPackage, FiTool, FiHeart, FiUser } from 'react-icons/fi';
 import { publicCatalogService } from '../../../../services/catalogService';
 import { useCity } from '../../../../context/CityContext';
 import { useCart } from '../../../../context/CartContext';
 import NotificationBell from '../../components/common/NotificationBell';
 import LogoLoader from '../../../../components/common/LogoLoader';
+import CategoryModal from '../Home/components/CategoryModal';
+import { toast } from 'react-hot-toast';
 
 const toAssetUrl = (url) => {
   if (!url) return '';
@@ -15,16 +17,34 @@ const toAssetUrl = (url) => {
   return `${base}${clean.startsWith('/') ? '' : '/'}${clean}`;
 };
 
+const MANPOWER_DATA = [
+  { id: "m1", title: "Engineer", icon: "👷‍♂️", categoryType: "manpower" },
+  { id: "m2", title: "Mason & Labour", icon: "🧱", categoryType: "manpower" },
+  { id: "m3", title: "Contractor", icon: "🏗️", categoryType: "manpower" },
+  { id: "m4", title: "Vehicle Service", icon: "🚜", categoryType: "manpower" },
+  { id: "m5", title: "Rental Machine", icon: "⚙️", categoryType: "manpower" }
+];
+
 const UserCategoriesPage = () => {
   const navigate = useNavigate();
   const { currentCity } = useCity();
   const { cartCount } = useCart();
 
-  const [productCatalog, setProductCatalog] = useState([]);   // Sub-categories / Products
-  const [serviceCatalog, setServiceCatalog] = useState([]);   // Service brands
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState('products');     // 'products' | 'services'
+  const [activeTab, setActiveTab] = useState('all');
+  const [shortlistedIds, setShortlistedIds] = useState(() => {
+    try {
+      const saved = localStorage.getItem('shortlisted_categories');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -34,48 +54,205 @@ const UserCategoriesPage = () => {
     try {
       setLoading(true);
       const cityId = currentCity?._id || currentCity?.id;
-
-      const [productRes, serviceRes] = await Promise.all([
-        publicCatalogService.getProductsCatalog(cityId),
-        publicCatalogService.getBrands({ cityId }).catch(() => ({ success: false, brands: [] }))
-      ]);
-
-      // Products catalog (sub-categories grouped under parent categories)
-      if (productRes?.success && productRes.catalog) {
-        setProductCatalog(productRes.catalog.filter(c => c.brands?.length > 0));
-      }
-
-      // Services catalog (flat list of service brands grouped by category)
-      if (serviceRes?.success && serviceRes.brands) {
-        // Group service brands by their categoryId
-        const serviceGroupMap = new Map();
-        serviceRes.brands.forEach(brand => {
-          const catId = brand.categoryId || 'other';
-          const catTitle = brand.categoryTitle || 'Other Services';
-          if (!serviceGroupMap.has(catId)) {
-            serviceGroupMap.set(catId, { id: catId, title: catTitle, brands: [] });
-          }
-          serviceGroupMap.get(catId).brands.push(brand);
-        });
-        setServiceCatalog(Array.from(serviceGroupMap.values()));
+      const catRes = await publicCatalogService.getCategories(cityId);
+      if (catRes?.success && catRes.categories) {
+        setCategories(catRes.categories);
+      } else {
+        setCategories([]);
       }
     } catch (err) {
-      console.error('Error fetching catalog:', err);
+      console.error('Error fetching categories:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  // Current data based on active tab
-  const currentCatalog = activeTab === 'products' ? productCatalog : serviceCatalog;
+  const toggleShortlist = (cat) => {
+    const id = cat.id;
+    setShortlistedIds(prev => {
+      const next = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id];
+      localStorage.setItem('shortlisted_categories', JSON.stringify(next));
+      if (prev.includes(id)) {
+        toast.success(`Removed ${cat.title} from shortlist`);
+      } else {
+        toast.success(`Added ${cat.title} to shortlist!`);
+      }
+      return next;
+    });
+  };
 
-  // Filter based on search
-  const filteredCatalog = currentCatalog.map(cat => ({
-    ...cat,
-    brands: cat.brands.filter(b =>
-      b.title.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-  })).filter(cat => cat.brands.length > 0);
+  const mappedProductCategories = useMemo(() => {
+    return categories
+      .filter(cat => (cat.categoryType || 'service') === 'product')
+      .map(cat => ({
+        id: cat._id || cat.id,
+        title: cat.title,
+        icon: cat.icon || cat.image,
+        categoryType: 'product',
+        original: cat
+      }));
+  }, [categories]);
+
+  const mappedServiceCategories = useMemo(() => {
+    return categories
+      .filter(cat => (cat.categoryType || 'service') === 'service')
+      .map(cat => ({
+        id: cat._id || cat.id,
+        title: cat.title,
+        icon: cat.icon || cat.image,
+        categoryType: 'service',
+        original: cat
+      }));
+  }, [categories]);
+
+  const mappedManpowerCategories = useMemo(() => {
+    return MANPOWER_DATA.map(cat => ({
+      id: cat.id,
+      title: cat.title,
+      icon: cat.icon,
+      categoryType: 'manpower',
+      original: cat
+    }));
+  }, []);
+
+  const allMappedCategories = useMemo(() => {
+    return [
+      ...mappedManpowerCategories,
+      ...mappedProductCategories,
+      ...mappedServiceCategories
+    ];
+  }, [mappedManpowerCategories, mappedProductCategories, mappedServiceCategories]);
+
+  // Filter all categories by search query first
+  const searchedCategories = useMemo(() => {
+    if (!searchQuery) return allMappedCategories;
+    return allMappedCategories.filter(cat =>
+      cat.title.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [allMappedCategories, searchQuery]);
+
+  // Then split by activeTab
+  const displayedManpower = useMemo(() => {
+    if (activeTab !== 'all' && activeTab !== 'manpower') return [];
+    return searchedCategories.filter(cat => cat.categoryType === 'manpower');
+  }, [searchedCategories, activeTab]);
+
+  const displayedProducts = useMemo(() => {
+    if (activeTab !== 'all' && activeTab !== 'products') return [];
+    return searchedCategories.filter(cat => cat.categoryType === 'product');
+  }, [searchedCategories, activeTab]);
+
+  const displayedServices = useMemo(() => {
+    if (activeTab !== 'all' && activeTab !== 'services') return [];
+    return searchedCategories.filter(cat => cat.categoryType === 'service');
+  }, [searchedCategories, activeTab]);
+
+  const displayedShortlisted = useMemo(() => {
+    if (activeTab !== 'shortlisted') return [];
+    return searchedCategories.filter(cat => shortlistedIds.includes(cat.id));
+  }, [searchedCategories, activeTab, shortlistedIds]);
+
+  const handleCategoryClick = (category) => {
+    if (category.categoryType === 'manpower') {
+      navigate(`/user/subcategories?category=${encodeURIComponent(category.title)}&type=worker`);
+    } else if (category.categoryType === 'product') {
+      navigate(`/user/subcategories?category=${encodeURIComponent(category.title)}&type=shop`);
+    } else if (category.categoryType === 'service') {
+      setSelectedCategory(category.original);
+      setIsCategoryModalOpen(true);
+    }
+  };
+
+  const getActiveTabTitle = () => {
+    switch (activeTab) {
+      case 'manpower': return 'Manpower';
+      case 'products': return 'Shop Products';
+      case 'services': return 'Services';
+      case 'shortlisted': return 'Shortlisted';
+      default: return '';
+    }
+  };
+
+  const getActiveBorderColor = () => {
+    switch (activeTab) {
+      case 'manpower': return 'border-sky-400';
+      case 'products': return 'border-amber-400';
+      case 'services': return 'border-emerald-400';
+      case 'shortlisted': return 'border-red-400';
+      default: return 'border-[#889400]';
+    }
+  };
+
+  const currentList = activeTab === 'manpower'
+    ? displayedManpower
+    : activeTab === 'products'
+      ? displayedProducts
+      : activeTab === 'services'
+        ? displayedServices
+        : displayedShortlisted;
+
+  const showAllEmptyState = activeTab === 'all' && 
+    displayedManpower.length === 0 && 
+    displayedProducts.length === 0 && 
+    displayedServices.length === 0;
+
+  const tabs = [
+    { id: 'all', label: 'All', icon: <FiCompass className="w-3.5 h-3.5" /> },
+    { id: 'manpower', label: 'Manpower', icon: <FiUser className="w-3.5 h-3.5" /> },
+    { id: 'products', label: 'Products', icon: <FiPackage className="w-3.5 h-3.5" /> },
+    { id: 'services', label: 'Services', icon: <FiTool className="w-3.5 h-3.5" /> },
+    { id: 'shortlisted', label: 'Shortlisted', icon: <FiHeart className="w-3.5 h-3.5 fill-current text-red-500" /> }
+  ];
+
+  const renderCategoryCard = (cat) => {
+    const isShortlisted = shortlistedIds.includes(cat.id);
+    return (
+      <div
+        key={cat.id}
+        onClick={() => handleCategoryClick(cat)}
+        className="flex flex-col items-center gap-2 group cursor-pointer relative"
+      >
+        {/* Heart/Shortlist Button */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleShortlist(cat);
+          }}
+          className="absolute top-1 right-1 z-20 w-6 h-6 rounded-full bg-white/90 hover:bg-white shadow-sm flex items-center justify-center transition-all active:scale-90"
+        >
+          <FiHeart className={`w-3 h-3 transition-colors ${
+            isShortlisted ? 'text-red-500 fill-current' : 'text-gray-400'
+          }`} />
+        </button>
+
+        {/* Icon Container */}
+        <div className={`w-full aspect-square rounded-2xl flex items-center justify-center border group-active:scale-95 transition-all overflow-hidden p-3.5 text-2xl shadow-sm ${
+          cat.categoryType === 'manpower' 
+            ? 'bg-sky-50 border-sky-100/50 hover:bg-sky-100' 
+            : cat.categoryType === 'product'
+              ? 'bg-amber-50 border-amber-100/50 hover:bg-amber-100'
+              : 'bg-[#f5faff] border-sky-100/30 hover:bg-[#e6f2ff]'
+        }`}>
+          {cat.categoryType === 'manpower' ? (
+            <span className="relative z-10">{cat.icon}</span>
+          ) : cat.icon?.length > 2 ? (
+            <img 
+              src={toAssetUrl(cat.icon)} 
+              alt={cat.title} 
+              className="w-full h-full object-contain relative z-10 group-hover:scale-105 transition-transform" 
+            />
+          ) : (
+            <span className="relative z-10">{cat.icon || '🛠️'}</span>
+          )}
+        </div>
+
+        {/* Title */}
+        <span className="text-xs font-semibold text-gray-800 text-center leading-tight line-clamp-2 max-w-[72px]">
+          {cat.title}
+        </span>
+      </div>
+    );
+  };
 
   if (loading) return <LogoLoader />;
 
@@ -136,97 +313,129 @@ const UserCategoriesPage = () => {
           />
         </div>
 
-        {/* Products / Services Toggle */}
-        <div className="relative z-10 flex items-center bg-black/10 rounded-xl p-1 gap-1">
-          <button
-            onClick={() => { setActiveTab('products'); setSearchQuery(''); }}
-            className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg text-[10px] font-black tracking-wide transition-all active:scale-95 ${
-              activeTab === 'products'
-                ? 'bg-[#0f172a] text-[#cfdc01] shadow-md'
-                : 'text-gray-700 hover:bg-white/20'
-            }`}
-          >
-            <FiPackage className="w-3.5 h-3.5" />
-            Products
-          </button>
-          <button
-            onClick={() => { setActiveTab('services'); setSearchQuery(''); }}
-            className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg text-[10px] font-black tracking-wide transition-all active:scale-95 ${
-              activeTab === 'services'
-                ? 'bg-[#0f172a] text-[#cfdc01] shadow-md'
-                : 'text-gray-700 hover:bg-white/20'
-            }`}
-          >
-            <FiTool className="w-3.5 h-3.5" />
-            Services
-          </button>
+        {/* Scrollable Tab bar */}
+        <div className="relative z-10 flex gap-1.5 overflow-x-auto no-scrollbar py-1">
+          {tabs.map(tab => {
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => {
+                  setActiveTab(tab.id);
+                  if (tab.id === 'shortlisted' && shortlistedIds.length === 0) {
+                    toast('No shortlisted categories yet. Tap ❤️ on any category to save it!', { icon: 'ℹ️' });
+                  }
+                }}
+                className={`flex items-center gap-1 px-3.5 py-1.5 rounded-full text-[10px] font-black tracking-wide shrink-0 transition-all active:scale-95 border ${
+                  isActive
+                    ? 'bg-[#0f172a] text-[#cfdc01] border-[#0f172a] shadow-sm'
+                    : 'bg-white/95 text-gray-600 border-white/20 hover:bg-white'
+                }`}
+              >
+                {tab.icon}
+                <span>{tab.label}</span>
+                {tab.id === 'shortlisted' && shortlistedIds.length > 0 && (
+                  <span className="ml-1 bg-red-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full leading-none">
+                    {shortlistedIds.length}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
       </header>
 
       {/* Catalog Section */}
-      <main className="px-6 py-4 relative z-10 flex flex-col gap-6">
-        {filteredCatalog.length > 0 ? (
-          filteredCatalog.map(category => (
-            <div key={category.id} className="flex flex-col gap-3">
-              {/* Category Title */}
-              <h2 className="text-[13px] font-black text-gray-900 tracking-tight leading-none uppercase pl-1 border-l-[3px] border-[#889400]">
-                {category.title}
-              </h2>
-
-              {/* 4-Column Grid */}
-              <div className="grid grid-cols-4 gap-x-2 gap-y-5 mt-2">
-                {category.brands.map(brand => (
-                  <div
-                    key={brand.id || brand._id}
-                    onClick={() => {
-                      if (activeTab === 'products') {
-                        if (brand.type === 'subcategory') {
-                          navigate(`/user/catalog/brand/${brand.id}?slug=${brand.slug}`);
-                        } else {
-                          navigate(`/user/categories/${category.id}/brand/${brand.id}`);
-                        }
-                      } else {
-                        // Services — navigate to brand detail
-                        navigate(`/user/catalog/brand/${brand.id || brand._id}?slug=${brand.slug}`);
-                      }
-                    }}
-                    className="flex flex-col items-center cursor-pointer active:scale-95 transition-all group"
-                  >
-                    <div className={`w-16 h-16 rounded-2xl border flex items-center justify-center p-3 shadow-sm group-hover:border-[#cfdc01] group-hover:shadow-md transition-all overflow-hidden ${
-                      activeTab === 'products'
-                        ? 'bg-sky-50 border-sky-100'
-                        : 'bg-amber-50 border-amber-100'
-                    }`}>
-                      {(brand.icon || brand.logo || brand.iconUrl) ? (
-                        <img
-                          src={toAssetUrl(brand.icon || brand.logo || brand.iconUrl)}
-                          alt={brand.title}
-                          className="w-full h-full object-contain group-hover:scale-105 transition-transform"
-                        />
-                      ) : (
-                        <span className="text-lg font-black text-[#a2ad02]">{brand.title.charAt(0)}</span>
-                      )}
-                    </div>
-                    <span className="text-[9px] font-bold text-gray-800 mt-2 text-center max-w-[70px] truncate uppercase tracking-tight">
-                      {brand.title}
-                    </span>
-                  </div>
-                ))}
+      <main className="px-6 py-6 relative z-10 flex flex-col gap-6">
+        
+        {/* Render grouped sections when tab is 'all' */}
+        {activeTab === 'all' && (
+          <>
+            {/* Manpower Section */}
+            {displayedManpower.length > 0 && (
+              <div className="flex flex-col gap-3">
+                <h2 className="text-[13px] font-black text-gray-900 tracking-tight leading-none uppercase pl-1 border-l-[3px] border-sky-400">
+                  Manpower
+                </h2>
+                <div className="grid grid-cols-4 gap-x-3 gap-y-4 mt-2">
+                  {displayedManpower.map(renderCategoryCard)}
+                </div>
               </div>
-            </div>
-          ))
-        ) : (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <FiCompass className="w-12 h-12 text-gray-300 animate-pulse mb-3" />
-            <p className="text-xs font-black text-gray-400">
-              No {activeTab === 'products' ? 'products' : 'services'} found.
-            </p>
-            <p className="text-[10px] text-gray-300 mt-1">
-              {searchQuery ? 'Try a different search term' : 'Check back later'}
-            </p>
+            )}
+
+            {/* Shop Products Section */}
+            {displayedProducts.length > 0 && (
+              <div className="flex flex-col gap-3">
+                <h2 className="text-[13px] font-black text-gray-900 tracking-tight leading-none uppercase pl-1 border-l-[3px] border-amber-400">
+                  Shop Products
+                </h2>
+                <div className="grid grid-cols-4 gap-x-3 gap-y-4 mt-2">
+                  {displayedProducts.map(renderCategoryCard)}
+                </div>
+              </div>
+            )}
+
+            {/* Services Section */}
+            {displayedServices.length > 0 && (
+              <div className="flex flex-col gap-3">
+                <h2 className="text-[13px] font-black text-gray-900 tracking-tight leading-none uppercase pl-1 border-l-[3px] border-[#a2ad02]">
+                  Services
+                </h2>
+                <div className="grid grid-cols-4 gap-x-3 gap-y-4 mt-2">
+                  {displayedServices.map(renderCategoryCard)}
+                </div>
+              </div>
+            )}
+
+            {showAllEmptyState && (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <FiCompass className="w-12 h-12 text-gray-300 animate-pulse mb-3" />
+                <p className="text-xs font-black text-gray-400">
+                  No categories found.
+                </p>
+                <p className="text-[10px] text-gray-300 mt-1">
+                  Try searching for a different service or product.
+                </p>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Render a single grid section when tab is NOT 'all' */}
+        {activeTab !== 'all' && (
+          <div className="flex flex-col gap-3">
+            <h2 className={`text-[13px] font-black text-gray-900 tracking-tight leading-none uppercase pl-1 border-l-[3px] ${getActiveBorderColor()}`}>
+              {getActiveTabTitle()}
+            </h2>
+            {currentList.length > 0 ? (
+              <div className="grid grid-cols-4 gap-x-3 gap-y-4 mt-2">
+                {currentList.map(renderCategoryCard)}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <FiCompass className="w-12 h-12 text-gray-300 animate-pulse mb-3" />
+                <p className="text-xs font-black text-gray-400">
+                  No categories found in this section.
+                </p>
+                {activeTab === 'shortlisted' && (
+                  <p className="text-[10px] text-gray-300 mt-1 max-w-[200px] mx-auto">
+                    Tap the ❤️ icon on any category card to shortlist it!
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         )}
+
       </main>
+
+      {/* Service Brand Category Detail Drawer */}
+      <CategoryModal
+        isOpen={isCategoryModalOpen}
+        onClose={() => setIsCategoryModalOpen(false)}
+        category={selectedCategory}
+        currentCity={currentCity}
+      />
     </div>
   );
 };

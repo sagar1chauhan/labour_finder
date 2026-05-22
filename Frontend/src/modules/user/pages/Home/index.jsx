@@ -12,6 +12,7 @@ import AddressSelectionModal from '../Checkout/components/AddressSelectionModal'
 import { useCity } from '../../../../context/CityContext';
 import { useCart } from '../../../../context/CartContext';
 import { toast } from 'react-hot-toast';
+import { DUMMY_WORKERS } from '../Workers/workersData';
 
 // --- Sub-components ---
 
@@ -79,25 +80,6 @@ const Header = ({ city, onLocationClick, cartCount, navigate }) => {
   );
 };
 
-const FilterPills = ({ active, onChange }) => {
-  const filters = ['All', 'Electricians', 'Plumbers', 'Cleaning', 'Booked'];
-  
-  return (
-    <div className="flex gap-2 overflow-x-auto no-scrollbar px-6 py-4">
-      {filters.map(filter => (
-        <button
-          key={filter}
-          onClick={() => onChange(filter)}
-          className={`px-4 py-1.5 rounded-lg text-[10px] font-black tracking-wide shrink-0 transition-all ${active === filter 
-            ? 'bg-[#0f172a] text-white shadow-sm' 
-            : 'bg-white text-gray-500 border border-gray-100 shadow-sm'}`}
-        >
-          {filter}
-        </button>
-      ))}
-    </div>
-  );
-};
 
 const FlyingImage = ({ img }) => {
   const [style, setStyle] = useState({
@@ -173,7 +155,7 @@ const DynamicBanners = ({ banners, navigate, defaultHero }) => {
   }
 
   return (
-    <div className="px-6 py-1.5 flex gap-4 overflow-x-auto snap-x snap-mandatory no-scrollbar scroll-smooth">
+    <div className="px-6 pt-3 pb-1.5 flex gap-4 overflow-x-auto snap-x snap-mandatory no-scrollbar scroll-smooth">
       {banners.map((banner) => (
         <div
           key={banner._id}
@@ -560,8 +542,6 @@ const Home = () => {
   const [brands, setBrands] = useState([]);
   const [subCategories, setSubCategories] = useState([]);
   const [selectedBrand, setSelectedBrand] = useState(null);
-  const [activeFilter, setActiveFilter] = useState('All');
-  const [activeServiceTab, setActiveServiceTab] = useState('Repairing');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -598,7 +578,7 @@ const Home = () => {
       id: "m5",
       title: "Rental Machine",
       icon: "⚙️",
-      subCategories: ["Material", "Mixture", "Breaker", "Compressor"]
+      subCategories: ["Mixture", "Breaker", "Compressor"]
     }
   ];
 
@@ -875,20 +855,6 @@ const Home = () => {
     }
   ];
 
-  const DUMMY_WORKERS = [
-    { id: 1, name: "James Carter", rating: "4.9 (200)", experience: "8 years", type: "Electricians", tab: "Repairing", image: "https://img.freepik.com/free-photo/portrait-smiley-man-working-as-delivery-person_23-2148911520.jpg?w=740" },
-    { id: 2, name: "Ethan Brooks", rating: "4.8 (150)", experience: "10 years", type: "Plumbers", tab: "Installation", image: "https://img.freepik.com/free-photo/plumber-ready-work_23-2147744158.jpg?w=740" },
-    { id: 3, name: "Sarah Miller", rating: "4.7 (120)", experience: "5 years", type: "Cleaning", tab: "Repairing", image: "https://img.freepik.com/free-photo/woman-cleaning-house_23-2148222320.jpg?w=740" },
-    { id: 4, name: "David Wilson", rating: "4.9 (310)", experience: "12 years", type: "Electricians", tab: "Rewiring", image: "https://img.freepik.com/free-photo/electrician-working-house_23-2148404281.jpg?w=740" },
-  ];
-
-  const filteredWorkers = DUMMY_WORKERS.filter(worker => {
-    const matchesFilter = activeFilter === 'All' || activeFilter === 'Booked' || worker.type === activeFilter;
-    const matchesTab = worker.tab === activeServiceTab;
-    return matchesFilter && matchesTab;
-  });
-
-  const displayWorkers = filteredWorkers.length > 0 ? filteredWorkers : DUMMY_WORKERS;
 
   const productCategories = useMemo(() => {
     return categories.filter(cat => {
@@ -924,7 +890,12 @@ const Home = () => {
           cartCount={cartCount}
           navigate={navigate}
         />
-        <FilterPills active={activeFilter} onChange={setActiveFilter} />
+        
+        <DynamicBanners 
+          banners={banners} 
+          navigate={navigate} 
+          defaultHero={<HeroCard onAction={() => navigate('/user/categories')} />} 
+        />
         
         {/* Manpower Categories Section */}
         <div className="px-6 pt-4 pb-2">
@@ -1028,13 +999,6 @@ const Home = () => {
             <p className="text-xs text-gray-400 text-center py-4">No products available</p>
           )}
         </div>
-
-
-        <DynamicBanners 
-          banners={banners} 
-          navigate={navigate} 
-          defaultHero={<HeroCard onAction={() => navigate('/user/categories')} />} 
-        />
 
         {/* Shop by Brands Section */}
         {brands.length > 0 && (

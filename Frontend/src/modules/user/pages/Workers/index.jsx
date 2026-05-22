@@ -5,129 +5,7 @@ import { FiArrowLeft, FiFilter, FiSearch, FiStar, FiCheckCircle, FiMessageCircle
 import { useCart } from '../../../../context/CartContext';
 import { toast } from 'react-hot-toast';
 
-// Dummy Workers matching the same in Home/index.jsx
-const DUMMY_WORKERS = [
-  {
-    id: 1,
-    name: "Ramesh Kumar",
-    type: "Plumber",
-    rating: "4.8 (124 reviews)",
-    experience: "5 Years",
-    image: "https://img.freepik.com/free-photo/plumber-ready-work_23-2147744158.jpg?w=740"
-  },
-  {
-    id: 2,
-    name: "Suresh Singh",
-    type: "Electrician",
-    rating: "4.9 (201 reviews)",
-    experience: "8 Years",
-    image: "https://img.freepik.com/free-photo/smiling-electrician-fixing-electrical-panel_23-2147772322.jpg?w=740"
-  },
-  {
-    id: 3,
-    name: "Amit Sharma",
-    type: "Carpenter",
-    rating: "4.7 (89 reviews)",
-    experience: "3 Years",
-    image: "https://img.freepik.com/free-photo/carpenter-working-wood_23-2147772344.jpg?w=740"
-  },
-  {
-    id: 4,
-    name: "Vikram Patel",
-    type: "Architect",
-    rating: "4.9 (340 reviews)",
-    experience: "10 Years",
-    image: "https://img.freepik.com/free-photo/architect-working-office_23-2147772345.jpg?w=740"
-  },
-  {
-    id: 5,
-    name: "Rahul Verma",
-    type: "Engineer",
-    rating: "4.8 (150 reviews)",
-    experience: "6 Years",
-    image: "https://img.freepik.com/free-photo/engineer-working-office_23-2147772346.jpg?w=740"
-  },
-  {
-    id: 6,
-    name: "Prakash Yadav",
-    type: "Mason",
-    rating: "4.6 (95 reviews)",
-    experience: "4 Years",
-    image: "https://img.freepik.com/free-photo/mason-working-construction-site_23-2147772347.jpg?w=740"
-  },
-  {
-    id: 7,
-    name: "Priya Singh",
-    type: "Architect",
-    rating: "4.9 (180 reviews)",
-    experience: "7 Years",
-    image: "https://img.freepik.com/free-photo/young-female-architect-working-office_23-2147772348.jpg?w=740"
-  },
-  {
-    id: 8,
-    name: "Rahul Desai",
-    type: "Architect",
-    rating: "4.7 (120 reviews)",
-    experience: "4 Years",
-    image: "https://img.freepik.com/free-photo/male-architect-working-office_23-2147772349.jpg?w=740"
-  },
-  {
-    id: 9,
-    name: "Neha Gupta",
-    type: "Architect",
-    rating: "4.8 (210 reviews)",
-    experience: "9 Years",
-    image: "https://img.freepik.com/free-photo/female-architect-working-office_23-2147772350.jpg?w=740"
-  },
-  {
-    id: 10,
-    name: "Sanjay Kumar",
-    type: "Engineer",
-    rating: "4.9 (300 reviews)",
-    experience: "12 Years",
-    image: "https://img.freepik.com/free-photo/male-engineer-working-office_23-2147772351.jpg?w=740"
-  },
-  {
-    id: 11,
-    name: "Manoj Builders",
-    type: "Building contractor",
-    rating: "4.8 (240 reviews)",
-    experience: "15 Years",
-    image: "https://img.freepik.com/free-photo/building-construction-site-with-scaffolding_1127-2856.jpg?w=740"
-  },
-  {
-    id: 12,
-    name: "Apex Renovations",
-    type: "Renovation contractor",
-    rating: "4.7 (195 reviews)",
-    experience: "8 Years",
-    image: "https://img.freepik.com/free-photo/man-renovating-house_23-2148187834.jpg?w=740"
-  },
-  {
-    id: 13,
-    name: "Dream Interiors",
-    type: "Interior contractor",
-    rating: "4.9 (310 reviews)",
-    experience: "10 Years",
-    image: "https://img.freepik.com/free-photo/modern-interior-design-with-home-decor_23-2148301549.jpg?w=740"
-  },
-  {
-    id: 14,
-    name: "Rao Construction Co.",
-    type: "Building contractor",
-    rating: "4.6 (150 reviews)",
-    experience: "12 Years",
-    image: "https://img.freepik.com/free-photo/construction-manager-with-hard-hat_114579-2428.jpg?w=740"
-  },
-  {
-    id: 15,
-    name: "Modern Living Interiors",
-    type: "Interior contractor",
-    rating: "4.8 (185 reviews)",
-    experience: "6 Years",
-    image: "https://img.freepik.com/free-photo/interior-design-concept-with-furniture_23-2148301545.jpg?w=740"
-  }
-];
+import { DUMMY_WORKERS } from './workersData';
 
 const WorkerCard = ({ name, type, rating, experience, image, onClick }) => (
   <div 
@@ -285,8 +163,7 @@ const WorkersList = () => {
 
   const workers = useMemo(() => {
     return DUMMY_WORKERS.filter(w => 
-      w.type.toLowerCase().includes(categoryTitle.toLowerCase()) || 
-      categoryTitle.toLowerCase().includes(w.type.toLowerCase().slice(0, -1))
+      w.type.toLowerCase() === categoryTitle.toLowerCase()
     );
   }, [categoryTitle]);
 
