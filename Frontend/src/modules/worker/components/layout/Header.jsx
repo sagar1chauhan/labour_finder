@@ -6,6 +6,8 @@ import { workerTheme as themeColors } from '../../../../theme';
 import { animateLogo } from '../../../../utils/gsapAnimations';
 import Logo from '../../../../components/common/Logo';
 import api from '../../../../services/api';
+import workerService from '../../../../services/workerService';
+import { toast } from 'react-hot-toast';
 
 const Header = ({
   title,
@@ -13,13 +15,60 @@ const Header = ({
   showBack = true,
   showSearch = false,
   showNotifications = true,
-  notificationCount = 0
+  notificationCount = 0,
+  showOnlineToggle = false
 }) => {
   const navigate = useNavigate();
   const logoRef = useRef(null);
   const bellRef = useRef(null);
   const bellButtonRef = useRef(null);
   const [count, setCount] = useState(notificationCount);
+
+  const [isOnline, setIsOnline] = useState(false);
+  const [isToggling, setIsToggling] = useState(false);
+
+  // Sync online status
+  useEffect(() => {
+    const workerData = JSON.parse(localStorage.getItem('workerData') || '{}');
+    setIsOnline(workerData.status === 'ONLINE');
+
+    const handleStatusUpdate = (e) => {
+      if (e.detail?.status !== undefined) {
+        setIsOnline(e.detail.status === 'ONLINE');
+      }
+    };
+
+    window.addEventListener('workerStatusChanged', handleStatusUpdate);
+    return () => window.removeEventListener('workerStatusChanged', handleStatusUpdate);
+  }, []);
+
+  const handleToggleOnline = async (e) => {
+    e.stopPropagation();
+    try {
+      setIsToggling(true);
+      const newStatus = isOnline ? 'OFFLINE' : 'ONLINE';
+      
+      const response = await workerService.updateProfile({ status: newStatus });
+      
+      if (response.success) {
+        setIsOnline(newStatus === 'ONLINE');
+        toast.success(`You are now ${newStatus === 'ONLINE' ? 'Online' : 'Offline'}`);
+        
+        // Update localStorage
+        const workerData = JSON.parse(localStorage.getItem('workerData') || '{}');
+        workerData.status = newStatus;
+        localStorage.setItem('workerData', JSON.stringify(workerData));
+
+        // Dispatch event for other components (like Dashboard)
+        window.dispatchEvent(new CustomEvent('workerStatusChanged', { detail: { status: newStatus } }));
+      }
+    } catch (error) {
+      console.error('Failed to toggle status:', error);
+      toast.error('Failed to update status');
+    } finally {
+      setIsToggling(false);
+    }
+  };
 
   // Sync prop changes
   useEffect(() => {
@@ -71,8 +120,31 @@ const Header = ({
   const handleBack = () => {
     if (onBack) {
       onBack();
+      return;
+    }
+
+    const path = window.location.pathname;
+    
+    // Smart fallbacks for Worker
+    if (path.includes('/profile/edit') || path.includes('/profile/edit/')) {
+      navigate('/worker/profile');
+    } else if (path.includes('/job/')) {
+      navigate('/worker/dashboard');
+    } else if (path === '/worker/notifications') {
+      navigate('/worker/dashboard');
+    } else if (path === '/worker/profile') {
+      navigate('/worker/dashboard');
+    } else if (path === '/worker/wallet') {
+      navigate('/worker/dashboard');
+    } else if (path.includes('/billing')) {
+      navigate('/worker/dashboard');
     } else {
-      navigate(-1);
+      // Check if we can safely go back
+      if (window.history.state && window.history.state.idx > 0) {
+        navigate(-1);
+      } else {
+        navigate('/worker/dashboard');
+      }
     }
   };
 
@@ -143,6 +215,28 @@ const Header = ({
             >
               <FiSearch className="w-5 h-5" style={{ color: themeColors.button }} />
             </button>
+          )}
+          {showOnlineToggle && (
+            <div className="flex items-center gap-2 mr-1">
+              <button
+                onClick={handleToggleOnline}
+                disabled={isToggling}
+                className={`relative w-11 h-6 rounded-full transition-all duration-500 flex items-center px-1 shadow-inner ${isOnline ? 'bg-green-500' : 'bg-gray-300'}`}
+              >
+                <div
+                  className={`w-4 h-4 bg-white rounded-full shadow-md flex items-center justify-center transform transition-transform duration-300 ${isOnline ? 'translate-x-5' : 'translate-x-0'}`}
+                >
+                  {isToggling ? (
+                    <div className="w-2 h-2 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <div className={`w-1 h-1 rounded-full ${isOnline ? 'bg-green-500' : 'bg-gray-400'}`} />
+                  )}
+                </div>
+              </button>
+              <span className="text-[9px] font-bold text-gray-500 uppercase tracking-tighter w-14">
+                {isOnline ? 'Go Offline' : 'Go Online'}
+              </span>
+            </div>
           )}
           {showNotifications && (
             <div

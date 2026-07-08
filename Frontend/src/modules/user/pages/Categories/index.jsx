@@ -18,11 +18,11 @@ const toAssetUrl = (url) => {
 };
 
 const MANPOWER_DATA = [
-  { id: "m1", title: "Engineer", icon: "👷‍♂️", categoryType: "manpower" },
-  { id: "m2", title: "Mason & Labour", icon: "🧱", categoryType: "manpower" },
-  { id: "m3", title: "Contractor", icon: "🏗️", categoryType: "manpower" },
-  { id: "m4", title: "Vehicle Service", icon: "🚜", categoryType: "manpower" },
-  { id: "m5", title: "Rental Machine", icon: "⚙️", categoryType: "manpower" }
+  { id: "m1", title: "Engineer", icon: "https://img.icons8.com/color/96/engineer.png", categoryType: "manpower" },
+  { id: "m2", title: "Mason & Labour", icon: "https://img.icons8.com/color/96/trowel.png", categoryType: "manpower" },
+  { id: "m3", title: "Contractor", icon: "https://img.icons8.com/color/96/builder.png", categoryType: "manpower" },
+  { id: "m4", title: "Vehicle Service", icon: "https://img.icons8.com/color/96/excavator.png", categoryType: "manpower" },
+  { id: "m5", title: "Rental Machine", icon: "https://img.icons8.com/color/96/concrete-mixer.png", categoryType: "manpower" }
 ];
 
 const UserCategoriesPage = () => {
@@ -233,9 +233,7 @@ const UserCategoriesPage = () => {
               ? 'bg-amber-50 border-amber-100/50 hover:bg-amber-100'
               : 'bg-[#f5faff] border-sky-100/30 hover:bg-[#e6f2ff]'
         }`}>
-          {cat.categoryType === 'manpower' ? (
-            <span className="relative z-10">{cat.icon}</span>
-          ) : cat.icon?.length > 2 ? (
+          {cat.icon && (cat.icon.startsWith('http') || cat.icon.startsWith('/')) ? (
             <img 
               src={toAssetUrl(cat.icon)} 
               alt={cat.title} 

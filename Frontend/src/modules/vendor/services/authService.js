@@ -160,22 +160,8 @@ export const getCurrentVendor = async () => {
  */
 export const updateProfile = async (profileData) => {
   try {
-    // TODO: Replace with actual API call
-    // const response = await fetch(`${API_BASE_URL}/auth/profile`, {
-    //   method: 'PUT',
-    //   headers: {
-    //     'Content-Type': 'application/json',
-    //     'Authorization': `Bearer ${localStorage.getItem('vendorToken')}`,
-    //   },
-    //   body: JSON.stringify(profileData),
-    // });
-    // return await response.json();
-
-    // Mock implementation
-    const existing = JSON.parse(localStorage.getItem('vendorProfile') || '{}');
-    const updated = { ...existing, ...profileData, updatedAt: new Date().toISOString() };
-    localStorage.setItem('vendorProfile', JSON.stringify(updated));
-    return updated;
+    const response = await api.put('/vendors/profile', profileData);
+    return response.data;
   } catch (error) {
     console.error('Error updating profile:', error);
     throw error;

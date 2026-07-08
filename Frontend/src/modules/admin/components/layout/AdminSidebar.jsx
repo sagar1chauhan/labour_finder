@@ -188,7 +188,16 @@ const AdminSidebar = ({ isOpen, onClose }) => {
     fetchCounts();
     // Refresh every 30 seconds
     const interval = setInterval(fetchCounts, 30000);
-    return () => clearInterval(interval);
+
+    const handleRefresh = () => {
+      fetchCounts();
+    };
+    window.addEventListener('refreshSidebarCounts', handleRefresh);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('refreshSidebarCounts', handleRefresh);
+    };
   }, []);
 
   // Check if mobile on mount and resize
