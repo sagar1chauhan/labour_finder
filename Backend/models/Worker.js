@@ -133,6 +133,21 @@ const workerSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  bio: {
+    type: String,
+    default: 'Professional expert with dedicated field experience. Specialized in high-precision technical work.'
+  },
+  packages: {
+    type: [{
+      name: { type: String, required: true },
+      price: { type: Number, required: true },
+      description: { type: String, default: '' }
+    }],
+    default: [
+      { name: 'Basic Package', price: 499, description: 'Complete service with warranty' },
+      { name: 'Standard Package', price: 999, description: 'Complete service with warranty' }
+    ]
+  },
 
   // FCM Push Notification Tokens
   fcmTokens: {

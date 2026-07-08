@@ -35,19 +35,44 @@ const EditProfile = () => {
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
   };
 
-  const [formData, setFormData] = useState({
-    name: '',
-    businessName: '',
-    phone: '',
-    email: '',
-    address: '',
-    serviceCategories: [], // Array for multiple selection
-    profilePhoto: '', // URL
-    aadharDocument: '', // URL
-    serviceRange: 10,
-  });
+  const getInitialFormData = () => {
+    try {
+      const stored = JSON.parse(localStorage.getItem('vendorProfile') || localStorage.getItem('vendorData') || '{}');
+      let addressData = stored.address;
+      if (typeof stored.address === 'string') {
+        addressData = { fullAddress: stored.address };
+      } else if (!stored.address) {
+        addressData = {};
+      }
+      return {
+        name: stored.name || '',
+        businessName: stored.businessName || '',
+        phone: stored.phone || '',
+        email: stored.email || '',
+        address: addressData,
+        serviceCategories: Array.isArray(stored.service) ? stored.service : (stored.service ? [stored.service] : (stored.categories || [])),
+        profilePhoto: stored.profilePhoto || '',
+        aadharDocument: stored.aadharDocument || (stored.aadhar && stored.aadhar.document) || '',
+        serviceRange: stored.settings?.serviceRange || 10,
+      };
+    } catch (e) {
+      return {
+        name: '',
+        businessName: '',
+        phone: '',
+        email: '',
+        address: {},
+        serviceCategories: [],
+        profilePhoto: '',
+        aadharDocument: '',
+        serviceRange: 10,
+      };
+    }
+  };
 
-  const [photoPreview, setPhotoPreview] = useState(null);
+  const [formData, setFormData] = useState(getInitialFormData);
+
+  const [photoPreview, setPhotoPreview] = useState(formData.profilePhoto || null);
   const [photoFile, setPhotoFile] = useState(null);
   const [aadharFile, setAadharFile] = useState(null);
   const [uploading, setUploading] = useState(false);

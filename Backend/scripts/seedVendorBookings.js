@@ -3,7 +3,8 @@ const Booking = require('../models/Booking');
 const Vendor = require('../models/Vendor');
 const Worker = require('../models/Worker');
 const User = require('../models/User');
-const Service = require('../models/Service');
+const UserService = require('../models/UserService');
+const Category = require('../models/Category');
 const { BOOKING_STATUS, PAYMENT_STATUS } = require('../utils/constants');
 
 require('dotenv').config();
@@ -23,17 +24,46 @@ const seedVendorBookings = async () => {
   try {
     console.log('Starting vendor bookings seeding...');
 
-    // Get existing vendors, workers, and services
+    // 1. Get existing vendors, workers
     const vendors = await Vendor.find({ approvalStatus: 'approved' });
     const workers = await Worker.find({});
-    const services = await Service.find({});
+    const electricityCategory = await Category.findOne({ title: 'Electricity' });
 
     if (vendors.length === 0) {
       console.log('No approved vendors found. Run vendor seeding first.');
       return;
     }
 
-    // Create sample users for bookings
+    // 2. Create or find Category & dummy UserService
+    let catId;
+    if (electricityCategory) {
+      catId = electricityCategory._id;
+    } else {
+      const newCat = new Category({
+        title: 'Electricity',
+        slug: 'electricity',
+        description: 'Electrical services',
+        isActive: true
+      });
+      await newCat.save();
+      catId = newCat._id;
+    }
+
+    let dummyService = await UserService.findOne({ title: 'Ceiling Fan Repair' });
+    if (!dummyService) {
+      dummyService = new UserService({
+        categoryId: catId,
+        title: 'Ceiling Fan Repair',
+        basePrice: 500,
+        gstPercentage: 18,
+        status: 'active',
+        description: 'Repair and installation of ceiling fans'
+      });
+      await dummyService.save();
+      console.log('Created dummy UserService for bookings');
+    }
+
+    // 3. Create sample users for bookings
     const sampleUsers = [
       {
         name: 'John Doe',
@@ -78,22 +108,26 @@ const seedVendorBookings = async () => {
     // Bookings for Rajesh Kumar
     const rajesh = vendors.find(v => v.name === 'Rajesh Kumar');
     if (rajesh) {
-      const rajeshWorkers = workers.filter(w => w.vendorId.toString() === rajesh._id.toString());
+      const rajeshWorkers = workers.filter(w => w.vendorId && w.vendorId.toString() === rajesh._id.toString());
 
       bookingsData.push(
         {
+          bookingNumber: `BK-${Date.now()}-1`,
           userId: createdUsers[0]._id,
           vendorId: rajesh._id,
-          serviceId: services[0]?._id || null,
+          serviceId: dummyService._id,
           workerId: rajeshWorkers[0]?._id || null,
-          baseAmount: 500,
+          serviceName: 'Ceiling Fan Repair',
+          serviceCategory: 'Electricity',
+          basePrice: 500,
           finalAmount: 500,
           scheduledDate: new Date(),
-          scheduledTimeSlot: '2:00 PM - 4:00 PM',
+          scheduledTime: '14:00 - 16:00',
+          timeSlot: { start: '14:00', end: '16:00' },
           status: BOOKING_STATUS.COMPLETED,
           paymentStatus: PAYMENT_STATUS.SUCCESS,
           address: {
-            addressLine1: '456 Park Avenue, Indore, MP 452001',
+            addressLine1: '456 Park Avenue',
             city: 'Indore',
             state: 'Madhya Pradesh',
             pincode: '452001'
@@ -102,18 +136,22 @@ const seedVendorBookings = async () => {
           completedAt: new Date(Date.now() - 2 * 60 * 60 * 1000)
         },
         {
+          bookingNumber: `BK-${Date.now()}-2`,
           userId: createdUsers[1]._id,
           vendorId: rajesh._id,
-          serviceId: services[1]?._id || null,
+          serviceId: dummyService._id,
           workerId: rajeshWorkers[1]?._id || null,
-          baseAmount: 1200,
+          serviceName: 'Ceiling Fan Repair',
+          serviceCategory: 'Electricity',
+          basePrice: 1200,
           finalAmount: 1200,
           scheduledDate: new Date(),
-          scheduledTimeSlot: '10:00 AM - 12:00 PM',
+          scheduledTime: '10:00 - 12:00',
+          timeSlot: { start: '10:00', end: '12:00' },
           status: BOOKING_STATUS.IN_PROGRESS,
           paymentStatus: PAYMENT_STATUS.SUCCESS,
           address: {
-            addressLine1: '789 MG Road, Indore, MP 452002',
+            addressLine1: '789 MG Road',
             city: 'Indore',
             state: 'Madhya Pradesh',
             pincode: '452002'
@@ -121,17 +159,21 @@ const seedVendorBookings = async () => {
           description: 'AC not cooling properly'
         },
         {
+          bookingNumber: `BK-${Date.now()}-3`,
           userId: createdUsers[2]._id,
           vendorId: rajesh._id,
-          serviceId: services[2]?._id || null,
-          baseAmount: 800,
+          serviceId: dummyService._id,
+          serviceName: 'Ceiling Fan Repair',
+          serviceCategory: 'Electricity',
+          basePrice: 800,
           finalAmount: 800,
           scheduledDate: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow
-          scheduledTimeSlot: '11:00 AM - 1:00 PM',
+          scheduledTime: '11:00 - 13:00',
+          timeSlot: { start: '11:00', end: '13:00' },
           status: BOOKING_STATUS.ACCEPTED,
           paymentStatus: PAYMENT_STATUS.PENDING,
           address: {
-            addressLine1: '321 Station Road, Indore, MP 452003',
+            addressLine1: '321 Station Road',
             city: 'Indore',
             state: 'Madhya Pradesh',
             pincode: '452003'
@@ -144,22 +186,26 @@ const seedVendorBookings = async () => {
     // Bookings for Amit Sharma
     const amit = vendors.find(v => v.name === 'Amit Sharma');
     if (amit) {
-      const amitWorkers = workers.filter(w => w.vendorId.toString() === amit._id.toString());
+      const amitWorkers = workers.filter(w => w.vendorId && w.vendorId.toString() === amit._id.toString());
 
       bookingsData.push(
         {
+          bookingNumber: `BK-${Date.now()}-4`,
           userId: createdUsers[0]._id,
           vendorId: amit._id,
-          serviceId: services[0]?._id || null,
+          serviceId: dummyService._id,
           workerId: amitWorkers[0]?._id || null,
-          baseAmount: 600,
+          serviceName: 'Ceiling Fan Repair',
+          serviceCategory: 'Electricity',
+          basePrice: 600,
           finalAmount: 600,
           scheduledDate: new Date(Date.now() - 24 * 60 * 60 * 1000), // Yesterday
-          scheduledTimeSlot: '9:00 AM - 11:00 AM',
+          scheduledTime: '09:00 - 11:00',
+          timeSlot: { start: '09:00', end: '11:00' },
           status: BOOKING_STATUS.COMPLETED,
           paymentStatus: PAYMENT_STATUS.SUCCESS,
           address: {
-            addressLine1: '555 New Colony, Indore, MP 452004',
+            addressLine1: '555 New Colony',
             city: 'Indore',
             state: 'Madhya Pradesh',
             pincode: '452004'
@@ -174,7 +220,7 @@ const seedVendorBookings = async () => {
     for (const bookingData of bookingsData) {
       const booking = new Booking(bookingData);
       await booking.save();
-      console.log(`Created booking for vendor: ${booking.vendorId} with status: ${booking.status}`);
+      console.log(`Created booking: ${booking.bookingNumber} with status: ${booking.status}`);
     }
 
     console.log(`Seeded ${bookingsData.length} bookings successfully!`);
@@ -193,4 +239,3 @@ const runSeeding = async () => {
 };
 
 runSeeding();
-

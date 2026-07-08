@@ -164,10 +164,13 @@ const cancelBooking = async (req, res) => {
     // ── Update Vendor Performance Stats ──
     if (booking.vendorId) {
       try {
-        const { updateVendorStats } = require('../../utils/vendorStatsHelper');
+        const { updateVendorStats, updateWorkerStats } = require('../../utils/vendorStatsHelper');
         updateVendorStats(booking.vendorId);
+        if (booking.workerId) {
+          updateWorkerStats(booking.workerId);
+        }
       } catch (statsErr) {
-        console.error('Error updating vendor stats after admin cancellation:', statsErr);
+        console.error('Error updating stats after admin cancellation:', statsErr);
       }
     }
 

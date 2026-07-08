@@ -108,8 +108,57 @@ const updateVendorStats = async (vendorId) => {
   }
 };
 
+/**
+ * Update Worker Stats in DB
+ * @param {string} workerId 
+ */
+const updateWorkerStats = async (workerId) => {
+  try {
+    const Worker = require('../models/Worker');
+    const Booking = require('../models/Booking');
+    const mongoose = require('mongoose');
+
+    if (!workerId) return;
+    const wId = new mongoose.Types.ObjectId(workerId);
+
+    // 1. Calculate Aggregate Ratings and Job Stats
+    const stats = await Booking.aggregate([
+      { $match: { workerId: wId } },
+      {
+        $group: {
+          _id: null,
+          totalJobs: { $sum: 1 },
+          completedJobs: { $sum: { $cond: [{ $eq: ['$status', 'completed'] }, 1, 0] } },
+          avgRating: { $avg: '$rating' }
+        }
+      }
+    ]);
+
+    const workerStats = stats[0] || { totalJobs: 0, completedJobs: 0, avgRating: 0 };
+
+    // 2. Fetch Worker and update
+    const worker = await Worker.findById(workerId);
+    if (!worker) return;
+
+    worker.totalJobs = workerStats.totalJobs || 0;
+    worker.completedJobs = workerStats.completedJobs || 0;
+    if (workerStats.avgRating) {
+      worker.rating = Math.round(workerStats.avgRating * 10) / 10;
+    }
+
+    await worker.save();
+    console.log(`[WorkerStats] Updated Worker ${workerId}: Total Jobs ${worker.totalJobs}, Completed Jobs ${worker.completedJobs}, Rating ${worker.rating}`);
+
+    return worker;
+  } catch (error) {
+    console.error('[WorkerStats] Update failed:', error);
+  }
+};
+
 module.exports = {
   calculateVendorPerformance,
-  updateVendorStats
+  updateVendorStats,
+  updateWorkerStats
 };
+
 

@@ -267,6 +267,18 @@ const acceptBooking = async (req, res) => {
     }
 
     // ── Original Direct Acceptance Flow (For non-bidding or already assigned) ──
+    const hasWorker = !!bookingCheck.workerId;
+    const updateFields = {
+      vendorId: vendorId,
+      acceptedAt: new Date(),
+      status: hasWorker ? BOOKING_STATUS.ASSIGNED : BOOKING_STATUS.CONFIRMED
+    };
+
+    if (hasWorker) {
+      updateFields.assignedAt = new Date();
+      updateFields.workerResponse = 'PENDING';
+    }
+
     const updatedBooking = await Booking.findOneAndUpdate(
       {
         _id: id,
@@ -274,12 +286,7 @@ const acceptBooking = async (req, res) => {
         vendorId: null // Crucial: Ensures another request didn't just take it
       },
       {
-        $set: {
-          vendorId: vendorId,
-          acceptedAt: new Date(),
-          // Check payment method for optimized status update logic
-          status: BOOKING_STATUS.CONFIRMED // Default to confirmed
-        }
+        $set: updateFields
       },
       { new: true } // Return updated doc
     );
@@ -387,6 +394,35 @@ const acceptBooking = async (req, res) => {
     });
 
     // Send Push Notification to user (handled by createNotification)
+
+    // Send notifications to the assigned worker if direct worker booking
+    if (booking.workerId) {
+      try {
+        await createNotification({
+          workerId: booking.workerId,
+          type: 'new_job_alert',
+          title: 'New Job Assigned',
+          message: `You have been assigned a new job ${booking.bookingNumber}. Please review and respond.`,
+          relatedId: booking._id,
+          relatedType: 'booking',
+          priority: 'high',
+          pushData: {
+            type: 'new_job',
+            bookingId: booking._id.toString(),
+            link: `/worker/dashboard`
+          }
+        });
+
+        if (io) {
+          io.to(`worker_${booking.workerId.toString()}`).emit('new_job_assigned', {
+            bookingId: booking._id,
+            message: 'New job assigned to you!'
+          });
+        }
+      } catch (err) {
+        console.error('Error notifying worker on direct accept:', err.message);
+      }
+    }
 
     res.status(200).json({
       success: true,
@@ -831,10 +867,13 @@ const updateBookingStatus = async (req, res) => {
     // ── Update Vendor Performance Stats ──
     if (status === BOOKING_STATUS.COMPLETED || status === BOOKING_STATUS.CANCELLED) {
       try {
-        const { updateVendorStats } = require('../../utils/vendorStatsHelper');
+        const { updateVendorStats, updateWorkerStats } = require('../../utils/vendorStatsHelper');
         updateVendorStats(vendorId);
+        if (booking.workerId) {
+          updateWorkerStats(booking.workerId);
+        }
       } catch (statsErr) {
-        console.error('Error updating vendor stats after status change:', statsErr);
+        console.error('Error updating stats after status change:', statsErr);
       }
     }
 
@@ -1508,10 +1547,13 @@ const collectSelfCash = async (req, res) => {
 
     // ── Update Vendor Performance Stats ──
     try {
-      const { updateVendorStats } = require('../../utils/vendorStatsHelper');
+      const { updateVendorStats, updateWorkerStats } = require('../../utils/vendorStatsHelper');
       updateVendorStats(vendorId);
+      if (booking.workerId) {
+        updateWorkerStats(booking.workerId);
+      }
     } catch (statsErr) {
-      console.error('Error updating vendor stats after cash collection:', statsErr);
+      console.error('Error updating stats after cash collection:', statsErr);
     }
 
     res.status(200).json({ success: true, message: 'Cash collected, job completed', data: booking });
@@ -1683,6 +1725,7 @@ const getPendingBookings = async (req, res) => {
         match: { status: BOOKING_STATUS.SEARCHING, vendorId: null },
         populate: [
           { path: 'userId', select: 'name phone' },
+          { path: 'workerId', select: 'name profilePhoto' },
           {
             path: 'serviceId',
             select: 'title iconUrl categoryId',
@@ -1716,6 +1759,8 @@ const getPendingBookings = async (req, res) => {
       brandName: req.bookingId.brandName,
       brandIcon: req.bookingId.brandIcon,
       categoryIcon: req.bookingId.categoryIcon,
+      workerName: req.bookingId.workerId?.name || null,
+      workerPhoto: req.bookingId.workerId?.profilePhoto || null,
       createdAt: req.bookingId.createdAt,
       expiresAt: req.bookingId.expiresAt
     }));

@@ -28,7 +28,10 @@ const workerProfileSchema = z.object({
     pincode: z.string().optional(),
     fullAddress: z.string().optional()
   }).refine((data) => {
-    return (data.fullAddress && data.fullAddress.length > 5) || (data.addressLine1 && data.addressLine1.length > 0);
+    return (data.fullAddress && data.fullAddress.length > 0) || 
+           (data.addressLine1 && data.addressLine1.length > 0) ||
+           (data.city && data.city.length > 0) ||
+           (data.pincode && data.pincode.length > 0);
   }, { message: "Address is required" })
 });
 
@@ -311,37 +314,6 @@ const EditProfile = () => {
           <p className="text-xs text-gray-400 mt-2 font-medium">Tap to change photo</p>
         </div>
 
-        {/* Availability Status */}
-        <div className="bg-white rounded-2xl p-5 shadow-sm space-y-4 border border-gray-100">
-          <div className="flex items-center gap-2 mb-2">
-            <FiCheck className="text-blue-600" />
-            <h2 className="text-sm font-bold text-gray-800 uppercase tracking-wide">Availability</h2>
-          </div>
-
-          <div className="flex gap-3">
-            <button
-              onClick={() => handleInputChange('status', 'ONLINE')}
-              className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all border-2 ${formData.status === 'ONLINE'
-                ? 'bg-green-50 border-green-500 text-green-700'
-                : 'bg-white border-gray-200 text-gray-500'
-                }`}
-            >
-              Online
-            </button>
-            <button
-              onClick={() => handleInputChange('status', 'OFFLINE')}
-              className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all border-2 ${formData.status === 'OFFLINE'
-                ? 'bg-red-50 border-red-500 text-red-700'
-                : 'bg-white border-gray-200 text-gray-500'
-                }`}
-            >
-              Offline
-            </button>
-          </div>
-          <p className="text-xs text-gray-400 text-center">
-            Set your status to receive new job assignments.
-          </p>
-        </div>
 
         {/* Personal Details */}
         <div className="bg-white rounded-2xl p-5 shadow-sm space-y-4 border border-gray-100">

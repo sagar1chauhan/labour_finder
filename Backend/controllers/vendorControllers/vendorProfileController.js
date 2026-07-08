@@ -215,7 +215,6 @@ const updateProfile = async (req, res) => {
         isPhoneVerified: vendor.isPhoneVerified,
         isEmailVerified: vendor.isEmailVerified,
         profilePhoto: vendor.profilePhoto,
-        service: vendor.service,
         skills: vendor.skills,
         settings: vendor.settings
       }

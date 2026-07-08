@@ -1,5 +1,6 @@
 const Worker = require('../../models/Worker');
 const Booking = require('../../models/Booking');
+const Transaction = require('../../models/Transaction');
 const { validationResult } = require('express-validator');
 const { WORKER_STATUS, BOOKING_STATUS, VENDOR_STATUS } = require('../../utils/constants');
 const { createNotification } = require('../notificationControllers/notificationController');
@@ -495,16 +496,44 @@ const getAllWorkerJobs = async (req, res) => {
  */
 const getWorkerPaymentsSummary = async (req, res) => {
   try {
-    // For now, return workers with non-zero balances or recent job activity
-    const workers = await Worker.find({
-      'wallet.balance': { $exists: true }
-    })
-      .select('name phone wallet email serviceCategory approvalStatus')
+    const workers = await Worker.find({})
+      .select('name phone wallet email serviceCategories approvalStatus')
       .sort({ 'wallet.balance': -1 });
+
+    const transformedWorkers = [];
+
+    for (const worker of workers) {
+      // Aggregate earnings from transactions
+      const transactions = await Transaction.find({
+        workerId: worker._id,
+        type: 'worker_payment',
+        status: 'completed'
+      });
+
+      const totalEarnings = transactions.reduce((sum, tx) => sum + tx.amount, 0);
+
+      // Format category for display
+      const serviceCategory = worker.serviceCategories && worker.serviceCategories.length > 0
+        ? worker.serviceCategories.join(', ')
+        : 'N/A';
+
+      transformedWorkers.push({
+        _id: worker._id,
+        name: worker.name,
+        phone: worker.phone,
+        email: worker.email,
+        approvalStatus: worker.approvalStatus,
+        serviceCategory,
+        wallet: {
+          balance: worker.wallet?.balance || 0,
+          totalEarnings: totalEarnings
+        }
+      });
+    }
 
     res.status(200).json({
       success: true,
-      data: workers
+      data: transformedWorkers
     });
   } catch (error) {
     console.error('Get worker payments summary error:', error);

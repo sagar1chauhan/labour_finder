@@ -176,7 +176,7 @@ const Dashboard = () => {
   if (loading) {
     return (
       <div className="min-h-screen pb-20" style={{ background: themeColors.backgroundGradient }}>
-        <Header title="Dashboard" showBack={false} />
+        <Header title="Dashboard" showBack={false} showOnlineToggle={true} />
         <main className="px-4 py-4 space-y-6">
           <SkeletonProfileHeader />
           <SkeletonDashboardStats />
@@ -191,7 +191,7 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen pb-20" style={{ background: themeColors.backgroundGradient }}>
-      <Header title="Dashboard" showBack={false} notificationCount={stats.pendingJobs} />
+      <Header title="Dashboard" showBack={false} notificationCount={stats.pendingJobs} showOnlineToggle={true} />
 
       <main className="pt-0">
 

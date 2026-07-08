@@ -45,7 +45,7 @@ const getDashboardStats = async (req, res) => {
     // Booking stats
     const pendingBookings = await Booking.countDocuments({
       ...dateFilter,
-      status: { $nin: [BOOKING_STATUS.COMPLETED, BOOKING_STATUS.CANCELLED] }
+      status: BOOKING_STATUS.PENDING
     });
     const completedBookings = await Booking.countDocuments({
       ...dateFilter,

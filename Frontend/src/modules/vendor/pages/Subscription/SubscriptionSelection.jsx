@@ -137,9 +137,19 @@ const SubscriptionSelection = () => {
             }
           },
           prefill: {
-            name: "",
-            email: "",
-            contact: ""
+            name: (() => { try { return JSON.parse(localStorage.getItem('vendorData') || '{}').name || ''; } catch { return ''; } })(),
+            email: (() => { try { return JSON.parse(localStorage.getItem('vendorData') || '{}').email || ''; } catch { return ''; } })(),
+            contact: (() => { 
+              try { 
+                const phone = JSON.parse(localStorage.getItem('vendorData') || '{}').phone || ''; 
+                if (phone && !phone.startsWith('+')) {
+                  return `+91${phone}`;
+                }
+                return phone;
+              } catch { 
+                return ''; 
+              } 
+            })()
           },
           theme: {
             color: "#cfdc01"
@@ -148,6 +158,9 @@ const SubscriptionSelection = () => {
             ondismiss: () => setProcessingPayment(false)
           }
         };
+
+        console.log('[DEBUG] Vendor Data in LocalStorage:', localStorage.getItem('vendorData'));
+        console.log('[DEBUG] Razorpay Options passed to checkout:', options);
 
         const rzp = new window.Razorpay(options);
         rzp.open();

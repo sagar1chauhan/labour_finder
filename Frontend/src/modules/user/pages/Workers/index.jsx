@@ -1,30 +1,32 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiArrowLeft, FiFilter, FiSearch, FiStar, FiCheckCircle, FiMessageCircle, FiPhone, FiZap, FiHeart, FiShare2 } from 'react-icons/fi';
 import { useCart } from '../../../../context/CartContext';
 import { toast } from 'react-hot-toast';
-
-import { DUMMY_WORKERS } from './workersData';
+import publicDataService from '../../../../services/publicDataService';
+import LogoLoader from '../../../../components/common/LogoLoader';
 
 const WorkerCard = ({ name, type, rating, experience, image, onClick }) => (
   <div 
     onClick={onClick}
     className="bg-white rounded-[20px] p-2 shadow-sm border border-gray-50 group active:scale-[0.98] transition-all cursor-pointer"
   >
-    <div className="relative w-full aspect-square rounded-[16px] overflow-hidden mb-2 bg-gray-50">
-      <img 
-        src={image} 
-        alt={name} 
-        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
-        onError={(e) => {
-          e.target.onerror = null;
-          e.target.src = "https://img.freepik.com/free-vector/isolated-young-handsome-man-different-poses-white-background-illustration_632498-859.jpg?w=740";
-        }}
-      />
+    <div className="relative w-full aspect-square rounded-[16px] overflow-hidden mb-2 bg-gray-50 flex items-center justify-center p-2.5">
+      <div className="w-full h-full rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
+        <img 
+          src={image || "https://img.freepik.com/free-vector/isolated-young-handsome-man-different-poses-white-background-illustration_632498-859.jpg?w=740"} 
+          alt={name} 
+          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
+          onError={(e) => {
+            e.target.onerror = null;
+            e.target.src = "https://img.freepik.com/free-vector/isolated-young-handsome-man-different-poses-white-background-illustration_632498-859.jpg?w=740";
+          }}
+        />
+      </div>
       <div className="absolute top-1.5 right-1.5 bg-white/90 backdrop-blur-md px-1 py-0.5 rounded-md flex items-center gap-0.5 shadow-sm">
         <FiStar className="w-2 h-2 text-orange-400 fill-current" />
-        <span className="text-[7px] font-black text-gray-800">{rating.split(' ')[0]}</span>
+        <span className="text-[7px] font-black text-gray-800">{rating ? rating.split(' ')[0] : 'N/A'}</span>
       </div>
     </div>
     <div className="px-1">
@@ -35,7 +37,24 @@ const WorkerCard = ({ name, type, rating, experience, image, onClick }) => (
 );
 
 const ServiceDetail = ({ worker, isOpen, onClose, onBook }) => {
+  const [selectedPackage, setSelectedPackage] = useState(null);
+
+  useEffect(() => {
+    if (worker && worker.packages && worker.packages.length > 0) {
+      setSelectedPackage(worker.packages[0]);
+    } else {
+      setSelectedPackage(null);
+    }
+  }, [worker]);
+
   if (!worker) return null;
+
+  const packages = worker.packages && worker.packages.length > 0 ? worker.packages : [
+    { name: 'Basic Package', price: 499, description: 'Complete service with warranty' },
+    { name: 'Standard Package', price: 999, description: 'Complete service with warranty' }
+  ];
+
+  const currentSelected = selectedPackage || packages[0];
 
   return (
     <AnimatePresence>
@@ -64,14 +83,19 @@ const ServiceDetail = ({ worker, isOpen, onClose, onBook }) => {
             </div>
           </div>
 
-          <div className="relative w-full aspect-[4/5] bg-gray-50">
-             <img src={worker.image} alt={worker.name} className="w-full h-full object-cover" 
-                onError={(e) => {
-                  e.target.onerror = null;
-                  e.target.src = "https://img.freepik.com/free-vector/isolated-young-handsome-man-different-poses-white-background-illustration_632498-859.jpg?w=740";
-                }}
-             />
-             <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+          <div className="relative w-full aspect-square bg-gray-50 flex items-center justify-center p-8 bg-gradient-to-br from-gray-900/10 to-gray-900/5">
+             <div className="w-48 h-48 rounded-full overflow-hidden border-4 border-white shadow-xl bg-white flex items-center justify-center">
+                <img 
+                   src={worker.image || "https://img.freepik.com/free-vector/isolated-young-handsome-man-different-poses-white-background-illustration_632498-859.jpg?w=740"} 
+                   alt={worker.name} 
+                   className="w-full h-full object-cover" 
+                   onError={(e) => {
+                     e.target.onerror = null;
+                     e.target.src = "https://img.freepik.com/free-vector/isolated-young-handsome-man-different-poses-white-background-illustration_632498-859.jpg?w=740";
+                   }}
+                />
+             </div>
+             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" style={{ pointerEvents: 'none' }} />
              <div className="absolute bottom-8 left-6 right-6">
                 <div className="flex items-center gap-1.5 mb-1.5">
                    <div className="px-1.5 py-0.5 bg-orange-500 rounded-md text-[6px] font-black text-white uppercase tracking-widest">Top Rated</div>
@@ -87,7 +111,7 @@ const ServiceDetail = ({ worker, isOpen, onClose, onBook }) => {
                    <div className="w-9 h-9 bg-orange-50 rounded-xl flex items-center justify-center text-orange-600 border border-orange-100">
                       <FiStar className="w-3.5 h-3.5 fill-current" />
                    </div>
-                   <p className="text-[8px] font-black text-gray-900">{worker.rating.split(' ')[0]}</p>
+                   <p className="text-[8px] font-black text-gray-900">{worker.rating ? worker.rating.split(' ')[0] : 'N/A'}</p>
                    <p className="text-[6px] font-bold text-gray-400 uppercase">Rating</p>
                 </div>
                 <div className="flex flex-col items-center gap-0.5">
@@ -101,30 +125,37 @@ const ServiceDetail = ({ worker, isOpen, onClose, onBook }) => {
                    <div className="w-9 h-9 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600 border border-blue-100">
                       <FiMessageCircle className="w-3.5 h-3.5" />
                    </div>
-                   <p className="text-[8px] font-black text-gray-900">450+</p>
-                   <p className="text-[6px] font-bold text-gray-400 uppercase">Jobs</p>
+                   <p className="text-[8px] font-black text-gray-900">{worker.totalReviews || 0}</p>
+                   <p className="text-[6px] font-bold text-gray-400 uppercase">Reviews</p>
                 </div>
              </div>
 
              <div className="mb-6">
                 <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-2.5">About Expert</p>
                 <p className="text-[10px] text-gray-500 font-medium leading-relaxed">
-                   Professional {worker.type.toLowerCase()} with over {worker.experience} of dedicated field experience. Specialized in high-precision technical work.
+                   {worker.bio || `Professional ${worker.type.toLowerCase()} with over ${worker.experience} of dedicated field experience. Specialized in high-precision technical work.`}
                 </p>
              </div>
 
              <div className="mb-6">
                 <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-2.5">Service Packages</p>
                 <div className="space-y-2">
-                   {['Basic Package', 'Standard Package'].map((pkg, idx) => (
-                      <div key={pkg} className={`p-3 rounded-xl border flex items-center justify-between transition-all ${idx === 0 ? 'bg-[#cfdc01]/10 border-[#cfdc01]/30' : 'bg-white border-gray-100'}`}>
-                         <div>
-                            <h4 className="text-[10px] font-black text-gray-900">{pkg}</h4>
-                            <p className="text-[7px] font-medium text-gray-400">Complete service with warranty</p>
+                   {packages.map((pkg) => {
+                      const isSelected = currentSelected && (currentSelected.name === pkg.name || currentSelected._id === pkg._id);
+                      return (
+                         <div 
+                            key={pkg._id || pkg.name} 
+                            onClick={() => setSelectedPackage(pkg)}
+                            className={`p-3 rounded-xl border flex items-center justify-between transition-all cursor-pointer ${isSelected ? 'bg-[#cfdc01]/10 border-[#cfdc01]/30' : 'bg-white border-gray-100 hover:border-gray-200'}`}
+                         >
+                            <div>
+                               <h4 className="text-[10px] font-black text-gray-900">{pkg.name}</h4>
+                               <p className="text-[7px] font-medium text-gray-400">{pkg.description || 'Complete service with warranty'}</p>
+                            </div>
+                            <p className="text-[10px] font-black text-[#a2ad02]">₹{pkg.price}</p>
                          </div>
-                         <p className="text-[10px] font-black text-[#a2ad02]">₹{499 + (idx * 500)}</p>
-                      </div>
-                   ))}
+                      );
+                   })}
                 </div>
              </div>
           </div>
@@ -136,7 +167,7 @@ const ServiceDetail = ({ worker, isOpen, onClose, onBook }) => {
               </button>
               <button 
                 onClick={() => {
-                  onBook(worker);
+                  onBook(worker, currentSelected);
                   onClose();
                 }}
                 className="flex-1 h-11 bg-[#cfdc01] text-[#0f172a] rounded-xl font-bold text-xs tracking-wide shadow-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
@@ -160,28 +191,53 @@ const WorkersList = () => {
   const categoryTitle = searchParams.get('category') || 'Workers';
 
   const [selectedWorker, setSelectedWorker] = useState(null);
+  const [workers, setWorkers] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const workers = useMemo(() => {
-    return DUMMY_WORKERS.filter(w => 
-      w.type.toLowerCase() === categoryTitle.toLowerCase()
-    );
+  useEffect(() => {
+    const fetchWorkers = async () => {
+      try {
+        setLoading(true);
+        const res = await publicDataService.getPublicWorkers(categoryTitle);
+        if (res.success && res.workers) {
+          setWorkers(res.workers);
+        } else {
+          setWorkers([]);
+        }
+      } catch (err) {
+        console.error('Error fetching workers:', err);
+        setWorkers([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (categoryTitle) {
+      fetchWorkers();
+    }
   }, [categoryTitle]);
 
-  const handleBookService = (worker) => {
+  const handleBookService = (worker, selectedPkg) => {
+    const bookingPrice = selectedPkg ? selectedPkg.price : 499;
+    const bookingTitle = selectedPkg 
+      ? `${worker.type} Booking (${selectedPkg.name}) - ${worker.name}` 
+      : `${worker.type} Booking - ${worker.name}`;
+
     addToCart({
       id: worker.id,
       serviceId: worker.id,
       categoryId: null,
-      title: `${worker.type} Booking - ${worker.name}`,
-      price: 499, // default base package price
+      title: bookingTitle,
+      price: bookingPrice,
       image: worker.image,
       icon: worker.image,
       category: 'Service',
-      vendorId: null
+      vendorId: worker.vendorId || null
     });
-    toast.success(`${worker.type} service added to cart!`);
+    toast.success(`${worker.type} ${selectedPkg ? selectedPkg.name : 'service'} added to cart!`);
     navigate('/user/checkout');
   };
+
+  if (loading) return <LogoLoader />;
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -191,12 +247,18 @@ const WorkersList = () => {
       >
          <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
-               <button 
-                 onClick={() => navigate(-1)}
-                 className="w-8 h-8 bg-white/40 backdrop-blur-md rounded-xl flex items-center justify-center text-gray-900 border border-white/20 active:scale-90 transition-all"
-               >
-                 <FiArrowLeft className="w-4 h-4" />
-               </button>
+                <button 
+                  onClick={() => {
+                    if (window.history.state && window.history.state.idx > 0) {
+                      navigate(-1);
+                    } else {
+                      navigate('/user/categories');
+                    }
+                  }}
+                  className="w-8 h-8 bg-white/40 backdrop-blur-md rounded-xl flex items-center justify-center text-gray-900 border border-white/20 active:scale-90 transition-all"
+                >
+                  <FiArrowLeft className="w-4 h-4" />
+                </button>
                <div>
                   <h2 className="text-base font-bold text-gray-900 tracking-tight">Services</h2>
                   <p className="text-[10px] font-bold text-gray-800 tracking-wide leading-none mt-0.5">{categoryTitle}</p>
