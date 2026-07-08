@@ -54,6 +54,17 @@ const createBooking = async (req, res) => {
 
     let visitingCharges = reqVisitingCharges !== undefined ? reqVisitingCharges : (reqVisitationFee || 0);
 
+    // Automatic direct worker booking detection
+    let workerId = null;
+    if (serviceId && mongoose.Types.ObjectId.isValid(serviceId)) {
+      const bookedWorker = await Worker.findById(serviceId).lean();
+      if (bookedWorker) {
+        workerId = bookedWorker._id;
+        vendorId = bookedWorker.vendorId ? bookedWorker.vendorId.toString() : null;
+        console.log(`[CreateBooking] Resolved direct worker booking: workerId=${workerId}, parent vendorId=${vendorId}`);
+      }
+    }
+
     // Calculate total value from booked items or fallback to base (Move to top)
     let totalServiceValue = 0;
     if (bookedItems && bookedItems.length > 0) {
@@ -75,10 +86,28 @@ const createBooking = async (req, res) => {
     }
 
     // 1. Parallel Fetching: Service and User
-    const [service, user] = await Promise.all([
+    let [service, user] = await Promise.all([
       Service.findById(serviceId).select('title basePrice discountPrice description images iconUrl categoryId category categoryIds type').lean(),
       User.findById(userId).select('name phone wallet plans')
     ]);
+
+    if (!service) {
+      // Fallback: Check if this is a direct worker booking
+      const Worker = require('../../models/Worker');
+      const worker = await Worker.findById(serviceId).lean();
+      if (worker) {
+        service = {
+          _id: worker._id,
+          title: `${worker.serviceCategories?.[0] || 'General'} Booking - ${worker.name}`,
+          basePrice: amount || 499,
+          discountPrice: amount || 499,
+          iconUrl: worker.profilePhoto || null,
+          categoryId: null,
+          category: 'Service',
+          type: 'service'
+        };
+      }
+    }
 
     if (!service) {
       return res.status(404).json({
@@ -327,6 +356,7 @@ const createBooking = async (req, res) => {
       userId,
       vendorId: null, // Will be assigned when vendor accepts
       serviceId,
+      workerId: workerId || null,
       categoryId: finalCategory?._id || categoryId,
       serviceName: service.title,
       serviceCategory: reqServiceCategory || finalCategory?.title || service.category || 'General',
@@ -402,7 +432,22 @@ const createBooking = async (req, res) => {
           .populate('userId', 'name phone email')
           .populate('serviceId', 'title iconUrl')
           .populate('categoryId', 'title slug');
-        const serviceForBackground = await Service.findById(serviceId); // Re-fetch service if needed
+        let serviceForBackground = await Service.findById(serviceId); // Re-fetch service if needed
+        if (!serviceForBackground) {
+          const worker = await Worker.findById(serviceId).lean();
+          if (worker) {
+            serviceForBackground = {
+              _id: worker._id,
+              title: `${worker.serviceCategories?.[0] || 'General'} Booking - ${worker.name}`,
+              basePrice: amount || 499,
+              discountPrice: amount || 499,
+              iconUrl: worker.profilePhoto || null,
+              categoryId: null,
+              category: 'Service',
+              type: 'service'
+            };
+          }
+        }
 
         if (!userForBackground || !bookingForBackground || !serviceForBackground) {
           console.error('[CreateBooking] Background task failed: User, Booking or Service not found after initial creation.');
@@ -486,6 +531,21 @@ const createBooking = async (req, res) => {
         const io = getIO();
         if (io) {
           console.log(`[CreateBooking] Emitting Socket.IO events to ${wave1Vendors.length} vendors in Wave 1...`);
+          
+          let workerName = null;
+          let workerPhoto = null;
+          if (bookingForBackground.workerId) {
+            try {
+              const wk = await Worker.findById(bookingForBackground.workerId).select('name profilePhoto').lean();
+              if (wk) {
+                workerName = wk.name;
+                workerPhoto = wk.profilePhoto;
+              }
+            } catch (err) {
+              console.error('[CreateBooking] Worker query error:', err.message);
+            }
+          }
+
           wave1Vendors.forEach(vendor => {
             const vendorRoom = `vendor_${vendor._id.toString()}`;
             console.log(`[Wave 1] Emitting to ${vendorRoom} (dist: ${vendor.distance?.toFixed(1) || 'N/A'}km)`);
@@ -507,6 +567,8 @@ const createBooking = async (req, res) => {
               expiresAt: new Date(new Date(bookingForBackground.createdAt || Date.now()).getTime() + (60 * 1000)).toISOString(),
               status: bookingForBackground.status,
               serviceType: bookingForBackground.serviceType || 'service',
+              workerName,
+              workerPhoto,
               playSound: true,
               message: `New booking request within ${vendor.distance?.toFixed(1) || '?'}km!`
             });
@@ -592,7 +654,7 @@ const createBooking = async (req, res) => {
     console.error('Create booking error:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to create booking. Please try again.'
+      message: `Create Booking Error: ${error.message}`
     });
   }
 };
@@ -912,10 +974,13 @@ const cancelBooking = async (req, res) => {
     // ── Update Vendor Performance Stats ──
     if (booking.vendorId) {
       try {
-        const { updateVendorStats } = require('../../utils/vendorStatsHelper');
+        const { updateVendorStats, updateWorkerStats } = require('../../utils/vendorStatsHelper');
         updateVendorStats(booking.vendorId);
+        if (booking.workerId) {
+          updateWorkerStats(booking.workerId);
+        }
       } catch (statsErr) {
-        console.error('Error updating vendor stats after user cancellation:', statsErr);
+        console.error('Error updating stats after user cancellation:', statsErr);
       }
     }
 
@@ -1130,10 +1195,13 @@ const addReview = async (req, res) => {
 
     // ── Update Vendor Performance Stats ──
     try {
-      const { updateVendorStats } = require('../../utils/vendorStatsHelper');
+      const { updateVendorStats, updateWorkerStats } = require('../../utils/vendorStatsHelper');
       updateVendorStats(booking.vendorId);
+      if (booking.workerId) {
+        updateWorkerStats(booking.workerId);
+      }
     } catch (statsErr) {
-      console.error('Error updating vendor stats after review:', statsErr);
+      console.error('Error updating stats after review:', statsErr);
     }
 
     res.status(200).json({

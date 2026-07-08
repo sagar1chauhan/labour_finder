@@ -9,16 +9,30 @@ const getUserCart = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    let cart = await Cart.findOne({ userId }).populate('items.serviceId', 'title iconUrl slug').populate('items.categoryId', 'title slug');
+    let cart = await Cart.findOne({ userId }).populate('items.categoryId', 'title slug');
 
     if (!cart) {
       // Create empty cart if doesn't exist
       cart = await Cart.create({ userId, items: [] });
     }
 
+    let items = [];
+    if (cart.items) {
+      items = cart.items.map(item => item.toObject());
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (item.category !== 'Service' && item.category !== 'Services' && item.serviceId) {
+          const populatedService = await Service.findById(item.serviceId).select('title iconUrl slug').lean();
+          if (populatedService) {
+            item.serviceId = populatedService;
+          }
+        }
+      }
+    }
+
     res.status(200).json({
       success: true,
-      data: cart.items || []
+      data: items
     });
   } catch (error) {
     console.error('Get user cart error:', error);
@@ -66,10 +80,10 @@ const addToCart = async (req, res) => {
 
     console.log(`[AddToCart] Request details - Title: ${title}, Section: ${sectionTitle}`);
 
-    // Verify service exists (only if serviceId is provided and is a valid ObjectId)
+    // Verify service exists (only if serviceId is provided, is a valid ObjectId, and is not a direct worker booking)
     const mongoose = require('mongoose');
     let service = null;
-    if (serviceId && mongoose.Types.ObjectId.isValid(serviceId)) {
+    if (serviceId && mongoose.Types.ObjectId.isValid(serviceId) && category !== 'Service' && category !== 'Services') {
       service = await Service.findById(serviceId);
       if (!service) {
         return res.status(404).json({

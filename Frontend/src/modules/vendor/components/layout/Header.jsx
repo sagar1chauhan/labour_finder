@@ -96,8 +96,30 @@ const Header = memo(({
   const handleBack = () => {
     if (onBack) {
       onBack();
+      return;
+    }
+
+    const path = window.location.pathname;
+    
+    // Smart fallbacks for Vendor
+    if (path.includes('/profile/edit') || path.includes('/profile/details')) {
+      navigate('/vendor/profile');
+    } else if (path.includes('/booking/')) {
+      navigate('/vendor/dashboard');
+    } else if (path === '/vendor/notifications') {
+      navigate('/vendor/dashboard');
+    } else if (path === '/vendor/profile') {
+      navigate('/vendor/dashboard');
+    } else if (path === '/vendor/wallet') {
+      navigate('/vendor/dashboard');
+    } else if (path.includes('/billing')) {
+      navigate('/vendor/dashboard');
     } else {
-      navigate(-1);
+      if (window.history.state && window.history.state.idx > 0) {
+        navigate(-1);
+      } else {
+        navigate('/vendor/dashboard');
+      }
     }
   };
 

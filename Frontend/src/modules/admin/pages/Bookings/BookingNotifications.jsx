@@ -1,57 +1,86 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiBell, FiCheck, FiX, FiInfo, FiTrash2 } from 'react-icons/fi';
+import { FiBell, FiCheck, FiX, FiInfo, FiTrash2, FiLoader } from 'react-icons/fi';
+import adminNotificationService from '../../../../services/adminNotificationService';
+import { toast } from 'react-hot-toast';
 
 const BookingNotifications = () => {
   const [filter, setFilter] = useState('All Types');
-  const [notifications, setNotifications] = useState([
-    {
-      id: 1,
-      title: 'New Booking Received',
-      message: 'Booking #ORD-001 has been placed by John Doe',
-      time: 'Dec 31, 2025, 06:35 PM',
-      bookingId: 'ORD-001',
-      type: 'new_booking',
-      unread: true,
-    },
-    {
-      id: 2,
-      title: 'Booking Cancelled',
-      message: 'Booking #ORD-002 has been cancelled by customer',
-      time: 'Dec 31, 2025, 05:35 PM',
-      bookingId: 'ORD-002',
-      type: 'cancelled',
-      unread: true,
-    },
-    {
-      id: 3,
-      title: 'Payment Failed',
-      message: 'Payment for Booking #ORD-003 has failed',
-      time: 'Dec 31, 2025, 04:35 PM',
-      bookingId: 'ORD-003',
-      type: 'payment_failed',
-      unread: false,
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchNotifications = async () => {
+    try {
+      setLoading(true);
+      const res = await adminNotificationService.getNotifications();
+      if (res.success) {
+        const mapped = res.data.map(n => ({
+          id: n._id,
+          title: n.title,
+          message: n.message,
+          time: new Date(n.createdAt).toLocaleString(),
+          unread: !n.isRead,
+          type: n.type,
+          bookingId: n.data?.bookingNumber || 'N/A'
+        }));
+        setNotifications(mapped);
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to load notifications');
+    } finally {
+      setLoading(false);
     }
-  ]);
+  };
+
+  useEffect(() => {
+    fetchNotifications();
+  }, []);
 
   const unreadCount = notifications.filter(n => n.unread).length;
 
-  const markAllRead = () => {
-    setNotifications(notifications.map(n => ({ ...n, unread: false })));
+  const markAllRead = async () => {
+    try {
+      const res = await adminNotificationService.markAllAsRead();
+      if (res.success) {
+        setNotifications(notifications.map(n => ({ ...n, unread: false })));
+        toast.success('All notifications marked as read');
+        window.dispatchEvent(new Event('refreshSidebarCounts'));
+      }
+    } catch (err) {
+      toast.error('Failed to mark all as read');
+    }
   };
 
-  const deleteNotification = (id) => {
-    setNotifications(notifications.filter(n => n.id !== id));
+  const deleteNotification = async (id) => {
+    try {
+      const res = await adminNotificationService.deleteNotification(id);
+      if (res.success) {
+        setNotifications(notifications.filter(n => n.id !== id));
+        toast.success('Notification deleted');
+        window.dispatchEvent(new Event('refreshSidebarCounts'));
+      }
+    } catch (err) {
+      toast.error('Failed to delete notification');
+    }
   };
 
-  const markAsRead = (id) => {
-    setNotifications(notifications.map(n => n.id === id ? { ...n, unread: false } : n));
+  const markAsRead = async (id) => {
+    try {
+      const res = await adminNotificationService.markAsRead(id);
+      if (res.success) {
+        setNotifications(notifications.map(n => n.id === id ? { ...n, unread: false } : n));
+        window.dispatchEvent(new Event('refreshSidebarCounts'));
+      }
+    } catch (err) {
+      toast.error('Failed to mark as read');
+    }
   };
 
   const getIcon = (type) => {
     switch (type) {
-      case 'new_booking': return <FiBell className="text-blue-500 w-5 h-5" />;
-      case 'cancelled': return <FiBell className="text-red-500 w-5 h-5" />; // Using generic bell for now, or X
+      case 'booking_created': return <FiBell className="text-blue-500 w-5 h-5" />;
+      case 'booking_cancelled': return <FiBell className="text-red-500 w-5 h-5" />;
       case 'payment_failed': return <FiBell className="text-yellow-500 w-5 h-5" />;
       default: return <FiInfo className="text-gray-500 w-5 h-5" />;
     }
@@ -59,12 +88,20 @@ const BookingNotifications = () => {
 
   const getBgColor = (type) => {
     switch (type) {
-      case 'new_booking': return 'bg-blue-50';
-      case 'cancelled': return 'bg-red-50';
+      case 'booking_created': return 'bg-blue-50';
+      case 'booking_cancelled': return 'bg-red-50';
       case 'payment_failed': return 'bg-yellow-50';
       default: return 'bg-gray-50';
     }
   };
+
+  const filteredNotifications = notifications.filter(item => {
+    if (filter === 'All Types') return true;
+    if (filter === 'new_booking') return item.type === 'booking_created';
+    if (filter === 'cancelled') return item.type === 'booking_cancelled';
+    if (filter === 'payment_failed') return item.type === 'payment_failed';
+    return true;
+  });
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
@@ -91,7 +128,8 @@ const BookingNotifications = () => {
           )}
           <button
             onClick={markAllRead}
-            className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+            disabled={unreadCount === 0}
+            className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
           >
             Mark All Read
           </button>
@@ -101,10 +139,15 @@ const BookingNotifications = () => {
       {/* Notifications List */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden divide-y divide-gray-50">
         <AnimatePresence>
-          {notifications.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">No notifications</div>
+          {loading ? (
+            <div className="p-8 text-center flex items-center justify-center gap-2 text-gray-500">
+              <FiLoader className="animate-spin w-5 h-5 text-blue-600" />
+              Loading notifications...
+            </div>
+          ) : filteredNotifications.length === 0 ? (
+            <div className="p-8 text-center text-gray-500">No notifications found</div>
           ) : (
-            notifications.map((notification) => (
+            filteredNotifications.map((notification) => (
               <motion.div
                 key={notification.id}
                 initial={{ opacity: 0, height: 0 }}
@@ -121,16 +164,22 @@ const BookingNotifications = () => {
                     <p className="text-sm text-gray-500">{notification.message}</p>
                     <div className="flex items-center gap-3 mt-1">
                       <span className="text-xs text-gray-400">{notification.time}</span>
-                      <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded">{notification.bookingId}</span>
+                      {notification.bookingId !== 'N/A' && (
+                        <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded">{notification.bookingId}</span>
+                      )}
                     </div>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-3 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
                   {notification.unread && (
-                    <button title="Mark as read" onClick={() => (notification.title)} className="p-2 text-blue-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors relative">
+                    <button
+                      title="Mark as read"
+                      onClick={() => markAsRead(notification.id)}
+                      className="p-2 text-blue-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors relative"
+                    >
                       <div className="w-2 h-2 bg-blue-500 rounded-full absolute top-1 right-1" />
-                      <FiCheck className="w-4 h-4" /> {/* Simple check icon logic implies read */}
+                      <FiCheck className="w-4 h-4" />
                     </button>
                   )}
                   <button

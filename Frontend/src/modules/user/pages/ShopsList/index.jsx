@@ -1,59 +1,8 @@
-import React, { useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { FiArrowLeft, FiFilter, FiSearch, FiStar, FiMapPin, FiClock } from 'react-icons/fi';
-
-const DUMMY_SHOPS = [
-  {
-    id: 's1',
-    name: "Shreeji Hardware & Tools",
-    rating: "4.8",
-    reviews: 124,
-    distance: "1.2 km",
-    deliveryTime: "30 mins",
-    image: "https://img.freepik.com/free-photo/view-hardware-store-with-tools-equipment_23-2151693766.jpg?w=740",
-    tags: ["Hardware Tool Shop", "Plywood Traders"]
-  },
-  {
-    id: 's2',
-    name: "Laxmi Electricals",
-    rating: "4.9",
-    reviews: 89,
-    distance: "2.5 km",
-    deliveryTime: "45 mins",
-    image: "https://img.freepik.com/free-photo/electric-tools-market_1398-3168.jpg?w=740",
-    tags: ["Electrical Shop"]
-  },
-  {
-    id: 's3',
-    name: "Gupta Cement Agency",
-    rating: "4.6",
-    reviews: 210,
-    distance: "0.8 km",
-    deliveryTime: "25 mins",
-    image: "https://img.freepik.com/free-photo/sack-cement-plaster-building-site_1150-13768.jpg?w=740",
-    tags: ["Cement Dealers"]
-  },
-  {
-    id: 's4',
-    name: "Balaji Plywood Center",
-    rating: "4.7",
-    reviews: 156,
-    distance: "3.1 km",
-    deliveryTime: "60 mins",
-    image: "https://img.freepik.com/free-photo/wooden-planks-stack-background_1398-4663.jpg?w=740",
-    tags: ["Plywood Traders"]
-  },
-  {
-    id: 's5',
-    name: "SafeTech Industrial Safety",
-    rating: "4.9",
-    reviews: 320,
-    distance: "4.0 km",
-    deliveryTime: "45 mins",
-    image: "https://img.freepik.com/free-photo/construction-safety-equipment_1398-4179.jpg?w=740",
-    tags: ["Safety Gear Shop", "Helmet Suppliers"]
-  }
-];
+import publicDataService from '../../../../services/publicDataService';
+import LogoLoader from '../../../../components/common/LogoLoader';
 
 const ShopCard = ({ id, name, rating, reviews, distance, deliveryTime, image, navigate }) => (
   <div 
@@ -62,7 +11,7 @@ const ShopCard = ({ id, name, rating, reviews, distance, deliveryTime, image, na
   >
     <div className="w-24 h-24 rounded-xl overflow-hidden bg-gray-50 shrink-0">
       <img 
-        src={image} 
+        src={image || "https://img.freepik.com/free-vector/store-building-isolated-icon_24877-51111.jpg?w=740"} 
         alt={name} 
         className="w-full h-full object-cover" 
         onError={(e) => {
@@ -78,20 +27,20 @@ const ShopCard = ({ id, name, rating, reviews, distance, deliveryTime, image, na
         <div className="flex items-center gap-2 mb-2">
           <div className="flex items-center gap-1 bg-green-50 px-1.5 py-0.5 rounded text-green-700">
             <FiStar className="w-3 h-3 fill-current" />
-            <span className="text-[10px] font-bold">{rating}</span>
+            <span className="text-[10px] font-bold">{rating || '4.5'}</span>
           </div>
-          <span className="text-[10px] text-gray-400 font-medium">({reviews})</span>
+          <span className="text-[10px] text-gray-400 font-medium">({reviews || '10+'})</span>
         </div>
       </div>
       
       <div className="flex items-center gap-3 text-[10px] font-bold text-gray-500">
         <div className="flex items-center gap-1">
           <FiMapPin className="w-3 h-3 text-gray-400" />
-          <span>{distance}</span>
+          <span>{distance || '1.5 km'}</span>
         </div>
         <div className="flex items-center gap-1">
           <FiClock className="w-3 h-3 text-gray-400" />
-          <span>{deliveryTime}</span>
+          <span>{deliveryTime || '30 mins'}</span>
         </div>
       </div>
     </div>
@@ -104,11 +53,30 @@ const ShopsList = () => {
   const searchParams = new URLSearchParams(location.search);
   const categoryTitle = searchParams.get('category') || 'Shops';
 
-  const shops = useMemo(() => {
-    return DUMMY_SHOPS.filter(s => 
-      s.tags.some(tag => tag.toLowerCase().includes(categoryTitle.toLowerCase()) || categoryTitle.toLowerCase().includes(tag.toLowerCase()))
-    );
+  const [shops, setShops] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchShops = async () => {
+      try {
+        setLoading(true);
+        const res = await publicDataService.getPublicShops(categoryTitle);
+        if (res.success && res.shops) {
+          setShops(res.shops);
+        } else {
+          setShops([]);
+        }
+      } catch (err) {
+        console.error('Error fetching shops:', err);
+        setShops([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchShops();
   }, [categoryTitle]);
+
+  if (loading) return <LogoLoader />;
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -119,7 +87,13 @@ const ShopsList = () => {
          <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
                <button 
-                 onClick={() => navigate(-1)}
+                 onClick={() => {
+                   if (window.history.state && window.history.state.idx > 0) {
+                     navigate(-1);
+                   } else {
+                     navigate('/user/categories');
+                   }
+                 }}
                  className="w-8 h-8 bg-white/40 backdrop-blur-md rounded-xl flex items-center justify-center text-gray-900 border border-white/20 active:scale-90 transition-all"
                >
                  <FiArrowLeft className="w-4 h-4" />

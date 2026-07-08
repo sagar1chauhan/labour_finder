@@ -11,9 +11,11 @@ import {
   FiAlertCircle,
   FiArrowUpRight,
   FiLoader,
-  FiActivity
+  FiActivity,
+  FiX
 } from 'react-icons/fi';
 import adminWorkerService from '../../../../services/adminWorkerService';
+import { adminTransactionService } from '../../../../services/adminTransactionService';
 import toast from 'react-hot-toast';
 import { exportToCSV } from '../../../../utils/csvExport';
 import { formatCurrency } from '../../utils/adminHelpers';
@@ -31,6 +33,11 @@ const WorkerPayments = () => {
     search: '',
     status: 'all'
   });
+
+  // Modal State
+  const [selectedWorker, setSelectedWorker] = useState(null);
+  const [transactions, setTransactions] = useState([]);
+  const [loadingTxns, setLoadingTxns] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -59,6 +66,24 @@ const WorkerPayments = () => {
       toast.error('Failed to load worker payment data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchWorkerTransactions = async (worker) => {
+    try {
+      setSelectedWorker(worker);
+      setLoadingTxns(true);
+      const res = await adminTransactionService.getAllTransactions({
+        workerId: worker._id
+      });
+      if (res.success) {
+        setTransactions(res.data);
+      }
+    } catch (error) {
+      console.error('Error fetching worker transactions:', error);
+      toast.error('Failed to load transaction history');
+    } finally {
+      setLoadingTxns(false);
     }
   };
 
@@ -259,7 +284,7 @@ const WorkerPayments = () => {
                       <td className="px-6 py-4">
                         <button
                           className="flex items-center gap-1 text-primary-600 font-semibold hover:underline text-sm"
-                          onClick={() => toast('Detailed transaction history coming soon')}
+                          onClick={() => fetchWorkerTransactions(worker)}
                         >
                           View History <FiArrowUpRight className="w-4 h-4" />
                         </button>
@@ -272,6 +297,99 @@ const WorkerPayments = () => {
           )}
         </div>
       </div>
+
+      {/* Transaction History Modal */}
+      {selectedWorker && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-xl max-w-3xl w-full max-h-[85vh] flex flex-col overflow-hidden border border-gray-100">
+            {/* Modal Header */}
+            <div className="p-5 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">Transaction History</h3>
+                <p className="text-xs text-gray-500 mt-0.5">{selectedWorker.name} ({selectedWorker.phone})</p>
+              </div>
+              <button
+                onClick={() => setSelectedWorker(null)}
+                className="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-all"
+              >
+                <FiX className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 overflow-y-auto flex-1">
+              {loadingTxns ? (
+                <div className="flex flex-col items-center justify-center py-12 gap-3">
+                  <FiLoader className="w-8 h-8 text-primary-500 animate-spin" />
+                  <span className="text-sm text-gray-500">Loading transactions...</span>
+                </div>
+              ) : transactions.length === 0 ? (
+                <div className="text-center py-12 text-gray-500">
+                  <FiAlertCircle className="w-12 h-12 mx-auto text-gray-300 mb-3" />
+                  No transactions found for this worker.
+                </div>
+              ) : (
+                <div className="overflow-hidden rounded-xl border border-gray-100">
+                  <table className="w-full border-collapse">
+                    <thead>
+                      <tr className="bg-gray-50/50 border-b border-gray-100">
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Txn ID / Ref</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Type</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Amount</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Method</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Date</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Description</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 text-sm">
+                      {transactions.map((tx) => (
+                        <tr key={tx._id} className="hover:bg-gray-50/50 transition-colors">
+                          <td className="px-4 py-3 font-mono text-xs text-gray-600 truncate max-w-[120px]" title={tx.referenceId || tx._id}>
+                            {tx.referenceId || tx._id}
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                              tx.type === 'worker_payment' || tx.type === 'credit'
+                                ? 'bg-green-50 text-green-700'
+                                : 'bg-red-50 text-red-700'
+                            }`}>
+                              {tx.type.replace('_', ' ')}
+                            </span>
+                          </td>
+                          <td className={`px-4 py-3 font-semibold ${
+                            tx.type === 'worker_payment' || tx.type === 'credit'
+                              ? 'text-green-600'
+                              : 'text-red-600'
+                          }`}>
+                            {tx.type === 'worker_payment' || tx.type === 'credit' ? '+' : '-'}{formatCurrency(tx.amount)}
+                          </td>
+                          <td className="px-4 py-3 text-xs uppercase text-gray-500">{tx.paymentMethod}</td>
+                          <td className="px-4 py-3 text-xs text-gray-500">
+                            {new Date(tx.createdAt).toLocaleDateString()}
+                          </td>
+                          <td className="px-4 py-3 text-xs text-gray-600 max-w-[180px] truncate" title={tx.description}>
+                            {tx.description}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 border-t border-gray-100 bg-gray-50/50 flex justify-end">
+              <button
+                onClick={() => setSelectedWorker(null)}
+                className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg text-sm font-semibold transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </motion.div>
   );
 };

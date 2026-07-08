@@ -133,6 +133,12 @@ const getAllTransactions = async (req, res) => {
     const skip = (parseInt(page) - 1) * parseInt(limit);
     let query = {};
 
+    // Direct ID filters
+    if (req.query.userId) query.userId = req.query.userId;
+    if (req.query.vendorId) query.vendorId = req.query.vendorId;
+    if (req.query.workerId) query.workerId = req.query.workerId;
+    if (req.query.bookingId) query.bookingId = req.query.bookingId;
+
     // Apply status filter
     if (status && status !== 'all') {
       query.status = status;
