@@ -167,9 +167,18 @@ const BookingAlertCard = ({ booking, onAccept, onReject, onAssign, maxSearchTime
             <h4 className="text-[15px] font-black text-gray-900 leading-tight">
               {booking.serviceType === 'product' ? (booking.serviceName || booking.serviceId?.title) : (booking.serviceType || booking.serviceName || 'Service Request')}
             </h4>
-            <div className="flex items-center gap-2 mt-2">
-              <span className="text-[10px] font-bold text-gray-400">Customer:</span>
-              <span className="text-[10px] font-black text-gray-800 uppercase">{booking.customerName}</span>
+            <div className="flex items-center justify-between mt-2">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-bold text-gray-400">Customer:</span>
+                <span className="text-[10px] font-black text-gray-800 uppercase">{booking.customerName}</span>
+              </div>
+              {booking.workerName && (
+                <div className="flex items-center gap-1 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-100 animate-pulse">
+                  <span className="text-[8px] font-black text-amber-700 uppercase tracking-tighter">
+                     Direct: {booking.workerName}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         </div>

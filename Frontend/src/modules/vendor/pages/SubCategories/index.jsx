@@ -144,7 +144,7 @@ const VendorSubCategoriesPage = () => {
           >
             All
           </button>
-          {categories.filter(c => c.categoryType === 'product').map(cat => {
+          {categories.map(cat => {
             const catId = cat._id || cat.id;
             return (
               <button
@@ -201,7 +201,7 @@ const VendorSubCategoriesPage = () => {
       {/* Add Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-end">
-          <div className="bg-white w-full rounded-t-3xl p-6 max-h-[85vh] overflow-y-auto">
+          <div className="bg-white w-full rounded-t-3xl p-6 pb-24 max-h-[85vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-black text-gray-900">Add Sub-Category</h2>
               <button onClick={() => setIsModalOpen(false)} className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
@@ -222,8 +222,8 @@ const VendorSubCategoriesPage = () => {
                   className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold text-gray-800 focus:outline-none focus:border-[#cfdc01] transition-colors"
                 >
                   <option value="">Select Category</option>
-                  {categories.filter(c => c.categoryType === 'product').map(cat => (
-                    <option key={cat._id || cat.id} value={cat._id || cat.id}>{cat.title}</option>
+                  {categories.map(cat => (
+                    <option key={cat._id || cat.id} value={cat._id || cat.id}>{cat.title} ({cat.categoryType === 'product' ? 'Product' : 'Service'})</option>
                   ))}
                 </select>
               </div>
@@ -268,7 +268,7 @@ const VendorSubCategoriesPage = () => {
               <button
                 type="submit"
                 disabled={isSubmitting || uploadingIcon}
-                className="w-full py-3.5 rounded-xl text-sm font-black text-white transition-all active:scale-95 disabled:opacity-50"
+                className="w-full py-3.5 rounded-xl text-sm font-black text-white transition-all active:scale-95 disabled:opacity-50 mb-6"
                 style={{ backgroundColor: brandColor }}
               >
                 {isSubmitting ? 'Creating...' : 'Create Sub-Category'}

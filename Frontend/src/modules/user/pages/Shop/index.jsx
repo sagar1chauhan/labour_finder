@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiArrowLeft, FiSearch, FiSliders, FiShoppingCart, FiStar, FiPackage, FiZap, FiChevronLeft, FiShare2, FiHeart, FiPhone, FiMessageCircle, FiFilter } from 'react-icons/fi';
+import { FiArrowLeft, FiSearch, FiShoppingCart, FiStar } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import NotificationBell from '../../components/common/NotificationBell';
 import { publicCatalogService } from '../../../../services/catalogService';
 import { useCart } from '../../../../context/CartContext';
@@ -16,11 +16,6 @@ const toAssetUrl = (url) => {
   const base = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000').replace(/\/api$/, '');
   return `${base}${clean.startsWith('/') ? '' : '/'}${clean}`;
 };
-
-const DUMMY_PRODUCTS = [
-  { id: 'p1', title: 'Premium Wall Paint', category: 'Painting', price: 1200, rating: '4.9', icon: 'https://img.freepik.com/free-photo/paint-buckets-with-brushes-renovation_23-2148814234.jpg?w=740' },
-  { id: 'p2', title: 'Copper Wiring Bundle', category: 'Electrical', price: 850, rating: '4.8', icon: 'https://img.freepik.com/free-photo/electrician-builder-at-work-with-cables-in-hands_169016-16164.jpg?w=740' },
-];
 
 const ProductCard = ({ product, onAdd, onClick }) => (
   <motion.div
@@ -56,7 +51,7 @@ const UserShopPage = () => {
   const { currentCity } = useCity();
   
   const [categories, setCategories] = useState([]);
-  const [products, setProducts] = useState(DUMMY_PRODUCTS);
+  const [products, setProducts] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -103,7 +98,16 @@ const UserShopPage = () => {
         >
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-3">
-              <button onClick={() => navigate(-1)} className="w-8 h-8 bg-white/40 backdrop-blur-md rounded-xl flex items-center justify-center text-gray-900 border border-white/20 active:scale-90 transition-all">
+              <button 
+                onClick={() => {
+                  if (window.history.state && window.history.state.idx > 0) {
+                    navigate(-1);
+                  } else {
+                    navigate('/user/categories');
+                  }
+                }}
+                className="w-8 h-8 bg-white/40 backdrop-blur-md rounded-xl flex items-center justify-center text-gray-900 border border-white/20 active:scale-90 transition-all"
+              >
                 <FiArrowLeft className="w-4 h-4" />
               </button>
               <div>

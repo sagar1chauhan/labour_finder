@@ -6,34 +6,10 @@ import NotificationBell from '../../components/common/NotificationBell';
 import { motion, AnimatePresence } from 'framer-motion';
 import { bookingService } from '../../../../services/bookingService';
 
-const DUMMY_BOOKINGS = [
-  { 
-    id: 'b1', 
-    bookingNumber: 'BK-7892', 
-    serviceName: 'Full Home Deep Cleaning', 
-    serviceCategory: 'Cleaning',
-    status: 'confirmed', 
-    scheduledDate: new Date().toISOString(), 
-    scheduledTime: '10:00 AM', 
-    address: 'Flat 402, Sunshine Residency',
-    totalAmount: 2499
-  },
-  { 
-    id: 'b2', 
-    bookingNumber: 'BK-4421', 
-    serviceName: 'AC Filter Cleaning', 
-    serviceCategory: 'AC Service',
-    status: 'in-progress', 
-    scheduledDate: new Date().toISOString(), 
-    scheduledTime: '02:30 PM', 
-    address: 'Plot 12, Vijay Nagar',
-    totalAmount: 1850
-  },
-];
 
 const MyBookings = () => {
   const navigate = useNavigate();
-  const [bookings, setBookings] = useState(DUMMY_BOOKINGS);
+  const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState('all');
 
@@ -41,11 +17,16 @@ const MyBookings = () => {
     try {
       setLoading(true);
       const response = await bookingService.getUserBookings(filter !== 'all' ? { status: filter } : {});
-      if (response?.success && response.data?.length > 0) setBookings(response.data);
-      else if (filter === 'all') setBookings(DUMMY_BOOKINGS);
-      else setBookings([]);
-    } catch (error) { setBookings(filter === 'all' ? DUMMY_BOOKINGS : []); }
-    finally { setLoading(false); }
+      if (response?.success) {
+        setBookings(response.data || []);
+      } else {
+        setBookings([]);
+      }
+    } catch (error) {
+      setBookings([]);
+    } finally {
+      setLoading(false);
+    }
   }, [filter]);
 
   useEffect(() => {
@@ -73,7 +54,7 @@ const MyBookings = () => {
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-3">
               <button
-                onClick={() => navigate(-1)}
+                onClick={() => navigate('/user')}
                 className="w-8 h-8 bg-white/40 backdrop-blur-md rounded-xl flex items-center justify-center text-gray-900 border border-white/20 active:scale-90 transition-all"
               >
                 <FiArrowLeft className="w-4 h-4" />

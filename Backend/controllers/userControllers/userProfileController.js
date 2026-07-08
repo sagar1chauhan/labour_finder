@@ -186,10 +186,10 @@ const getCheckoutData = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    // Fetch all 3 in parallel
+    // Fetch user, cart, and settings in parallel
     const [user, cart, settings] = await Promise.all([
       User.findById(userId).select('addresses phone name'),
-      Cart.findOne({ userId }).populate('items.serviceId', 'title iconUrl slug').populate('items.categoryId', 'title slug'),
+      Cart.findOne({ userId }).populate('items.categoryId', 'title slug'),
       Settings.findOne({ type: 'global' }).select('visitedCharges serviceGstPercentage partsGstPercentage')
     ]);
 
@@ -200,6 +200,21 @@ const getCheckoutData = async (req, res) => {
       });
     }
 
+    let cartItems = [];
+    if (cart && cart.items) {
+      cartItems = cart.items.map(item => item.toObject());
+      for (let i = 0; i < cartItems.length; i++) {
+        const item = cartItems[i];
+        if (item.category !== 'Service' && item.category !== 'Services' && item.serviceId) {
+          const UserService = require('../../models/UserService');
+          const populatedService = await UserService.findById(item.serviceId).select('title iconUrl slug').lean();
+          if (populatedService) {
+            item.serviceId = populatedService;
+          }
+        }
+      }
+    }
+
     res.status(200).json({
       success: true,
       user: {
@@ -208,7 +223,7 @@ const getCheckoutData = async (req, res) => {
         phone: user.phone,
         addresses: user.addresses || []
       },
-      cartItems: cart ? cart.items : [],
+      cartItems,
       settings: settings || { visitedCharges: 29, serviceGstPercentage: 18, partsGstPercentage: 18 }
     });
   } catch (error) {

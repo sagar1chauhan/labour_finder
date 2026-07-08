@@ -10,15 +10,9 @@ const getVendorCategories = async (req, res) => {
   try {
     const { status, categoryType } = req.query;
     
-    // Build query - vendors can see their own categories + global categories (vendorId null/not exists)
-    // AND we must exclude deleted categories
+    // Build query - vendors can see all active/non-deleted categories in the catalog
     const query = {
-      status: { $ne: 'deleted' },
-      $or: [
-        { vendorId: req.user.id },
-        { vendorId: { $exists: false } },
-        { vendorId: null }
-      ]
+      status: { $ne: 'deleted' }
     };
     
     if (status) query.status = status;

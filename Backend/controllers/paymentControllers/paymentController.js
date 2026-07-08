@@ -782,3 +782,6 @@ module.exports = {
   getUpgradeDetails
 };
 
+// Trigger nodemon reload to load the latest environment variables from .env
+
+

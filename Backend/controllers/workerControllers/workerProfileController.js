@@ -18,6 +18,10 @@ const getProfile = async (req, res) => {
       });
     }
 
+    const Booking = require('../../models/Booking');
+    const totalJobs = await Booking.countDocuments({ workerId });
+    const completedJobs = await Booking.countDocuments({ workerId, status: 'completed' });
+
     res.status(200).json({
       success: true,
       worker: {
@@ -30,8 +34,8 @@ const getProfile = async (req, res) => {
         skills: worker.skills || [],
         address: worker.address || null,
         rating: worker.rating || 0,
-        totalJobs: worker.totalJobs || 0,
-        completedJobs: worker.completedJobs || 0,
+        totalJobs: totalJobs,
+        completedJobs: completedJobs,
         status: worker.status,
         profilePhoto: worker.profilePhoto || null,
         settings: worker.settings || { notifications: true, language: 'en' },

@@ -185,6 +185,16 @@ const updateJobStatus = async (req, res) => {
 
     await booking.save();
 
+    if (status === BOOKING_STATUS.COMPLETED || status === BOOKING_STATUS.CANCELLED) {
+      try {
+        const { updateVendorStats, updateWorkerStats } = require('../../utils/vendorStatsHelper');
+        if (booking.vendorId) updateVendorStats(booking.vendorId);
+        if (booking.workerId) updateWorkerStats(booking.workerId);
+      } catch (statsErr) {
+        console.error('Error updating stats in workerBookingController:', statsErr);
+      }
+    }
+
     res.status(200).json({
       success: true,
       message: 'Job status updated successfully',
@@ -668,6 +678,15 @@ const collectCash = async (req, res) => {
       relatedType: 'booking',
       priority: 'high'
     });
+
+    // ── Update Stats ──
+    try {
+      const { updateVendorStats, updateWorkerStats } = require('../../utils/vendorStatsHelper');
+      if (booking.vendorId) updateVendorStats(booking.vendorId);
+      if (booking.workerId) updateWorkerStats(booking.workerId);
+    } catch (statsErr) {
+      console.error('Error updating stats in workerBookingController confirmPaymentOtp:', statsErr);
+    }
 
     res.status(200).json({
       success: true,

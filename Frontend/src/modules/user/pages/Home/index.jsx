@@ -12,7 +12,7 @@ import AddressSelectionModal from '../Checkout/components/AddressSelectionModal'
 import { useCity } from '../../../../context/CityContext';
 import { useCart } from '../../../../context/CartContext';
 import { toast } from 'react-hot-toast';
-import { DUMMY_WORKERS } from '../Workers/workersData';
+import publicDataService from '../../../../services/publicDataService';
 
 // --- Sub-components ---
 
@@ -334,13 +334,17 @@ const WorkerCard = ({ name, rating, experience, image, onClick }) => (
   >
     <div className="relative w-full aspect-square rounded-[16px] overflow-hidden mb-2 bg-gray-50">
       <img 
-        src={image} 
+        src={image || "https://img.freepik.com/free-vector/isolated-young-handsome-man-different-poses-white-background-illustration_632498-859.jpg?w=740"} 
         alt={name} 
         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
+        onError={(e) => {
+          e.target.onerror = null;
+          e.target.src = "https://img.freepik.com/free-vector/isolated-young-handsome-man-different-poses-white-background-illustration_632498-859.jpg?w=740";
+        }}
       />
       <div className="absolute top-1.5 right-1.5 bg-white/90 backdrop-blur-md px-1 py-0.5 rounded-md flex items-center gap-0.5 shadow-sm">
         <FiStar className="w-2 h-2 text-orange-400 fill-current" />
-        <span className="text-[7px] font-black text-gray-800">{rating.split(' ')[0]}</span>
+        <span className="text-[7px] font-black text-gray-800">{rating ? rating.split(' ')[0] : 'N/A'}</span>
       </div>
     </div>
     <div className="px-1">
@@ -398,7 +402,7 @@ const ServiceDetail = ({ worker, isOpen, onClose, onBook }) => {
                    <div className="w-9 h-9 bg-orange-50 rounded-xl flex items-center justify-center text-orange-600 border border-orange-100">
                       <FiStar className="w-3.5 h-3.5 fill-current" />
                    </div>
-                   <p className="text-[8px] font-black text-gray-900">{worker.rating.split(' ')[0]}</p>
+                   <p className="text-[8px] font-black text-gray-900">{worker.rating ? worker.rating.split(' ')[0] : 'N/A'}</p>
                    <p className="text-[6px] font-bold text-gray-400 uppercase">Rating</p>
                 </div>
                 <div className="flex flex-col items-center gap-0.5">
@@ -420,7 +424,7 @@ const ServiceDetail = ({ worker, isOpen, onClose, onBook }) => {
              <div className="mb-6">
                 <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-2.5">About Expert</p>
                 <p className="text-[10px] text-gray-500 font-medium leading-relaxed">
-                   Professional {worker.type.toLowerCase()} with over {worker.experience} of dedicated field experience. Specialized in {worker.tab.toLowerCase()} and high-precision technical work.
+                   Professional {worker.type ? worker.type.toLowerCase() : 'worker'} with over {worker.experience} of dedicated field experience. Specialized in high-precision technical work and {worker.type ? worker.type.toLowerCase() : 'service'} tasks.
                 </p>
              </div>
 
@@ -508,16 +512,28 @@ const CategoryResultsView = ({ category, isOpen, onClose, workers, onWorkerClick
              </div>
           </div>
 
-          <div className="px-6 py-6">
-             <div className="grid grid-cols-2 gap-3">
-                {workers.map(worker => (
-                   <WorkerCard 
-                      key={worker.id} 
-                      {...worker} 
-                      onClick={() => onWorkerClick(worker)}
-                   />
-                ))}
-             </div>
+          <div className="px-6 py-6 flex flex-col items-center justify-center min-h-[50vh] text-center">
+             {workers.length > 0 ? (
+                <div className="grid grid-cols-2 gap-3 w-full">
+                   {workers.map(worker => (
+                      <WorkerCard 
+                         key={worker.id} 
+                         {...worker} 
+                         onClick={() => onWorkerClick(worker)}
+                      />
+                   ))}
+                </div>
+             ) : (
+                <div className="flex flex-col items-center justify-center py-10 px-4 mt-8">
+                   <div className="w-20 h-20 bg-yellow-50 rounded-full flex items-center justify-center text-[#a2ad02] mb-4 border border-yellow-100/50">
+                      <FiSearch className="w-8 h-8" />
+                   </div>
+                   <h3 className="text-sm font-bold text-gray-800 mb-1">No Experts Available</h3>
+                   <p className="text-[10px] font-medium text-gray-400 max-w-[200px] leading-relaxed">
+                      Currently, there are no service providers available in this category in your area.
+                   </p>
+                </div>
+             )}
           </div>
         </motion.div>
       )}
@@ -533,7 +549,7 @@ const Home = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { currentCity } = useCity();
-  const { cartCount, addToCart } = useCart();
+  const { cartCount, addToCart, clearCart } = useCart();
 
   const [flyingImages, setFlyingImages] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -548,52 +564,9 @@ const Home = () => {
   const [selectedWorker, setSelectedWorker] = useState(null);
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
   const [activeCategoryType, setActiveCategoryType] = useState('product'); // 'product' or 'service'
-
-  const MANPOWER_DATA = [
-    {
-      id: "m1",
-      title: "Engineer",
-      icon: "👷‍♂️",
-      subCategories: ["Architect", "Engineer", "Supervisor", "Home decor"]
-    },
-    {
-      id: "m2",
-      title: "Mason & Labour",
-      icon: "🧱",
-      subCategories: ["Tile fixer", "Plumber work", "Carpenter", "Electrician", "Painter", "Plaster & dismantler", "Bar Bander", "Shuttering"]
-    },
-    {
-      id: "m3",
-      title: "Contractor",
-      icon: "🏗️",
-      subCategories: ["Building contractor", "Renovation contractor", "Interior contractor"]
-    },
-    {
-      id: "m4",
-      title: "Vehicle Service",
-      icon: "🚜",
-      subCategories: ["JCB", "Tractor", "Tempo", "Eicher", "Crane", "Water Tanker"]
-    },
-    {
-      id: "m5",
-      title: "Rental Machine",
-      icon: "⚙️",
-      subCategories: ["Mixture", "Breaker", "Compressor"]
-    }
-  ];
-
-  const SHOP_DATA = {
-    "Constructor material": {
-      title: "Constructor material",
-      icon: "🧱",
-      subCategories: ["Hardware Tool Shop", "Plywood Traders", "Cement Dealers", "Electrical Shop"]
-    },
-    "Safety Materials": {
-      title: "Safety Materials",
-      icon: "🦺",
-      subCategories: ["Safety Gear Shop", "Helmet Suppliers", "Safety Shoes Store"]
-    }
-  };
+  const [manpowerCategories, setManpowerCategories] = useState([]);
+  const [featuredProducts, setFeaturedProducts] = useState([]);
+  const [workers, setWorkers] = useState([]);
 
   const handleAddToCart = (product, e) => {
     const cardEl = e?.currentTarget?.closest('.group');
@@ -669,13 +642,34 @@ const Home = () => {
     fetchData();
   }, [currentCity?._id]);
 
+  useEffect(() => {
+    if (!selectedCategory) {
+      setWorkers([]);
+      return;
+    }
+    const fetchCategoryWorkers = async () => {
+      try {
+        const res = await publicDataService.getPublicWorkers(selectedCategory.title);
+        if (res.success && res.workers) {
+          setWorkers(res.workers);
+        } else {
+          setWorkers([]);
+        }
+      } catch (err) {
+        console.error("Failed to fetch workers:", err);
+        setWorkers([]);
+      }
+    };
+    fetchCategoryWorkers();
+  }, [selectedCategory]);
+
   const fetchData = async () => {
     try {
       setLoading(true);
       const cityId = currentCity?._id || currentCity?.id;
 
-      // Fetch categories, home content, banners, and brands in parallel
-      const [catRes, homeRes, bannerRes, brandRes] = await Promise.all([
+      // Fetch categories, home content, banners, brands, manpower, and featured products in parallel
+      const [catRes, homeRes, bannerRes, brandRes, manpowerRes, productsRes] = await Promise.all([
         publicCatalogService.getCategories(cityId),
         publicCatalogService.getHomeContent(cityId),
         userBannerService.getActiveBanners().catch(err => {
@@ -685,6 +679,14 @@ const Home = () => {
         publicCatalogService.getBrands({ cityId }).catch(err => {
           console.error("Error fetching brands:", err);
           return { success: false, brands: [] };
+        }),
+        publicDataService.getManpowerCategories().catch(err => {
+          console.error("Error fetching manpower categories:", err);
+          return { success: false, categories: [] };
+        }),
+        publicDataService.getFeaturedProducts().catch(err => {
+          console.error("Error fetching featured products:", err);
+          return { success: false, data: [] };
         })
       ]);
 
@@ -713,6 +715,18 @@ const Home = () => {
       } else {
         setSubCategories([]);
       }
+
+      if (manpowerRes?.success && manpowerRes.categories) {
+        setManpowerCategories(manpowerRes.categories);
+      } else {
+        setManpowerCategories([]);
+      }
+
+      if (productsRes?.success && productsRes.data) {
+        setFeaturedProducts(productsRes.data);
+      } else {
+        setFeaturedProducts([]);
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -722,12 +736,7 @@ const Home = () => {
 
   const handleCategoryClick = (category) => {
     if (category.categoryType === 'product') {
-      const isShopData = SHOP_DATA[category.title];
-      if (isShopData) {
-        navigate(`/user/subcategories?category=${encodeURIComponent(category.title)}&type=shop`);
-      } else {
-        navigate('/user/categories');
-      }
+      navigate(`/user/subcategories?category=${encodeURIComponent(category.title)}&type=shop`);
     } else {
       setSelectedCategory(category);
       setIsCategoryModalOpen(true);
@@ -741,119 +750,6 @@ const Home = () => {
     }
     setIsAddressModalOpen(false);
   };
-
-  const DUMMY_PRODUCTS_BY_CATEGORY = [
-    {
-      categoryName: "Cement & Plaster",
-      products: [
-        {
-          id: "p1",
-          title: "UltraTech PPC Cement (50 kg)",
-          basePrice: 385,
-          discountPrice: 390,
-          unit: "bag",
-          stockWarning: "Only 5 left",
-          iconUrl: "https://res.cloudinary.com/deorxby43/image/upload/v1779274407/products/pn4b1tmtdcma9mppi7z0.png"
-        },
-        {
-          id: "p2",
-          title: "Birla White Cement (50 kg)",
-          basePrice: 1155,
-          discountPrice: 1250,
-          unit: "bag",
-          stockWarning: "Limited stock",
-          iconUrl: "https://res.cloudinary.com/deorxby43/image/upload/v1779274407/products/pn4b1tmtdcma9mppi7z0.png"
-        },
-        {
-          id: "p3",
-          title: "Saint Gobain Gyproc Xpert+ Gypsum Plaster (20 kg)",
-          basePrice: 270,
-          discountPrice: 350,
-          unit: "bag",
-          stockWarning: "Only 5 left",
-          iconUrl: "https://res.cloudinary.com/deorxby43/image/upload/v1779274407/products/pn4b1tmtdcma9mppi7z0.png"
-        },
-        {
-          id: "p4",
-          title: "Saint Gobain Gyproc Plain Gypsum Board (12.5 mm, 4 x 6 feet)",
-          basePrice: 580,
-          discountPrice: 580,
-          unit: "piece",
-          iconUrl: "https://res.cloudinary.com/deorxby43/image/upload/v1779274407/products/pn4b1tmtdcma9mppi7z0.png"
-        },
-        {
-          id: "p5",
-          title: "JK Super Strong Cement (50 kg)",
-          basePrice: 375,
-          discountPrice: 395,
-          unit: "bag",
-          iconUrl: "https://res.cloudinary.com/deorxby43/image/upload/v1779274407/products/pn4b1tmtdcma9mppi7z0.png"
-        },
-        {
-          id: "p6",
-          title: "Ambuja Kawach Waterproof Cement (50 kg)",
-          basePrice: 440,
-          discountPrice: 480,
-          unit: "bag",
-          iconUrl: "https://res.cloudinary.com/deorxby43/image/upload/v1779274407/products/pn4b1tmtdcma9mppi7z0.png"
-        }
-      ]
-    },
-    {
-      categoryName: "Tiling",
-      products: [
-        {
-          id: "p7",
-          title: "MYK Laticrete 305 Tiles Adhesive Grey (20 kg)",
-          basePrice: 335,
-          discountPrice: 506,
-          unit: "bag",
-          stockWarning: "Only 5 left",
-          iconUrl: "https://res.cloudinary.com/deorxby43/image/upload/v1779274407/products/pn4b1tmtdcma9mppi7z0.png"
-        },
-        {
-          id: "p8",
-          title: "MYK Laticrete 335 Super Flex Tile Adhesive (20 kg, White)",
-          basePrice: 1460,
-          discountPrice: 1810,
-          unit: "bag",
-          iconUrl: "https://res.cloudinary.com/deorxby43/image/upload/v1779274407/products/pn4b1tmtdcma9mppi7z0.png"
-        },
-        {
-          id: "p9",
-          title: "MYK Laticrete 325 High Flex Polymer Modified Tile Adhesive (20 kg)",
-          basePrice: 1060,
-          discountPrice: 1290,
-          unit: "bag",
-          iconUrl: "https://res.cloudinary.com/deorxby43/image/upload/v1779274407/products/pn4b1tmtdcma9mppi7z0.png"
-        },
-        {
-          id: "p10",
-          title: "Pidilite Roff Tile Grout (1 kg, Ivory)",
-          basePrice: 140,
-          discountPrice: 160,
-          unit: "bag",
-          iconUrl: "https://res.cloudinary.com/deorxby43/image/upload/v1779274407/products/pn4b1tmtdcma9mppi7z0.png"
-        },
-        {
-          id: "p11",
-          title: "Bal Endura Tile Adhesive (20 kg)",
-          basePrice: 290,
-          discountPrice: 340,
-          unit: "bag",
-          iconUrl: "https://res.cloudinary.com/deorxby43/image/upload/v1779274407/products/pn4b1tmtdcma9mppi7z0.png"
-        },
-        {
-          id: "p12",
-          title: "Dr. Fixit Pidiproof LW+ (1 Litre)",
-          basePrice: 165,
-          discountPrice: 195,
-          unit: "piece",
-          iconUrl: "https://res.cloudinary.com/deorxby43/image/upload/v1779274407/products/pn4b1tmtdcma9mppi7z0.png"
-        }
-      ]
-    }
-  ];
 
 
   const productCategories = useMemo(() => {
@@ -870,13 +766,30 @@ const Home = () => {
     });
   }, [categories]);
 
-  const categoryWorkers = useMemo(() => {
-    if (!selectedCategory) return [];
-    return DUMMY_WORKERS.filter(w => w.type.toLowerCase().includes(selectedCategory.title.toLowerCase()) || selectedCategory.title.toLowerCase().includes(w.type.toLowerCase().slice(0, -1)));
-  }, [selectedCategory]);
 
-  const handleBookService = (worker) => {
-    toast.success(`${worker.name} booked successfully!`);
+
+  const handleBookService = async (worker) => {
+    try {
+      await clearCart();
+      
+      await addToCart({
+        id: worker.id || worker._id,
+        serviceId: worker.id || worker._id,
+        categoryId: worker.categoryId || null,
+        title: `${worker.type || 'Service'} Booking - ${worker.name}`,
+        price: 499, // Default base price
+        image: worker.image || worker.profilePhoto || null,
+        icon: worker.image || worker.profilePhoto || null,
+        category: 'Service',
+        vendorId: worker.vendorId || null
+      });
+
+      toast.success(`Booking initialized for ${worker.name}`);
+      navigate('/user/checkout');
+    } catch (error) {
+      console.error('Failed to initiate worker booking:', error);
+      toast.error('Failed to initiate booking. Please try again.');
+    }
   };
 
   if (loading && categories.length === 0) return <LogoLoader />;
@@ -905,14 +818,18 @@ const Home = () => {
           </div>
 
           <div className="grid grid-cols-4 gap-x-3 gap-y-4">
-            {MANPOWER_DATA.map(cat => (
+            {manpowerCategories.map(cat => (
               <div
-                key={cat.id}
+                key={cat._id || cat.id}
                 onClick={() => navigate(`/user/subcategories?category=${encodeURIComponent(cat.title)}&type=worker`)}
                 className="flex flex-col items-center gap-2 group cursor-pointer"
               >
                 <div className="w-full aspect-square bg-[#f5faff] hover:bg-[#e6f2ff] rounded-2xl flex items-center justify-center border border-sky-100/30 group-active:scale-95 transition-all overflow-hidden p-3.5 text-2xl relative shadow-sm">
-                  <span className="relative z-10">{cat.icon}</span>
+                  {cat.iconUrl ? (
+                    <img src={cat.iconUrl} alt={cat.title} className="w-full h-full object-contain relative z-10" />
+                  ) : (
+                    <span className="relative z-10">{cat.icon || '🛠️'}</span>
+                  )}
                 </div>
                 <span className="text-xs font-semibold text-gray-800 text-center leading-tight line-clamp-2 max-w-[72px]">{cat.title}</span>
               </div>
@@ -1040,7 +957,7 @@ const Home = () => {
         )}
 
         {/* Category Products Showcase Section */}
-        {DUMMY_PRODUCTS_BY_CATEGORY.map((catGroup) => (
+        {featuredProducts.map((catGroup) => (
           <div key={catGroup.categoryName} className="px-6 py-4 border-t border-black/[0.03] mt-2">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2 border-l-[3px] border-[#a2ad02] pl-2">
@@ -1054,21 +971,22 @@ const Home = () => {
               {catGroup.products.slice(0, 4).map((product) => {
                 const base = product.basePrice || 0;
                 const discount = product.discountPrice || 0;
-                const hasDiscount = discount > base;
+                const hasDiscount = discount > 0 && discount < base;
+                const priceToDisplay = hasDiscount ? discount : base;
                 const discountPercent = hasDiscount 
-                  ? Math.round(((discount - base) / discount) * 100)
+                  ? Math.round(((base - discount) / base) * 100)
                   : 0;
 
                 return (
                   <div 
                     key={product.id}
-                    onClick={() => navigate('/user/categories')}
+                    onClick={() => navigate(`/user/subcategories?category=${encodeURIComponent(catGroup.categoryName)}&type=shop`)}
                     className="bg-white rounded-2xl p-2 border border-gray-100 shadow-sm flex flex-col hover:shadow-md transition-all duration-300 relative group cursor-pointer"
                   >
                     {/* Image Box */}
                     <div className="aspect-square bg-gray-50 rounded-xl overflow-hidden mb-2 flex items-center justify-center p-1.5 relative">
                       <img 
-                        src={product.iconUrl} 
+                        src={product.iconUrl || 'https://res.cloudinary.com/deorxby43/image/upload/v1779274407/products/pn4b1tmtdcma9mppi7z0.png'} 
                         alt={product.title} 
                         className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500" 
                       />
@@ -1101,11 +1019,11 @@ const Home = () => {
                       {/* Pricing row */}
                       <div className="flex items-center gap-1.5 flex-wrap mt-auto">
                         <span className="text-[11px] font-black text-gray-900">
-                          ₹{base}{product.unit ? <span className="text-[8px] font-semibold text-gray-500">/{product.unit}</span> : ''}
+                          ₹{priceToDisplay}{product.unit ? <span className="text-[8px] font-semibold text-gray-500">/{product.unit}</span> : ''}
                         </span>
                         {hasDiscount && (
                           <span className="text-[9px] font-semibold text-gray-400 line-through">
-                            ₹{discount}
+                            ₹{base}
                           </span>
                         )}
                       </div>
@@ -1125,7 +1043,7 @@ const Home = () => {
             {/* See All Button directly below the 4 products */}
             <div className="flex justify-center mt-4">
               <button
-                onClick={() => navigate('/user/categories')}
+                onClick={() => navigate(`/user/subcategories?category=${encodeURIComponent(catGroup.categoryName)}&type=shop`)}
                 className="w-full py-3 bg-white border border-[#a2ad02]/30 text-[#a2ad02] rounded-xl text-[10px] font-black uppercase tracking-[0.2em] shadow-sm hover:bg-[#a2ad02] hover:text-white transition-all active:scale-95 text-center"
               >
                 See All {catGroup.categoryName}
@@ -1147,7 +1065,7 @@ const Home = () => {
            category={selectedCategory}
            isOpen={isCategoryModalOpen}
            onClose={() => setIsCategoryModalOpen(false)}
-           workers={categoryWorkers}
+           workers={workers}
            onWorkerClick={(w) => {
               setIsCategoryModalOpen(false);
               setSelectedWorker(w);

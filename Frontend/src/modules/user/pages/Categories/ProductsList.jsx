@@ -15,59 +15,6 @@ const toAssetUrl = (url) => {
   return `${base}${clean.startsWith('/') ? '' : '/'}${clean}`;
 };
 
-const DUMMY_SIBLINGS = [
-  { id: 'all', title: 'All', icon: 'https://res.cloudinary.com/deorxby43/image/upload/v1779274407/products/pn4b1tmtdcma9mppi7z0.png' },
-  { id: 'ppc', title: 'Ppc', icon: 'https://res.cloudinary.com/deorxby43/image/upload/v1779274407/products/pn4b1tmtdcma9mppi7z0.png' },
-  { id: 'white-cement', title: 'White Cement', icon: 'https://res.cloudinary.com/deorxby43/image/upload/v1779274407/products/pn4b1tmtdcma9mppi7z0.png' },
-  { id: 'punning-plaster', title: 'Punning Plaster', icon: 'https://res.cloudinary.com/deorxby43/image/upload/v1779274407/products/pn4b1tmtdcma9mppi7z0.png' },
-  { id: 'gypsum-sheets', title: 'Gypsum Sheets', icon: 'https://res.cloudinary.com/deorxby43/image/upload/v1779274407/products/pn4b1tmtdcma9mppi7z0.png' },
-  { id: 'gypsum-screw', title: 'Gypsum Screw', icon: 'https://res.cloudinary.com/deorxby43/image/upload/v1779274407/products/pn4b1tmtdcma9mppi7z0.png' },
-];
-
-const DUMMY_PRODUCTS = [
-  {
-    id: 'prod_1',
-    title: 'UltraTech PPC Cement (50 kg)',
-    basePrice: 385,
-    discountPrice: 390,
-    iconUrl: 'https://res.cloudinary.com/deorxby43/image/upload/v1779274407/products/pn4b1tmtdcma9mppi7z0.png',
-    unit: 'bag'
-  },
-  {
-    id: 'prod_2',
-    title: 'Birla White Cement (50 kg)',
-    basePrice: 1155,
-    discountPrice: 1155,
-    iconUrl: 'https://res.cloudinary.com/deorxby43/image/upload/v1779274407/products/pn4b1tmtdcma9mppi7z0.png',
-    stockWarning: 'Only 5 left',
-    unit: 'bag'
-  },
-  {
-    id: 'prod_3',
-    title: 'Saint Gobain Gyproc Xpert+ Gypsum Plaster of Paris POP Punning Powder (20 kg)',
-    basePrice: 270,
-    discountPrice: 350,
-    iconUrl: 'https://res.cloudinary.com/deorxby43/image/upload/v1779274407/products/pn4b1tmtdcma9mppi7z0.png',
-    stockWarning: 'Only 5 left',
-    unit: 'bag'
-  },
-  {
-    id: 'prod_4',
-    title: 'Saint Gobain Gyproc Plain Gypsum Board / Wall & Ceiling Drywall Sheet (12.5 mm, 4 x 6 feet)',
-    basePrice: 580,
-    discountPrice: 580,
-    iconUrl: 'https://res.cloudinary.com/deorxby43/image/upload/v1779274407/products/pn4b1tmtdcma9mppi7z0.png',
-    unit: 'piece'
-  },
-  {
-    id: 'prod_5',
-    title: 'Drywall Screws (Pack of 100)',
-    basePrice: 120,
-    discountPrice: 150,
-    iconUrl: 'https://res.cloudinary.com/deorxby43/image/upload/v1779274407/products/pn4b1tmtdcma9mppi7z0.png',
-    unit: 'pack'
-  }
-];
 
 const FlyingImage = ({ img }) => {
   const [style, setStyle] = React.useState({
@@ -136,20 +83,15 @@ const UserBrandProductsPage = () => {
       const cityId = currentCity?._id || currentCity?.id;
       const res = await publicCatalogService.getProductsByBrand(activeBrandId, cityId);
       if (res.success) {
-        // Fallback to dummy data if empty
-        const fetchedProducts = res.products?.length > 0 ? res.products : DUMMY_PRODUCTS;
-        const fetchedSiblings = res.siblings?.length > 0 ? res.siblings : DUMMY_SIBLINGS;
-        
-        setProducts(fetchedProducts);
-        setActiveBrandTitle(res.brand.title || 'Cement & Plaster');
-        setSiblings(fetchedSiblings);
+        setProducts(res.products || []);
+        setActiveBrandTitle(res.brand?.title || 'Brand Products');
+        setSiblings(res.siblings || []);
       }
     } catch (err) {
       console.error('Error fetching brand products:', err);
-      // Fallback on error
-      setProducts(DUMMY_PRODUCTS);
-      setActiveBrandTitle('Cement & Plaster');
-      setSiblings(DUMMY_SIBLINGS);
+      setProducts([]);
+      setActiveBrandTitle('Brand Products');
+      setSiblings([]);
     } finally {
       setLoading(false);
     }

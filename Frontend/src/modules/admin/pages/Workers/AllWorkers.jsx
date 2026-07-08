@@ -50,7 +50,7 @@ const AllWorkers = () => {
           name: worker.name,
           email: worker.email,
           phone: worker.phone,
-          serviceCategory: worker.serviceCategory || worker.service || 'N/A',
+          serviceCategory: worker.serviceCategory || worker.service || (worker.serviceCategories && worker.serviceCategories.join(', ')) || 'N/A',
           approvalStatus: worker.approvalStatus,
           aadhar: worker.aadhar?.number,
           pan: worker.pan?.number,

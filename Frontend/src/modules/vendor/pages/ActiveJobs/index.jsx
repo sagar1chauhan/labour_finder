@@ -14,7 +14,7 @@ const ActiveJobs = memo(() => {
   const navigate = useNavigate();
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('in_progress'); // Default to showing active jobs
+  const [filter, setFilter] = useState('all'); // Default to showing all jobs
   const [searchQuery, setSearchQuery] = useState('');
   const [confirmDialog, setConfirmDialog] = useState({
     isOpen: false,

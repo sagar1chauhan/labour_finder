@@ -75,6 +75,10 @@ exports.getBookingReport = async (req, res) => {
  */
 exports.getVendorReport = async (req, res) => {
   try {
+    // Total counts
+    const totalVendors = await Vendor.countDocuments();
+    const totalBookings = await Booking.countDocuments();
+
     // Top vendors by revenue
     const topVendors = await Booking.aggregate([
       { $match: { status: BOOKING_STATUS.COMPLETED } },
@@ -101,6 +105,7 @@ exports.getVendorReport = async (req, res) => {
           businessName: '$vendor.businessName',
           name: '$vendor.name',
           totalRevenue: 1,
+          bookingCount: '$bookingsCount',
           bookingsCount: 1
         }
       }
@@ -117,12 +122,26 @@ exports.getVendorReport = async (req, res) => {
       { $sort: { count: -1 } }
     ]);
 
+    // Monthly registration trend
+    const monthlyTrend = await Vendor.aggregate([
+      {
+        $group: {
+          _id: { $dateToString: { format: '%Y-%m', date: '$createdAt' } },
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { _id: 1 } }
+    ]);
+
     res.status(200).json({
       success: true,
       data: {
+        totalVendors,
+        totalBookings,
         topVendors,
         statusDistribution,
-        categoryDistribution
+        categoryDistribution,
+        monthlyTrend
       }
     });
   } catch (error) {
